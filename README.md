@@ -9,7 +9,7 @@ Estado: **P1 · La Meseta** (Mundo 1). Hucha, tienda con inflación, banco (cuen
 ```bash
 nvm use 22        # o cualquier Node >= 22
 npm install
-npm run dev       # http://localhost:5173
+npm run dev       # http://localhost:5180
 ```
 
 Sin configurar nada, el juego funciona en **modo local**: guarda la partida en el navegador y usa la hora del dispositivo.
