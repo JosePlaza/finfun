@@ -4,3 +4,6 @@ dist
 .env.local
 *.local
 .DS_Store
+
+# Capturas que deja la app de Claude
+Claude outputs/
