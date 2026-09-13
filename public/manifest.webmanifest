@@ -1,0 +1,11 @@
+{
+  "name": "Finfun",
+  "short_name": "Finfun",
+  "description": "Un día real es un mes de isla. Haz crecer tu isla y tu dinero.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#cfe8ee",
+  "theme_color": "#cfe8ee",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

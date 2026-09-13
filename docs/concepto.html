@@ -1,0 +1,558 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Finfun</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+  :root {
+    --bg: #EEF4F1;
+    --surface: #FFFFFF;
+    --surface-2: #E2ECE7;
+    --ink: #1E3436;
+    --ink-2: #4B6366;
+    --ink-3: #7B9093;
+    --line: #CBDAD4;
+    --coral: #E5735B;
+    --leaf: #5FA97C;
+    --sky: #5FA8D3;
+    --acorn: #9B6A3C;
+    --sun: #E2B04A;
+    --slate: #6B6F8A;
+    --coral-soft: #FBE6E0;
+    --leaf-soft: #DFF0E5;
+    --sky-soft: #DDEEF8;
+    --acorn-soft: #F1E5D6;
+    --sun-soft: #F9EFD3;
+    --slate-soft: #E6E7F0;
+    --sea: #B9DCE6;
+    --sand: #F3E4C4;
+    --grass: #9FD3A6;
+    --rock: #E8C9C0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12211F; --surface: #1A2C2B; --surface-2: #223836;
+      --ink: #E8F0ED; --ink-2: #B3C6C1; --ink-3: #7F9793; --line: #2F4644;
+      --coral: #F08A73; --leaf: #7CC397; --sky: #7DBFE3; --acorn: #C08E5F; --sun: #E9BE63; --slate: #A3A7C4;
+      --coral-soft: #3B2823; --leaf-soft: #1F3A2C; --sky-soft: #1E3341; --acorn-soft: #35291D; --sun-soft: #3A3120; --slate-soft: #272A3A;
+      --sea: #244B57; --sand: #6E5A3C; --grass: #3F7A4C; --rock: #6E4F4A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12211F; --surface: #1A2C2B; --surface-2: #223836;
+    --ink: #E8F0ED; --ink-2: #B3C6C1; --ink-3: #7F9793; --line: #2F4644;
+    --coral: #F08A73; --leaf: #7CC397; --sky: #7DBFE3; --acorn: #C08E5F; --sun: #E9BE63; --slate: #A3A7C4;
+    --coral-soft: #3B2823; --leaf-soft: #1F3A2C; --sky-soft: #1E3341; --acorn-soft: #35291D; --sun-soft: #3A3120; --slate-soft: #272A3A;
+    --sea: #244B57; --sand: #6E5A3C; --grass: #3F7A4C; --rock: #6E4F4A;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Nunito Sans", "Segoe UI", system-ui, sans-serif; font-size: 17px; line-height: 1.6; padding-block: 0 96px; padding-inline: 20px; }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  h1, h2, h3, .display { font-family: "Fredoka", "Nunito Sans", system-ui, sans-serif; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 { font-size: clamp(40px, 7vw, 60px); line-height: 1; margin: 0; }
+  h2 { font-size: 30px; line-height: 1.15; margin: 0 0 14px; }
+  h3 { font-size: 20px; margin: 28px 0 8px; font-weight: 500; }
+  p { margin: 0 0 16px; max-width: 68ch; }
+  strong { font-weight: 700; color: var(--ink); }
+
+  header { padding-block: 56px 28px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; }
+  .kicker { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 14px; }
+  .lede { font-size: 21px; line-height: 1.45; color: var(--ink-2); margin-top: 18px; max-width: 34ch; }
+  .island { width: 200px; height: 160px; display: block; }
+  @media (max-width: 560px) { header { grid-template-columns: 1fr; } .island { width: 160px; height: 128px; } }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-block: 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-2); margin-bottom: 48px; }
+  .meta b { color: var(--ink); font-weight: 700; }
+  .changes { font-size: 14px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: -28px 0 48px; }
+  .changes b { color: var(--ink); }
+
+  section { margin-bottom: 64px; }
+  .tag { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-2); margin-bottom: 12px; }
+  .tag::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--ink-3); transform: rotate(45deg); }
+  .tag.coral::before { background: var(--coral); } .tag.leaf::before { background: var(--leaf); } .tag.sky::before { background: var(--sky); } .tag.acorn::before { background: var(--acorn); } .tag.sun::before { background: var(--sun); } .tag.slate::before { background: var(--slate); }
+
+  .pillars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+  @media (max-width: 560px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 14px; }
+  .pillar .display { font-size: 19px; margin-bottom: 6px; }
+  .pillar p { font-size: 15px; color: var(--ink-2); margin: 0; }
+
+  .loop { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 22px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+  @media (max-width: 640px) { .loop { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 400px) { .loop { grid-template-columns: 1fr; } }
+  .step { padding: 18px 16px 16px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  @media (max-width: 640px) { .step { border-bottom: 1px solid var(--line); } }
+  .step .n { font-family: "Fredoka", sans-serif; font-size: 13px; letter-spacing: 0.1em; color: var(--ink-3); text-transform: uppercase; }
+  .step .display { font-size: 18px; margin: 4px 0 6px; }
+  .step p { font-size: 14px; color: var(--ink-2); margin: 0; }
+
+  /* calendar strip */
+  .cal { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 20px; }
+  .cal div { height: 44px; border-radius: 6px; display: flex; align-items: flex-end; justify-content: center; font-size: 11px; font-weight: 700; padding-bottom: 4px; color: var(--ink); }
+  .cal .pri { background: color-mix(in srgb, var(--leaf-soft) 80%, var(--surface)); border-bottom: 4px solid var(--leaf); }
+  .cal .ver { background: color-mix(in srgb, var(--sun-soft) 80%, var(--surface)); border-bottom: 4px solid var(--sun); }
+  .cal .oto { background: color-mix(in srgb, var(--coral-soft) 80%, var(--surface)); border-bottom: 4px solid var(--coral); }
+  .cal .inv { background: color-mix(in srgb, var(--sky-soft) 80%, var(--surface)); border-bottom: 4px solid var(--sky); }
+  .callabels { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; font-size: 12px; color: var(--ink-3); margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+
+  .asset { border-radius: 16px; padding: 24px 24px 20px; margin-top: 22px; border: 1px solid var(--line); background: var(--surface); }
+  .asset.coral { background: var(--coral-soft); border-color: transparent; } .asset.leaf { background: var(--leaf-soft); border-color: transparent; } .asset.sky { background: var(--sky-soft); border-color: transparent; } .asset.acorn { background: var(--acorn-soft); border-color: transparent; } .asset.slate { background: var(--slate-soft); border-color: transparent; }
+  .asset h3 { margin-top: 0; font-size: 24px; font-weight: 600; }
+  .asset .where { font-size: 14px; color: var(--ink-2); margin: -4px 0 14px; font-style: italic; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-top: 8px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid2 h4 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+  .grid2 p { font-size: 15px; margin: 0; }
+  .truth { margin-top: 16px; padding: 12px 14px; border-left: 3px solid var(--ink); background: color-mix(in srgb, var(--surface) 55%, transparent); border-radius: 0 10px 10px 0; font-size: 15px; }
+  .truth b { display: block; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2px; }
+
+  .tablewrap { overflow-x: auto; margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 640px; }
+  th, td { padding: 11px 13px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .world { font-family: "Fredoka", sans-serif; font-weight: 600; white-space: nowrap; }
+  .biz { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 16px; white-space: nowrap; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin: 2px 4px 2px 0; white-space: nowrap; }
+  .chip.coral { background: var(--coral-soft); color: var(--coral); } .chip.leaf { background: var(--leaf-soft); color: var(--leaf); } .chip.sky { background: var(--sky-soft); color: var(--sky); } .chip.acorn { background: var(--acorn-soft); color: var(--acorn); } .chip.sun { background: var(--sun-soft); color: var(--sun); } .chip.slate { background: var(--slate-soft); color: var(--slate); }
+  tr.sub td { background: var(--surface-2); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-2); padding-block: 7px; }
+  .foot { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+
+  .bars { margin-top: 18px; display: grid; gap: 10px; }
+  .bar { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 12px; font-size: 15px; }
+  @media (max-width: 480px) { .bar { grid-template-columns: 110px 1fr 48px; font-size: 14px; } }
+  .bar .track { height: 22px; background: var(--surface-2); border-radius: 6px; overflow: hidden; position: relative; }
+  .bar .fill { height: 100%; border-radius: 6px; }
+  .bar .ref { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); left: 64.1%; opacity: .6; }
+  .bar .v { font-variant-numeric: tabular-nums; text-align: right; font-weight: 700; }
+
+  /* tax ladder */
+  .ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 18px; align-items: end; }
+  @media (max-width: 560px) { .ladder { grid-template-columns: repeat(5, 1fr); gap: 4px; } }
+  .rung { background: var(--slate-soft); border-radius: 8px 8px 4px 4px; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px 6px; text-align: center; border-bottom: 4px solid var(--slate); }
+  .rung b { font-family: "Fredoka", sans-serif; font-size: 20px; font-weight: 600; }
+  .rung span { font-size: 11px; color: var(--ink-2); line-height: 1.3; }
+  .rung.now { outline: 2px solid var(--slate); outline-offset: 2px; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .sw { width: 92px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); font-size: 12px; background: var(--surface); }
+  .sw i { display: block; height: 46px; }
+  .sw span { display: block; padding: 6px 8px; color: var(--ink-2); }
+
+  .seasons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+  @media (max-width: 640px) { .seasons { grid-template-columns: 1fr 1fr; } }
+  .season { border-radius: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+  .season .display { font-size: 17px; margin-bottom: 6px; }
+  .season p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .season.pri { border-top: 4px solid var(--leaf); } .season.ver { border-top: 4px solid var(--sun); } .season.oto { border-top: 4px solid var(--coral); } .season.inv { border-top: 4px solid var(--sky); }
+
+  .cast { display: grid; gap: 10px; margin-top: 16px; }
+  .who { display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .who:last-child { border-bottom: 0; }
+  .who b { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 17px; }
+  @media (max-width: 480px) { .who { grid-template-columns: 1fr; gap: 4px; } }
+
+  .q { padding: 14px 16px; border: 1px dashed var(--line); border-radius: 12px; margin-top: 12px; font-size: 15px; background: var(--surface); }
+  .q b { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 17px; display: block; margin-bottom: 4px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .island .wave { animation: bob 4s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <div class="kicker">Documento de concepto · v0.3 · septiembre 2026</div>
+    <h1>Finfun</h1>
+    <p class="lede">Diez minutos al día para hacer crecer una isla y, sin darse cuenta, aprender a hacer crecer el dinero.</p>
+  </div>
+  <svg class="island" viewBox="0 0 200 160" aria-hidden="true">
+    <ellipse class="wave" cx="100" cy="126" rx="94" ry="24" fill="var(--sea)"/>
+    <!-- terraced plateaus -->
+    <polygon points="22,118 100,92 178,118 100,140" fill="var(--rock)"/>
+    <polygon points="22,118 100,140 100,148 22,126" fill="#D9B3AA" opacity=".8"/>
+    <polygon points="178,118 100,140 100,148 178,126" fill="#C9A29A" opacity=".8"/>
+    <polygon points="40,110 100,90 160,110 100,128" fill="var(--grass)"/>
+    <polygon points="70,94 110,80 150,94 110,106" fill="var(--rock)"/>
+    <polygon points="70,94 110,106 110,112 70,100" fill="#D9B3AA" opacity=".8"/>
+    <polygon points="80,92 110,82 140,92 110,101" fill="var(--grass)"/>
+    <!-- lighthouse -->
+    <rect x="118" y="58" width="9" height="34" fill="#F7F3EC"/>
+    <rect x="118" y="72" width="9" height="4" fill="#8E8A85"/>
+    <rect x="116" y="56" width="13" height="4" fill="#5A5652"/>
+    <polygon points="115,56 130,56 122.5,47" fill="var(--coral)"/>
+    <!-- red cabin -->
+    <rect x="128" y="84" width="14" height="10" fill="#D8544B"/>
+    <polygon points="126,84 144,84 135,76" fill="#5C4A40"/>
+    <rect x="133" y="88" width="4" height="6" fill="#fff" opacity=".9"/>
+    <!-- trees -->
+    <polygon points="86,90 93,74 100,90" fill="var(--leaf)"/>
+    <polygon points="78,96 84,84 90,96" fill="#4E9268"/>
+    <polygon points="52,108 57,96 62,108" fill="var(--leaf)"/>
+    <polygon points="60,110 64,100 68,110" fill="#4E9268"/>
+    <!-- bakery -->
+    <rect x="46" y="112" width="12" height="9" fill="#F3E4C4"/>
+    <polygon points="44,112 60,112 52,104" fill="var(--acorn)"/>
+    <!-- pier -->
+    <rect x="150" y="122" width="26" height="3" fill="var(--acorn)"/>
+    <rect x="152" y="125" width="2" height="5" fill="var(--acorn)"/><rect x="170" y="125" width="2" height="5" fill="var(--acorn)"/>
+    <circle cx="160" cy="34" r="12" fill="var(--sun)"/>
+    <ellipse cx="56" cy="44" rx="18" ry="7" fill="#fff" opacity=".85"/>
+    <ellipse cx="68" cy="40" rx="12" ry="6" fill="#fff" opacity=".85"/>
+  </svg>
+</header>
+
+<div class="meta">
+  <span><b>Género</b> construir y gestionar una isla</span>
+  <span><b>Ritmo</b> ~10 min al día, en tiempo real</span>
+  <span><b>Plataforma</b> web (navegador)</span>
+  <span><b>Edad</b> 6 a 14, por mundos</span>
+  <span><b>Contexto</b> juega solo en casa</span>
+</div>
+<div class="changes"><b>Cambios en v0.3</b> · el juego se llama Finfun y cada jugador bautiza su isla (en este documento la isla de ejemplo es Isla Bellota) · moneda propia: el euroLuky · la inflación pasa a ser una lección explícita con su propia explicación en el juego · cerradas las preguntas abiertas: Mundo 1 sin riesgo, la Liebre vecina desde el inicio, tareas con efectivo, paga acumulable, sin avisos.<br><b>v0.2</b> · ritmo diario en tiempo real · catálogos de bonos y comercios · Hacienda con la fiscalidad española · estética con las dos referencias.</div>
+
+<section>
+  <div class="tag">La idea en una frase</div>
+  <h2>El dinero que se queda quieto se encoge; el dinero que trabaja hace crecer la isla mientras tú no estás.</h2>
+  <p>El niño recibe una isla pequeña a la que pone nombre, una hucha y una paga mensual en euroLukys, la moneda del juego. Cada día entra unos minutos, recoge lo que sus inversiones han producido, mira cómo va la isla y decide dónde coloca los euroLukys nuevos. Luego cierra y espera hasta mañana: ahí está la lección. Un día real es un mes de isla, así que un año de isla dura doce días y la paciencia se practica de verdad, no se simula.</p>
+  <p>La tesis pedagógica es una sola y se repite en cada mundo con más matices: <strong>rentabilidad, riesgo y tiempo siempre van juntos</strong>. Lo que no tiene riesgo crece poco; lo que crece mucho a veces baja; y esperar es la herramienta más potente que tiene un niño, porque es lo que más tiene.</p>
+
+  <div class="pillars">
+    <div class="pillar"><div class="display">Todo se ve</div><p>Cada euroLuky tiene un lugar físico en la isla. Un bono es una cuerda con banderitas hasta el Ayuntamiento, un dividendo son monedas que se acumulan en el tejado de la panadería hasta que las recoges.</p></div>
+    <div class="pillar"><div class="display">El tiempo es real</div><p>No hay botón de "siguiente turno". La isla avanza sola, con o sin el niño. Querer tenerlo todo hoy no es posible por diseño, y mañana siempre hay algo nuevo que ver.</p></div>
+    <div class="pillar"><div class="display">Nunca se pierde la partida</div><p>Los errores cuestan euroLukys, no el juego. La tormenta hunde un barco y ese año no hay bici; la isla sigue ahí al día siguiente.</p></div>
+    <div class="pillar"><div class="display">Por su nombre y con su verdad</div><p>Se dice inflación, bono, acción, dividendo, Letra del Tesoro, retención. La moneda es de isla, pero las reglas son las reales, incluidas las de Hacienda.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="tag">Ritmo</div>
+  <h2>Un día real es un mes de isla</h2>
+  <p>La equivalencia lo ordena todo: la paga llega cada día (cada mes de isla), las estaciones cambian cada tres días, un año se cierra cada doce y en ese cierre se pasa por Hacienda. Diez años de isla, suficientes para ver el interés compuesto trabajar, son cuatro meses reales. Una partida completa hasta el Mundo 4 dura alrededor de un año de calendario, que es exactamente el tipo de horizonte que se quiere enseñar.</p>
+  <div class="cal" aria-label="Un año de isla en doce días reales">
+    <div class="pri">D1</div><div class="pri">D2</div><div class="pri">D3</div>
+    <div class="ver">D4</div><div class="ver">D5</div><div class="ver">D6</div>
+    <div class="oto">D7</div><div class="oto">D8</div><div class="oto">D9</div>
+    <div class="inv">D10</div><div class="inv">D11</div><div class="inv">D12</div>
+  </div>
+  <div class="callabels"><span>Primavera</span><span>Verano</span><span>Otoño</span><span>Invierno</span></div>
+  <p class="foot">Cada casilla es un día real y un mes de isla. El día 12 es fin de año: cierre, diario y Hacienda.</p>
+
+  <h3>Qué pasa y cuándo</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Cada día (mes de isla)</th><th>Cada 3 días (estación)</th><th>Cada 12 días (año)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Llega la paga a la hucha. El banco abona su interés. Los precios de los negocios se mueven un poco. Puede ocurrir un evento pequeño. Hay una tarea corta opcional para ganar algo extra.</td>
+          <td>Cambia la estación en toda la isla. Los negocios con dividendo trimestral reparten. Evento de estación (verano caluroso, tormenta de otoño, feria de primavera). Cierra o abre la heladería.</td>
+          <td>Cupones anuales y vencimientos de bonos. Cierre de cuentas: el diario de Doña Tortuga con el "¿y si…?". Hacienda liquida el año. La tienda cambia los precios y Doña Tortuga explica la inflación del año. Nuevas emisiones de bonos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Una visita típica de diez minutos</h3>
+  <div class="loop">
+    <div class="step"><div class="n">1 · Al entrar</div><div class="display">Recoger</div><p>Las monedas que se han acumulado en los tejados y en la chimenea del banco vuelan a la hucha al tocarlas. Es el momento de placer del día.</p></div>
+    <div class="step"><div class="n">2 · Mirar</div><div class="display">Comprobar</div><p>Qué ha pasado desde ayer: la estación, un evento, el precio de la heladería, si el Ayuntamiento ha sacado bonos nuevos. La Liebre cuenta lo suyo.</p></div>
+    <div class="step"><div class="n">3 · Decidir</div><div class="display">Colocar</div><p>La paga y lo recogido se arrastran a la tienda, al banco, a un bono o a un negocio. O se dejan en la hucha, que también es una decisión.</p></div>
+    <div class="step"><div class="n">4 · Salir</div><div class="display">Esperar</div><p>No hay nada más que hacer hasta mañana. El juego lo dice sin rodeos: "La isla sigue trabajando. Vuelve mañana".</p></div>
+  </div>
+  <p style="margin-top:18px">Si el niño no entra durante días, la isla no se detiene: la paga de cada mes se acumula en la hucha sin tope, los dividendos se acumulan en los tejados, los cupones se cobran solos, los bonos vencen y el dinero vuelve a la hucha. No hay avisos ni notificaciones de ningún tipo: el hábito de volver lo construye la curiosidad, no el móvil. Lo único que se pierde es la oportunidad de colocar la paga antes; de hecho, ver que todo ha seguido creciendo sin él es una de las lecciones más valiosas del juego.</p>
+</section>
+
+<section>
+  <div class="tag">Mundo y personajes</div>
+  <h2>Una isla que empieza siendo una meseta con una hucha</h2>
+  <p>Lo primero que hace el niño es ponerle nombre a su isla; en este documento la llamamos Isla Bellota. La isla arranca casi vacía: una meseta de roca rosada sobre el mar, un roble joven, la casita del niño y una hucha enorme en la plaza. Según pasan los años y el patrimonio crece, la isla se llena de terrazas, caminos y edificios. La riqueza no es un número arriba a la derecha: es el tamaño de la isla. El roble y la bellota son la metáfora de todo lo demás: una semilla pequeña que, si no te la comes hoy y la plantas, con el tiempo es un roble que da cientos de bellotas. La moneda del juego es el <strong>euroLuky</strong> (plural euroLukys): se comporta como un euro y se escribe con su propio símbolo, pero es dinero de isla, para que ningún niño confunda el juego con la cuenta de sus padres.</p>
+  <div class="cast">
+    <div class="who"><b>Doña Tortuga</b><span>La mentora. Vive junto al banco, habla poco y siempre dice "espera y verás". Explica cada concepto una sola vez, con un ejemplo en la propia isla, y después deja hacer. Escribe el diario de fin de año.</span></div>
+    <div class="who"><b>Liebre</b><span>El amigo del niño y grupo de control. Es vecina desde el primer día (se la ve pasar y contar lo suyo), pero su isla solo se puede visitar a partir del Mundo 2. Gasta la paga el mismo día, compra acciones porque "están subiendo" y vende cuando bajan. A veces le sale bien, y eso importa: el juego no castiga la impulsividad por decreto, la deja compararse con la paciencia a lo largo de los años.</span></div>
+    <div class="who"><b>Don Búho</b><span>El funcionario de Hacienda de la Isla. Amable, exacto y un poco pesado. Aparece cada vez que hay un cobro para llevarse su parte y una vez al año para "hacer la declaración" con el niño.</span></div>
+    <div class="who"><b>El Ayuntamiento y el Reino</b><span>Quienes emiten deuda pública: primero el alcalde de la isla, después el Tesoro del Reino en el continente. Son los prestatarios más seguros y los que menos pagan.</span></div>
+    <div class="who"><b>Los vecinos</b><span>La panadera, el heladero, la pescadora, el farero, la posadera, el carpintero… Son los negocios en los que se invierte y los que a veces piden prestado. Cada uno tiene carácter y calendario propio.</span></div>
+    <div class="who"><b>La tienda</b><span>Donde el dinero se convierte en cosas: helado, cometa, bici, telescopio, casa en el árbol. Sus precios suben con la inflación cada año y llevan IVA. Es la referencia de cuánto vale un euroLuky.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="tag">Qué enseña</div>
+  <h2>Cinco lecciones, cinco lugares de la isla</h2>
+  <p>Cada concepto tiene un edificio, una mecánica, un gesto visible y una "verdad que no se simplifica": el principio real que el juego respeta aunque ponga los números a escala de isla.</p>
+
+  <div class="asset acorn">
+    <div class="tag acorn">Lección 1</div>
+    <h3>El valor del dinero y la inflación</h3>
+    <div class="where">La hucha de la plaza y la tienda</div>
+    <div class="grid2">
+      <div><h4>Mecánica</h4><p>La hucha guarda euroLukys sin riesgo y sin crecer. Cada fin de año la tienda cambia sus precios según la inflación de ese año, entre un 1,5 % y un 4 %: la bici que costaba 180 pasa a 183, al siguiente quizá a 189. La etiqueta muestra el precio viejo tachado y el nuevo, y al lado una palabra nueva: <strong>inflación</strong>. Los precios llevan IVA y la etiqueta lo muestra en pequeño.</p></div>
+      <div><h4>Lo que se ve</h4><p>La hucha coge polvo y telarañas si pasan meses sin moverse. Junto a ella, un cartel: "con esto hoy compras 12 helados", que baja a 11, a 10… El primer fin de año, Doña Tortuga lleva al niño a la tienda y se lo explica delante de la bici: "Tienes los mismos 180 euroLukys que ayer, pero la bici ya cuesta 183. Eso es la inflación: los precios suben un poco cada año, y el dinero que se queda quieto compra cada vez menos". Desde entonces, en cada cierre de año aparece el dato: "Inflación de este año: 2,3 %".</p></div>
+      <div><h4>Elección clave</h4><p>"Ahora o después": la cometa hoy, o esperar dos meses y tener la cometa y euroLukys de sobra. Y la pregunta que planta la inflación: si voy a tardar un año en juntar para la bici, ¿costará lo mismo cuando llegue? El juego premia esperar sin castigar comprar.</p></div>
+      <div><h4>Edad de entrada</h4><p>6 años. Casi sin texto: monedas, helados y un cerdito. En el Mundo 1 solo hay euroLukys enteros y ningún evento de riesgo: la única cosa que "pasa" es que los precios suben.</p></div>
+    </div>
+    <div class="truth"><b>Verdad que no se simplifica</b>Guardar dinero no es lo mismo que conservar su valor. La inflación es normal, casi siempre pequeña y siempre silenciosa; por eso el dinero necesita crecer al menos lo que suben los precios solo para no perder.</div>
+  </div>
+
+  <div class="asset leaf">
+    <div class="tag leaf">Lección 2</div>
+    <h3>Cuenta remunerada</h3>
+    <div class="where">El Banco de la Isla</div>
+    <div class="grid2">
+      <div><h4>Mecánica</h4><p>Depositas euroLukys y cada mes el banco abona un poquito, siempre, sin sorpresas. Sacas lo que quieras cuando quieras. El tipo del banco (2,5 %) ronda la inflación: unos años la gana por poco y otros la pierde, así que el poder de compra apenas se mueve. Don Búho retiene su parte de cada abono.</p></div>
+      <div><h4>Lo que se ve</h4><p>Una planta en el mostrador del banco crece con tu saldo. Cada mañana, una moneda pequeña sale por la chimenea. Aburrido a propósito.</p></div>
+      <div><h4>Elección clave</h4><p>Hucha o banco: la primera vez que el banco regala una moneda por no hacer nada, la hucha deja de tener sentido salvo para el gasto inmediato.</p></div>
+      <div><h4>Edad de entrada</h4><p>6 a 8 años. Se abre al final del primer año de isla (día 12).</p></div>
+    </div>
+    <div class="truth"><b>Verdad que no se simplifica</b>Seguridad y liquidez total se pagan con poca rentabilidad. El banco es donde vive el dinero que vas a necesitar pronto, no el que quieres que crezca.</div>
+  </div>
+
+  <div class="asset sky">
+    <div class="tag sky">Lección 3</div>
+    <h3>Bonos</h3>
+    <div class="where">El Ayuntamiento, la Oficina del Tesoro del Reino y los negocios que emiten deuda</div>
+    <div class="grid2">
+      <div><h4>Mecánica</h4><p>Prestas una cantidad a cambio de un cupón fijo y la devolución al vencimiento. Cuanto más largo el plazo, mayor el cupón; cuanto menos fiable el prestatario, mayor también. Empieza con el Ayuntamiento de la isla; después llegan las Letras, Bonos y Obligaciones del Reino y, por último, los bonos de los propios negocios y el "bono Liebre" de alto rendimiento.</p></div>
+      <div><h4>Lo que se ve</h4><p>Una cuerda con banderitas une tu casa y el edificio del emisor, una banderita por cupón pendiente. Cada pago quita una. Al vencer, la cuerda se recoge y el dinero vuelve a la hucha.</p></div>
+      <div><h4>Elección clave</h4><p>Un año al 3 % o cinco al 5 %: certeza de cuánto cobras a cambio de no poder tocar ese dinero. Y en el Mundo 4: ¿Reino al 4 % o Liebre al 12 %?</p></div>
+      <div><h4>Edad de entrada</h4><p>8 a 10 años. Requiere aguantar un compromiso de varios años de isla (varias semanas reales).</p></div>
+    </div>
+    <div class="truth"><b>Verdad que no se simplifica</b>Un bono es un préstamo con calendario. Quien más interés ofrece es quien más probable es que no pague. Escalonar vencimientos es la forma de no quedarse sin liquidez.</div>
+  </div>
+
+  <div class="asset coral">
+    <div class="tag coral">Lección 4</div>
+    <h3>Acciones</h3>
+    <div class="where">El Mercado: los comercios de la isla</div>
+    <div class="grid2">
+      <div><h4>Mecánica</h4><p>Compras acciones de un comercio y pasas a ser dueño de una parte. El precio de la acción cambia cada día según cómo va el negocio y el humor de la isla. Unos comercios reparten parte de lo que ganan (dividendo, con su propio calendario); otros no reparten y lo reinvierten todo para crecer.</p></div>
+      <div><h4>Lo que se ve</h4><p>Tus acciones son un tejado con tu color. La panadería acumula monedas en el tejado cada trimestre hasta que las recoges; el astillero no reparte nada, pero su barco es cada año más grande y tu acción vale más si la vendes.</p></div>
+      <div><h4>Elección clave</h4><p>Panadería (aburrida, reparte siempre) o heladería (dispara en verano, se hunde en invierno). Y la pregunta que todo lo cambia: ¿vendo ahora que ha bajado, o espero?</p></div>
+      <div><h4>Edad de entrada</h4><p>10 a 12 años. Se abre cuando el niño ha cobrado al menos un bono completo.</p></div>
+    </div>
+    <div class="truth"><b>Verdad que no se simplifica</b>Una acción es un trozo de negocio real. El dividendo es parte de la rentabilidad, no toda; el crecimiento del negocio es la otra. El precio baila; el negocio cambia despacio. Diversificar amortigua los golpes.</div>
+  </div>
+
+  <div class="asset slate">
+    <div class="tag slate">Lección 5</div>
+    <h3>Impuestos</h3>
+    <div class="where">La Oficina de Hacienda de la Isla, junto al Ayuntamiento</div>
+    <div class="grid2">
+      <div><h4>Mecánica</h4><p>Cada vez que cobras un interés, un cupón o un dividendo, Don Búho retiene el 19 % en el momento: de cada moneda que sale de un tejado, una parte vuela a Hacienda en vez de a tu hucha. Si vendes acciones con ganancia, tributas solo entonces. Al cierre de cada año se hace la declaración: se suma todo, se aplica la escalera de tramos y se compensan pérdidas.</p></div>
+      <div><h4>Lo que se ve</h4><p>Las monedas se separan en el aire: cuatro de cada cinco a tu hucha, una a la oficina de Don Búho. En la pared de Hacienda cuelga la escalera de tramos como un póster. El día 12 aparece el sobre de la declaración.</p></div>
+      <div><h4>Elección clave</h4><p>Vender el astillero con ganancia hoy (y pagar) o seguir dentro (y no pagar todavía). El dividendo trimestral de la panadería es cómodo pero tributa cada vez.</p></div>
+      <div><h4>Edad de entrada</h4><p>Desde el Mundo 2 en versión simple (la retención visible); la declaración y los tramos, desde el Mundo 3.</p></div>
+    </div>
+    <div class="truth"><b>Verdad que no se simplifica</b>Lo que ganas invirtiendo se comparte con Hacienda, y cuándo pagas depende de cómo inviertes: los cobros tributan al cobrar; las ganancias, al vender. Aplazar no es evadir; es una decisión legítima que cambia el resultado.</div>
+  </div>
+</section>
+
+<section>
+  <div class="tag sky">Catálogo</div>
+  <h2>Bonos por nivel</h2>
+  <p>El mercado de deuda se abre por capas, primero lo público y cercano, después lo público lejano, por último lo privado. En cada capa hay varios plazos, y dentro de una misma capa un plazo más largo paga más. Los tipos son de isla, pero el orden entre ellos es el real: Tesoro por debajo del Ayuntamiento pequeño, empresas por encima del Tesoro, alto rendimiento muy por encima y con riesgo de impago. Las emisiones nuevas aparecen el día 12 de cada año.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Emisor</th><th>Producto</th><th>Plazo (isla)</th><th class="num">Cupón anual</th><th>Cómo paga</th><th>Riesgo</th><th>Mundo</th></tr></thead>
+      <tbody>
+        <tr class="sub"><td colspan="7">Nivel municipal · Ayuntamiento de Isla Bellota</td></tr>
+        <tr><td>Ayuntamiento</td><td>Pagaré del Faro</td><td>1 año</td><td class="num">3 %</td><td>Todo al vencimiento</td><td>Muy bajo</td><td>2</td></tr>
+        <tr><td>Ayuntamiento</td><td>Bono del Puente</td><td>3 años</td><td class="num">4 %</td><td>Cupón anual</td><td>Muy bajo</td><td>2</td></tr>
+        <tr><td>Ayuntamiento</td><td>Bono del Puerto</td><td>5 años</td><td class="num">5 %</td><td>Cupón anual</td><td>Muy bajo</td><td>2</td></tr>
+        <tr class="sub"><td colspan="7">Nivel estatal · Tesoro del Reino (en el continente)</td></tr>
+        <tr><td>Tesoro</td><td>Letras del Tesoro</td><td>3, 6 y 12 meses</td><td class="num">2 – 2,5 %</td><td>Se compran con descuento; sin retención al cobrar</td><td>Mínimo</td><td>3</td></tr>
+        <tr><td>Tesoro</td><td>Bonos del Reino</td><td>3 y 5 años</td><td class="num">3 – 3,5 %</td><td>Cupón anual</td><td>Mínimo</td><td>3</td></tr>
+        <tr><td>Tesoro</td><td>Obligaciones del Reino</td><td>10 años</td><td class="num">4 %</td><td>Cupón anual; se pueden vender antes a precio variable</td><td>Mínimo (si esperas al final)</td><td>4</td></tr>
+        <tr class="sub"><td colspan="7">Nivel corporativo · negocios de la isla</td></tr>
+        <tr><td>Panadería, Molino, Posada</td><td>Bono corporativo</td><td>3 años</td><td class="num">5 – 6 %</td><td>Cupón semestral</td><td>Bajo: negocio sólido</td><td>3</td></tr>
+        <tr><td>Astillero, Ferry</td><td>Bono corporativo</td><td>5 años</td><td class="num">7 – 8 %</td><td>Cupón semestral</td><td>Medio: un mal año puede retrasar el pago</td><td>4</td></tr>
+        <tr><td>Liebre</td><td>Bono Liebre (alto rendimiento)</td><td>2 años</td><td class="num">12 %</td><td>Cupón trimestral</td><td>Alto: a veces no devuelve todo</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="foot">Las Letras enseñan el rendimiento implícito (compras a 97, cobras 100) y son el único producto sin retención en origen, igual que en España. Las Obligaciones a 10 años introducen en el Mundo 4 que el precio de un bono baja cuando suben los tipos, si intentas venderlo antes de tiempo.</p>
+</section>
+
+<section>
+  <div class="tag coral">Catálogo</div>
+  <h2>Los comercios de la isla</h2>
+  <p>Trece negocios, pensados para que entre ellos aparezcan todas las diferencias que importan: estacionalidad, dividendo alto o ninguno, crecimiento lento o rápido, sensibilidad a la tormenta, a los tipos de interés o al turismo. Cada uno tiene un valor "de verdad" que crece despacio y un precio de acción que baila alrededor de él. Se abren por mundos para que el primer contacto sea con los cuatro más fáciles de entender.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Comercio</th><th>Sector</th><th>Cuándo gana</th><th>Dividendo</th><th>Crecimiento</th><th>Volatilidad</th><th>Le afecta</th><th>Mundo</th></tr></thead>
+      <tbody>
+        <tr class="sub"><td colspan="8">Los cuatro de inicio</td></tr>
+        <tr><td class="biz">Panadería</td><td>Consumo básico</td><td>Todo el año, igual</td><td>Alto · trimestral</td><td>Lento</td><td>Baja</td><td>Precio del trigo (cosecha de otoño)</td><td>3</td></tr>
+        <tr><td class="biz">Heladería</td><td>Consumo estacional</td><td>Verano; cierra en invierno</td><td>Medio · anual (tras el verano)</td><td>Medio</td><td>Alta</td><td>Verano caluroso o lluvioso</td><td>3</td></tr>
+        <tr><td class="biz">Barco pesquero</td><td>Pesca</td><td>Primavera y otoño</td><td>Medio · semestral</td><td>Lento</td><td>Alta</td><td>Tormentas (puede perder un barco)</td><td>3</td></tr>
+        <tr><td class="biz">Astillero</td><td>Industria</td><td>Cuando entrega barcos</td><td>Ninguno · reinvierte</td><td>Rápido</td><td>Alta</td><td>Pedidos del Ferry y la Pescadora</td><td>3</td></tr>
+        <tr class="sub"><td colspan="8">Se abren al diversificar (tres comercios distintos)</td></tr>
+        <tr><td class="biz">Huerto y granja</td><td>Agricultura</td><td>Cosecha de otoño</td><td>Medio · anual</td><td>Lento</td><td>Media</td><td>Plaga, sequía de verano</td><td>3</td></tr>
+        <tr><td class="biz">Molino de viento</td><td>Energía</td><td>Todo el año</td><td>Alto · trimestral</td><td>Muy lento</td><td>Muy baja</td><td>Precio regulado por el Ayuntamiento</td><td>3</td></tr>
+        <tr><td class="biz">Posada del Puerto</td><td>Turismo</td><td>Verano y feria de primavera</td><td>Medio · semestral</td><td>Medio</td><td>Media</td><td>Turistas del Ferry</td><td>3</td></tr>
+        <tr><td class="biz">Tienda General</td><td>Comercio</td><td>Todo el año, más en invierno</td><td>Medio · trimestral</td><td>Lento</td><td>Baja</td><td>Paga de los vecinos</td><td>3</td></tr>
+        <tr class="sub"><td colspan="8">Mundo 4 · la economía grande</td></tr>
+        <tr><td class="biz">Banco de la Isla</td><td>Finanzas</td><td>Cuando los tipos son altos</td><td>Alto · semestral</td><td>Lento</td><td>Media</td><td>Los tipos del Tesoro; impagos de la Liebre</td><td>4</td></tr>
+        <tr><td class="biz">Ferry del Continente</td><td>Transporte</td><td>Verano</td><td>Bajo · anual</td><td>Medio</td><td>Alta</td><td>Precio del combustible, tormentas</td><td>4</td></tr>
+        <tr><td class="biz">Cantera de roca rosa</td><td>Materiales</td><td>Cuando la isla construye</td><td>Medio · anual</td><td>Cíclico</td><td>Alta</td><td>Obras del Ayuntamiento</td><td>4</td></tr>
+        <tr><td class="biz">Taller de juguetes</td><td>Consumo discrecional</td><td>Invierno (fiestas)</td><td>Bajo · anual</td><td>Rápido</td><td>Alta</td><td>Modas: un año arrasa, otro no</td><td>4</td></tr>
+        <tr><td class="biz">Observatorio</td><td>Ciencia y tecnología</td><td>Cuando descubre algo</td><td>Ninguno · reinvierte</td><td>Muy rápido o nada</td><td>Muy alta</td><td>Suerte de los descubrimientos</td><td>4</td></tr>
+        <tr class="sub"><td colspan="8">El último desbloqueo</td></tr>
+        <tr><td class="biz">Fondo Isla</td><td>Cesta de todos los comercios</td><td>Como la isla entera</td><td>Acumula (no reparte)</td><td>El de la media</td><td>Media</td><td>Todo un poco; nada mucho. Traspasable a otro fondo sin tributar</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="foot">Los cuatro de inicio cubren el cuadrante básico: estable con dividendo (Panadería), estacional con dividendo (Heladería), estable con riesgo físico (Barco) y crecimiento sin dividendo (Astillero). Los demás añaden un matiz nuevo cada uno; ninguno repite el patrón de otro.</p>
+</section>
+
+<section>
+  <div class="tag slate">Fiscalidad</div>
+  <h2>Hacienda de la Isla juega con las reglas españolas</h2>
+  <p>La fiscalidad no es un castigo del juego sino una parte del mundo, presentada por Don Búho con la misma naturalidad que la lluvia. Las reglas son las del IRPF español para el ahorro, a escala de isla y sin letra pequeña, pero sin inventar nada que después haya que desaprender.</p>
+  <h3>Lo que el niño ve y hace</h3>
+  <p>Cada cobro de interés, cupón o dividendo se separa en el aire: el <strong>81 % a la hucha y el 19 % a Hacienda</strong>, la retención en origen. Las Letras del Tesoro son la excepción, como en la realidad, y el juego lo señala: "estas no llevan retención; se ajusta en la declaración". Vender acciones o un bono con ganancia genera una ganancia patrimonial que tributa solo al vender; si se vende con pérdida, Don Búho apunta la pérdida en una libreta y permite compensarla con ganancias de ese año o de los cuatro siguientes. Al comprar el mismo comercio varias veces y vender una parte, se venden primero las acciones más antiguas (regla FIFO), que el juego muestra como una pila de tickets con fecha.</p>
+  <p>El día 12 de cada año llega el sobre de la declaración. Don Búho suma todo lo cobrado y ganado, lo coloca en la escalera de tramos y compara con lo ya retenido: casi siempre sale a devolver unos céntimos o a pagar muy poco, y esa reconciliación es el momento en que el niño entiende que la retención era un adelanto. Los fondos tienen una regla especial que el juego enseña en el Mundo 4: traspasar el Fondo Isla a otro fondo no tributa, y por eso el Fondo Isla "acumula" en vez de repartir.</p>
+  <div class="ladder" aria-label="Escalera de tramos de la base del ahorro">
+    <div class="rung now" style="height:70px"><b>19 %</b><span>hasta 6.000 eL</span></div>
+    <div class="rung" style="height:84px"><b>21 %</b><span>6.000 – 50.000 eL</span></div>
+    <div class="rung" style="height:98px"><b>23 %</b><span>50.000 – 200.000 eL</span></div>
+    <div class="rung" style="height:112px"><b>27 %</b><span>200.000 – 300.000 eL</span></div>
+    <div class="rung" style="height:126px"><b>30 %</b><span>más de 300.000 eL</span></div>
+  </div>
+  <p class="foot">Escalera de la base del ahorro del IRPF (rendimientos del capital mobiliario y ganancias patrimoniales), con los mismos porcentajes y umbrales pero en euroLukys. A escala de isla el niño vivirá siempre en el primer peldaño; la escalera completa cuelga en la pared de Hacienda para que sepa que existe. Comprobar los umbrales vigentes al implementar.</p>
+  <h3>Las tres lecciones fiscales que caben en un niño</h3>
+  <p>La primera: <strong>lo que ganas se comparte</strong>, siempre, y con las mismas reglas para todos. La segunda: <strong>cuándo pagas depende de cómo inviertes</strong>. Dividendo trimestral es cómodo, pero paga cada vez; una acción que crece sin repartir no paga hasta que la vendes, y eso deja más dinero trabajando. La tercera: <strong>las pérdidas también cuentan</strong>. Vender con pérdida duele menos de lo que parece si hay ganancias con las que compensarla, y el juego lo enseña el primer año en que la heladería termina mal.</p>
+  <p>Fuera de la inversión, la tienda muestra el IVA en cada etiqueta (21 % en la cometa, 10 % en el helado, 4 % en el pan) para que el niño vea que también el gasto lleva impuesto y que no todo lo lleva igual.</p>
+</section>
+
+<section>
+  <div class="tag">Progresión</div>
+  <h2>Un núcleo, cuatro mundos</h2>
+  <p>El mismo bucle sirve para todas las edades; lo que cambia es qué edificios están abiertos, cuánto ruido hay en los precios y cuánto texto aparece. Un niño de 6 años vive meses en el Mundo 1; uno de 12 lo atraviesa en un par de semanas y llega al Mercado. Cada mundo se desbloquea por logros, no por edad declarada, y el desbloqueo trae a la isla una terraza nueva con sus edificios.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Mundo</th><th>Edad orientativa</th><th>Se abre</th><th>Novedad</th><th>Se desbloquea al</th><th>Duración real típica</th></tr></thead>
+      <tbody>
+        <tr><td class="world">1 · La Meseta</td><td>6–8</td><td><span class="chip acorn">Hucha</span><span class="chip acorn">Tienda</span><span class="chip leaf">Banco</span></td><td>Ganar, gastar, esperar. La inflación sube los precios y Doña Tortuga la explica. El banco regala céntimos cada mañana. Cero riesgo: ningún evento negativo. EuroLukys enteros.</td><td>Comprar la bici</td><td>3–6 semanas</td></tr>
+        <tr><td class="world">2 · El Ayuntamiento</td><td>8–10</td><td><span class="chip sky">Bonos municipales</span><span class="chip slate">Retención</span></td><td>Prestar con calendario y elegir plazo. Primer compromiso de varios años de isla. Don Búho aparece con la retención. Primera tormenta.</td><td>Cobrar un bono completo</td><td>4–8 semanas</td></tr>
+        <tr><td class="world">3 · El Mercado</td><td>10–12</td><td><span class="chip coral">Acciones</span><span class="chip coral">Dividendos</span><span class="chip sky">Tesoro</span><span class="chip slate">Declaración</span></td><td>Cuatro comercios, después ocho. Precios que bailan. Letras y Bonos del Reino. La primera declaración. La Liebre, vecina desde el principio, ya opera a tu lado y se le puede visitar.</td><td>Tener acciones de tres comercios y pasar una declaración</td><td>2–4 meses</td></tr>
+        <tr><td class="world">4 · La Tormenta</td><td>12–14</td><td><span class="chip sun">Crisis</span><span class="chip sky">Obligaciones y corporativos</span><span class="chip coral">Fondo Isla</span><span class="chip sun">Plan</span></td><td>Un mal año para toda la isla. Inflación que se dispara y tipos que suben (los bonos viejos valen menos). Bonos de empresa y el bono Liebre. Fijar un objetivo a 20 años de isla con aportación mensual fija.</td><td>Llegar al año 30 de isla con la casa del árbol</td><td>6–9 meses</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="foot">Los mundos anteriores siguen abiertos: el banco nunca deja de ser útil, solo deja de ser la única opción.</p>
+</section>
+
+<section>
+  <div class="tag">Economía</div>
+  <h2>Números a escala de isla</h2>
+  <p>La paga es de 30 euroLukys al mes de isla (cada día real) y se acumula si el niño no entra. Además hay tareas cortas en la isla (recoger bellotas, ayudar a la pescadora, pintar la valla del faro) que dan de 1 a 3 euroLukys en efectivo, con un tope de una tarea al día para que la sesión no se alargue y el esfuerzo se note. Los tipos están algo exagerados para que las diferencias se vean en pocos años de isla, pero el orden es el correcto: la hucha pierde, el banco empata más o menos, el bono gana un poco y las acciones ganan más de media pero a veces pierden. Este ejemplo sigue 100 euroLukys durante 5 años de isla (60 días reales) con una inflación media del 3 % anual, e incluye la parte de Hacienda.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Dónde pones 100 eL</th><th>Cómo crece</th><th class="num">A 5 años, antes de impuestos</th><th class="num">Después de Hacienda</th><th class="num">Helados que compras*</th><th>Riesgo</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip acorn">Hucha</span></td><td>No crece</td><td class="num">100</td><td class="num">100</td><td class="num">86</td><td>Ninguno, salvo el tiempo</td></tr>
+        <tr><td><span class="chip leaf">Banco</span></td><td>2,5 % al año, seguro; el 19 % de cada abono va a Hacienda</td><td class="num">113</td><td class="num">111</td><td class="num">95</td><td>Ninguno</td></tr>
+        <tr><td><span class="chip sky">Bono corporativo de la Panadería</span></td><td>6 eL de cupón al año + devolución de los 100</td><td class="num">130</td><td class="num">124</td><td class="num">107</td><td>Muy bajo</td></tr>
+        <tr><td><span class="chip coral">Acciones de la Panadería</span></td><td>Reparte un 4 % y el negocio crece un 6 % de media; la ganancia de precio no tributa hasta vender</td><td class="num">≈156</td><td class="num">≈152</td><td class="num">≈131</td><td>Alto: en un mal año puede valer 80</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="foot">* Con el helado a 1 euroLuky al empezar y una inflación del 3 % anual, 100 euroLukys compran 100 helados hoy y 86 dentro de cinco años. La fila de la Panadería es un camino medio: si vendiera las acciones el último día pagaría además unos 6 euroLukys por la ganancia. El juego tira dados para cada partida.</p>
+
+  <h3>La misma lección, dibujada</h3>
+  <p>Este es el gráfico que el diario de Doña Tortuga muestra en cada cierre de año: poder de compra en helados, después de Hacienda. La línea marca los 100 helados de partida.</p>
+  <div class="bars" aria-label="Helados que compras a 5 años según dónde pusiste 100 euroLukys, después de impuestos">
+    <div class="bar"><span>Hucha</span><div class="track"><div class="fill" style="width:55.3%; background: var(--acorn)"></div><div class="ref"></div></div><span class="v">86</span></div>
+    <div class="bar"><span>Banco</span><div class="track"><div class="fill" style="width:61.1%; background: var(--leaf)"></div><div class="ref"></div></div><span class="v">95</span></div>
+    <div class="bar"><span>Bono Panadería</span><div class="track"><div class="fill" style="width:68.7%; background: var(--sky)"></div><div class="ref"></div></div><span class="v">107</span></div>
+    <div class="bar"><span>Panadería</span><div class="track"><div class="fill" style="width:84.1%; background: var(--coral)"></div><div class="ref"></div></div><span class="v">≈131</span></div>
+  </div>
+  <p class="foot">Escala: 156 helados = barra completa. La marca vertical son los 100 helados de partida.</p>
+
+  <h3>Reglas de la simulación</h3>
+  <p>La inflación de cada año de isla se sortea entre el 1,5 % y el 4 % (media 3 %), se aplica a todos los precios de la tienda en el cierre de año y se anuncia con su cifra; en el Mundo 4 hay un año en que se dispara al 10 %. El banco paga un 2,5 % anual repartido por meses. Los bonos siguen el catálogo. Cada comercio tiene un valor intrínseco que crece a su ritmo y un precio de acción con ruido diario alrededor de ese valor; los eventos de estación (verano caluroso, feria, tormenta, plaga, cosecha) afectan a unos comercios y no a otros, según la columna "le afecta". La Liebre juega en paralelo con la misma paga desde el primer día y su isla se puede visitar desde el Mundo 2. La simulación es determinista a partir de la fecha: al abrir el juego se recalcula todo lo ocurrido desde la última visita, de modo que estar días sin entrar produce exactamente el mismo resultado que haber entrado cada día sin tocar nada.</p>
+</section>
+
+<section>
+  <div class="tag">Sin adulto</div>
+  <h2>Cómo enseña el juego cuando no hay nadie al lado</h2>
+  <p>Que el niño juegue solo obliga a que la pedagogía esté dentro de las mecánicas y no en un tutorial. Cuatro herramientas lo consiguen.</p>
+  <h3>El diario de "¿y si…?"</h3>
+  <p>El día 12 de cada año, Doña Tortuga enseña una página: qué hiciste con tus euroLukys y qué habría pasado con la otra opción. "Metiste 20 euroLukys en la hucha; en el banco tendrías 20,41; en la Panadería, 24, aunque en primavera valían 17. Y ojo: la bici ha subido de 180 a 183". Es contrafactual, concreto y sin juicio. Es la pieza más importante del juego.</p>
+  <h3>La isla de la Liebre</h3>
+  <p>Comparar con un amigo es más natural que leer un consejo. La Liebre gasta y especula; al principio a veces va por delante, y a los diez años de isla casi siempre por detrás. El niño saca la conclusión él solo, que es la única manera de que se le quede.</p>
+  <h3>Carnés de inversor</h3>
+  <p>Coleccionables que se ganan al vivir una situación, no al leerla: "Esperé un mes y tuve más", "Vi subir la bici (inflación)", "Cobré mi primer dividendo", "Aguanté una bajada sin vender", "Presté y no me devolvieron", "Hice mi primera declaración", "Compensé una pérdida". Cada carné tiene una frase de una línea que resume la lección. Es la enciclopedia del juego, escrita por el niño con sus actos.</p>
+  <h3>Errores seguros</h3>
+  <p>Nunca se puede quedar a cero: la paga sigue llegando y la hucha no admite deuda. Vender en pánico, prestar a la Liebre o gastarlo todo en helado son movimientos permitidos, con consecuencias visibles y recuperables. El juego no dice "mal": enseña el diario.</p>
+</section>
+
+<section>
+  <div class="tag">Estética</div>
+  <h2>La isla de mesetas rosadas y el faro de mil piezas</h2>
+  <p>La familia visual es la de CandeCity: polígonos limpios sin texturas, colores planos, sombras suaves, cielo degradado. Dentro de esa familia, dos referencias fijan lo que Isla Bellota hace distinto.</p>
+  <h3>Orografía en mesetas escalonadas</h3>
+  <p>La isla no es una loma suave sino un apilamiento de mesetas planas con acantilados facetados de roca rosa y beige, como una tarta de varios pisos cortada a cuchillo. Cada terraza es un nivel del juego (la Meseta, el Ayuntamiento, el Mercado, la Tormenta) y se une a la siguiente por rampas y escaleras talladas en la roca; los caminos de tierra clara serpentean entre cipreses altos y árboles redondos de copa oliva. El mar es de un turquesa plano que entra en calas y estanques interiores donde se refleja el faro. Los escalones aquí son deseables: nadie conduce por Isla Bellota, y las mesetas dan a cada nivel un lugar reconocible que se puede señalar con el dedo.</p>
+  <h3>Edificios de mucho detalle</h3>
+  <p>Los edificios llevan la carga de la personalidad. El faro no es un cilindro con un cono: tiene barandilla, franja gris, linterna acristalada con remate rojo, cabaña adosada de tablones rojos con marcos blancos, salvavidas colgado, barriles, cajas, una pasarela de madera sobre pilotes y una barca amarrada. Cada comercio se construye igual, con un presupuesto generoso de piezas (entre 400 y 1.200 triángulos por edificio, muy por encima de CandeCity) y accesorios que cuentan qué hace: la panadería con horno de piedra y sacos de harina, la heladería con toldo a rayas y bancos, el astillero con grúa y un casco a medias, Hacienda con fachada de columnas y un reloj. El generador procedural por piezas de CandeCity sirve como base, ampliado con una capa de accesorios por tipo de edificio y estados por prosperidad: un comercio que gana añade tiestos, toldos, farolillos y una planta más; uno que pierde se despinta y pierde piezas.</p>
+  <h3>Las estaciones se ven en todo</h3>
+  <div class="seasons">
+    <div class="season pri"><div class="display">Primavera</div><p>Verdes claros, flores en los cipreses de copa redonda, feria en la plaza con banderines. Luz limpia y alta.</p></div>
+    <div class="season ver"><div class="display">Verano</div><p>Luz cálida y sombras cortas, mar más brillante, toldos desplegados, la heladería llena, turistas del Ferry en el embarcadero.</p></div>
+    <div class="season oto"><div class="display">Otoño</div><p>El roble se vuelve naranja y suelta hojas por los caminos, cielo gris rosado, tormentas con lluvia facetada y mar oscuro.</p></div>
+    <div class="season inv"><div class="display">Invierno</div><p>Nieve en las mesetas y en los tejados, humo en las chimeneas, la cala interior helada, la heladería cerrada con la persiana bajada, luces en las ventanas.</p></div>
+  </div>
+  <p style="margin-top:18px">Como cada estación dura tres días reales, el cambio se percibe casi siempre entre una visita y la siguiente, con una transición corta al abrir el juego. La hora del día real también entra en la escena: por la tarde-noche la isla se ilumina con farolas y el faro barre el mar con su haz.</p>
+  <div class="swatches">
+    <div class="sw"><i style="background:#B9DCE6"></i><span>Mar</span></div>
+    <div class="sw"><i style="background:#E8C9C0"></i><span>Roca rosa</span></div>
+    <div class="sw"><i style="background:#F3E4C4"></i><span>Camino</span></div>
+    <div class="sw"><i style="background:#9FD3A6"></i><span>Meseta</span></div>
+    <div class="sw"><i style="background:#5FA97C"></i><span>Ciprés</span></div>
+    <div class="sw"><i style="background:#E5735B"></i><span>Tejados</span></div>
+    <div class="sw"><i style="background:#9B6A3C"></i><span>Madera</span></div>
+    <div class="sw"><i style="background:#E2B04A"></i><span>Moneda</span></div>
+  </div>
+  <p style="margin-top:16px">El color codifica el tipo de activo en toda la interfaz y en la isla: marrón para hucha y tienda, verde para el banco, azul para los bonos, coral para los comercios, pizarra para Hacienda. El nombre de la isla que eligió el niño aparece tallado en la roca del embarcadero, y el logotipo de Finfun solo en la pantalla de entrada. Un niño que no lee sabe qué es cada cosa por el color del edificio, y esa misma codificación se usa en el diario y en los carnés.</p>
+</section>
+
+<section>
+  <div class="tag">Construcción</div>
+  <h2>Alcance de un primer prototipo</h2>
+  <p>El objetivo del prototipo no es la isla bonita sino comprobar que el ritmo diario engancha y enseña: que un niño quiera volver mañana y que, al segundo año de isla, prefiera el banco a la hucha sin que nadie se lo diga. Por eso se construye primero el Mundo 1 completo con el reloj real y el diario, con el arte justo, y el detalle visual entra en la fase siguiente.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Fase</th><th>Qué incluye</th><th>Qué se comprueba</th></tr></thead>
+      <tbody>
+        <tr><td class="world">P0 · Papel</td><td>Doce días de juego en la mesa de casa con monedas reales, un calendario y cartas de estación; una tirada de dado al día.</td><td>Que el ritmo diario tiene sentido y que el "¿y si…?" funciona antes de escribir código.</td></tr>
+        <tr><td class="world">P1 · La Meseta</td><td>Motor de simulación determinista por fecha (módulo puro con tests). Isla mínima en Three.js con una meseta, pantalla de bautizo de la isla, hucha, tienda con 5 deseos e inflación anual explicada, banco, paga diaria acumulable, tarea diaria, estaciones cada 3 días, diario de fin de año. Guardado en Supabase con hora de servidor.</td><td>Que un niño de 6 a 8 vuelve cada día durante tres semanas y prefiere el banco a la hucha en el segundo año.</td></tr>
+        <tr><td class="world">P2 · El Ayuntamiento</td><td>Bonos municipales a 1, 3 y 5 años, cuerda con banderitas, retención visible de Don Búho, primera tormenta, carnés. Primera pasada de detalle en edificios (faro, banco, ayuntamiento).</td><td>Que aguanta un compromiso de varias semanas reales sin frustrarse y entiende la retención.</td></tr>
+        <tr><td class="world">P3 · El Mercado</td><td>Los cuatro comercios de inicio con dividendos y calendarios, Letras y Bonos del Reino, declaración anual, isla de la Liebre, segunda meseta.</td><td>Que entiende dividendo frente a crecimiento, no vende en la primera bajada y sabe qué hizo Hacienda con su dinero.</td></tr>
+        <tr><td class="world">P4 · La Tormenta</td><td>Resto de comercios, corporativos y bono Liebre, Obligaciones con precio variable, Fondo Isla, crisis, plan a 20 años.</td><td>Que fija una aportación mensual y la mantiene durante la crisis.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Stack y requisitos que impone el tiempo real</h3>
+  <p>El mismo stack que CandeCity para reaprovechar motor y aprendizajes: Vite, React, TypeScript, react-three-fiber, Zustand y Tailwind, con Supabase para cuentas y guardado desde la fase 1, porque el reloj del juego debe ser la hora del servidor y no la del dispositivo (si no, adelantar el reloj del ordenador sería la primera "inversión" que descubriría cualquier niño). La simulación es un módulo puro sin dependencias del render, determinista a partir de una semilla y una fecha, que se puede ejecutar hacia delante para recomponer los días no visitados y probar con tests. La aplicación se instala como PWA para que viva en la pantalla de inicio de la tablet, sin notificaciones de ningún tipo: la vuelta diaria tiene que nacer de la curiosidad por ver la isla.</p>
+</section>
+
+<section>
+  <div class="tag">Decisiones</div>
+  <h2>Lo que ya está cerrado</h2>
+  <div class="q"><b>Nombre: Finfun</b>De "finance fun". Cada jugador pone el nombre que quiera a su isla al empezar; Isla Bellota es solo la isla de ejemplo de este documento.</div>
+  <div class="q"><b>Moneda propia: el euroLuky</b>Se comporta como un euro (mismos porcentajes de Hacienda, mismos umbrales) pero es dinero de isla. Símbolo por decidir; en este documento se abrevia "eL".</div>
+  <div class="q"><b>Inflación explícita</b>Cada cierre de año la tienda actualiza precios con la inflación sorteada del año (1,5 – 4 %), Doña Tortuga la explica la primera vez delante de la bici (180 → 183) y desde entonces la cifra aparece en cada cierre.</div>
+  <div class="q"><b>Mundo 1 sin riesgo</b>Cero eventos negativos hasta el Mundo 2. Lo único que "pasa" en el Mundo 1 es que los precios suben y el banco paga.</div>
+  <div class="q"><b>La Liebre, vecina desde el inicio</b>Se la ve y se la oye desde el primer día; su isla solo se puede visitar desde el Mundo 2.</div>
+  <div class="q"><b>Tareas con efectivo</b>Sí: una tarea corta al día, de 1 a 3 euroLukys, opcional.</div>
+  <div class="q"><b>Paga acumulable y sin avisos</b>Los días sin entrar la paga se acumula en la hucha sin tope. El juego no envía ninguna notificación.</div>
+  <h3>Lo que queda abierto</h3>
+  <div class="q"><b>Símbolo y redondeo del euroLuky</b>¿Un símbolo propio dibujado (una bellota, una "L" con barra) o la abreviatura "eL"? ¿Céntimos desde el banco o redondeo a enteros hasta el Mundo 3?</div>
+  <div class="q"><b>Precios y cuantía de la paga</b>30 eL al mes y la bici a 180 eL (seis meses de paga sin gastar nada) es la propuesta. ¿Te cuadra con la sensación de esfuerzo que quieres?</div>
+</section>
+</div>
+</body></html>

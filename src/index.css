@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Fredoka', 'Nunito Sans', system-ui, sans-serif;
+  --font-sans: 'Nunito Sans', system-ui, -apple-system, sans-serif;
+
+  --color-ink: #1e3436;
+  --color-ink-2: #4b6366;
+  --color-ink-3: #7b9093;
+  --color-line: #cbdad4;
+  --color-paper: #ffffff;
+  --color-paper-2: #eef4f1;
+  --color-coral: #e5735b;
+  --color-coral-soft: #fbe6e0;
+  --color-leaf: #5fa97c;
+  --color-leaf-soft: #dff0e5;
+  --color-sky: #5fa8d3;
+  --color-sky-soft: #ddeef8;
+  --color-acorn: #9b6a3c;
+  --color-acorn-soft: #f1e5d6;
+  --color-coin: #e2b04a;
+  --color-coin-dark: #b8862b;
+  --color-slate: #6b6f8a;
+  --color-slate-soft: #e6e7f0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #cfe8ee;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Etiquetas que flotan sobre los edificios en la escena 3D */
+.scene-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.1;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(30, 52, 54, 0.12);
+  backdrop-filter: blur(6px);
+}
+.scene-label small {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--color-ink-2);
+}
+.scene-label__amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.scene-label--coin {
+  background: var(--color-coin);
+  color: #3d2c07;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.scene-label--coin small {
+  color: #5a4210;
+}
+.scene-label--locked {
+  background: rgba(230, 231, 240, 0.9);
+  color: var(--color-slate);
+}
+.scene-label--locked small {
+  color: var(--color-slate);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.sheet-enter {
+  animation: rise 0.22s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translate(-50%, -12px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+.toast-enter {
+  animation: toast-in 0.2s ease-out;
+}
+
+.safe-top {
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+.safe-bottom {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-label--coin,
+  .sheet-enter,
+  .toast-enter {
+    animation: none;
+  }
+}
