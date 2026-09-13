@@ -15,13 +15,14 @@ import {
 } from '../sim'
 import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
+import { BUILDINGS, WORLD_NAMES } from '../scene/registry'
 
 /* ---------- Contenedor: hoja inferior ---------- */
 
 function Sheet({ title, tone, children, kicker }: { title: string; tone: string; children: ReactNode; kicker?: string }) {
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end pointer-events-none">
-      <div className="sheet-enter pointer-events-auto relative mx-auto w-full max-w-md bg-paper rounded-t-[28px] shadow-2xl max-h-[54dvh] flex flex-col">
+      <div className="sheet-enter pointer-events-auto relative mx-auto w-full max-w-md bg-paper rounded-t-[28px] shadow-2xl max-h-[54dvh] flex flex-col md:mx-0 md:ml-auto md:mr-5 md:mb-[calc(env(safe-area-inset-bottom)+96px)] md:rounded-[28px] md:max-h-[72dvh]">
         <div className={`h-1.5 w-12 rounded-full mx-auto mt-3 ${tone}`} />
         <div className="px-5 pt-2 pb-2">
           {kicker && <div className="text-[11px] font-bold tracking-widest uppercase text-ink-3">{kicker}</div>}
@@ -254,6 +255,29 @@ function MisionesPanel() {
           </li>
         ))}
       </ul>
+
+      <h3 className="font-display font-semibold text-ink mt-5 mb-1">La isla, mundo a mundo</h3>
+      <p className="text-ink-2 text-sm mt-0 mb-2">Los solares en obras son edificios que se abrirán al llegar a su mundo.</p>
+      <div className="grid gap-2">
+        {[1, 2, 3, 4].map((w) => {
+          const open = game.world >= w
+          return (
+            <div key={w} className={`rounded-2xl p-3 ${open ? 'bg-leaf-soft' : 'bg-paper-2'}`}>
+              <div className="flex items-baseline justify-between">
+                <span className="font-display font-semibold text-ink">Mundo {w} · {WORLD_NAMES[w]}</span>
+                <span className={`text-[11px] font-bold tracking-widest uppercase ${open ? 'text-leaf' : 'text-ink-3'}`}>{open ? 'abierto' : 'en obras'}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {BUILDINGS.filter((b) => b.world === w).map((b) => (
+                  <span key={b.id} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-semibold ${open ? 'bg-paper text-ink' : 'bg-line/60 text-ink-2'}`}>
+                    <span aria-hidden="true">{b.icon}</span> {b.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </Sheet>
   )
 }

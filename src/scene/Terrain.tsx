@@ -1,100 +1,100 @@
 /**
- * TERRENO. La isla se compone de mesetas naturales (Terrace) apiladas en tres niveles,
- * con roca redondeada en los bordes, playas de arena, caminos y escaleras talladas.
+ * TERRENO Y AGUA. La isla es una única malla continua (campo de alturas low-poly) coloreada por
+ * altura y pendiente: arena junto al mar, hierba en las mesetas, roca en las laderas empinadas.
  */
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mulberry32 } from '../sim/rng'
 import { C, type SeasonPalette } from './palette'
-import { Mat } from './kit/Parts'
+import { coastPoints, ISLAND_RX, ISLAND_RZ, scatter, slopeAt, type Terrain as TerrainField } from './terrain'
 import { Rock } from './kit/Nature'
 
 type V3 = [number, number, number]
 
-/** Puntos de una silueta irregular y redondeada (una meseta vista desde arriba). */
-export function blobPoints(radius: number, verts: number, seed: number, squash = 1): [number, number][] {
-  const rng = mulberry32(seed)
-  const pts: [number, number][] = []
-  for (let i = 0; i < verts; i++) {
-    const a = (i / verts) * Math.PI * 2
-    const r = radius * (0.84 + rng() * 0.32)
-    pts.push([Math.cos(a) * r, Math.sin(a) * r * squash])
-  }
-  return pts
+const tmp = new THREE.Color()
+
+function mix(a: string, b: string, t: number): THREE.Color {
+  const ca = new THREE.Color(a)
+  const cb = new THREE.Color(b)
+  return ca.lerp(cb, Math.min(1, Math.max(0, t)))
 }
 
-function shapeFrom(points: [number, number][]): THREE.Shape {
-  // Curva suave que pasa por los puntos: bordes redondeados, no poligonales.
-  const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal')
-  const smooth = curve.getPoints(points.length * 4)
-  const shape = new THREE.Shape()
-  smooth.forEach((p, i) => (i === 0 ? shape.moveTo(p.x, p.y) : shape.lineTo(p.x, p.y)))
-  shape.closePath()
-  return shape
-}
-
-interface TerraceProps {
-  radius: number
-  height: number
-  seed: number
-  position: V3
-  squash?: number
-  verts?: number
-  topColor: string
-  sideColor?: string
-  /** Rocas redondeadas alrededor del borde, para que el acantilado parezca natural. */
-  boulders?: boolean
-  boulderSize?: number
-}
-
-export function Terrace({ radius, height, seed, position, squash = 1, verts = 12, topColor, sideColor = C.rock, boulders = true, boulderSize = 0.7 }: TerraceProps) {
-  const points = useMemo(() => blobPoints(radius, verts, seed, squash), [radius, verts, seed, squash])
+/** La isla entera como una sola malla facetada. */
+export function Ground({ terrain, palette }: { terrain: TerrainField; palette: SeasonPalette }) {
   const geometry = useMemo(() => {
-    const geo = new THREE.ExtrudeGeometry(shapeFrom(points), { depth: height, bevelEnabled: false, steps: 1 })
-    geo.rotateX(-Math.PI / 2)
+    const W = ISLAND_RX * 2 * 1.35
+    const D = ISLAND_RZ * 2 * 1.35
+    const segX = 132
+    const segZ = 108
+    const geo = new THREE.PlaneGeometry(W, D, segX, segZ)
+    geo.rotateX(-Math.PI / 2) // plano en XZ, +Y arriba
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    const rng = mulberry32(terrain.seed + 101)
+    const colors = new Float32Array(pos.count * 3)
+    const jitter = (W / segX) * 0.28
+    for (let i = 0; i < pos.count; i++) {
+      let x = pos.getX(i)
+      let z = pos.getZ(i)
+      // Desordenamos un poco la rejilla para que las facetas no sean regulares.
+      x += (rng() - 0.5) * jitter
+      z += (rng() - 0.5) * jitter
+      const h = terrain.height(x, z)
+      pos.setXYZ(i, x, h, z)
+      const slope = slopeAt(terrain, x, z)
+      let c: THREE.Color
+      if (h < 0.55) c = mix(C.sandWet, C.sand, (h - 0.1) / 0.45)
+      else if (h < 0.9) c = mix(C.sand, palette.grass, (h - 0.55) / 0.35)
+      else c = mix(palette.grass, palette.grassTop, (h - 3) / 4)
+      // Laderas empinadas: roca.
+      const rockT = (slope - 0.55) / 0.5
+      if (rockT > 0 && h > 0.3) c = c.lerp(tmp.set(h > 4 ? C.rockLight : C.rock), Math.min(1, rockT))
+      colors[i * 3] = c.r
+      colors[i * 3 + 1] = c.g
+      colors[i * 3 + 2] = c.b
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
     geo.computeVertexNormals()
     return geo
-  }, [points, height])
-  const materials = useMemo(
-    () => [
-      new THREE.MeshStandardMaterial({ color: topColor, roughness: 0.95 }),
-      new THREE.MeshStandardMaterial({ color: sideColor, flatShading: true, roughness: 0.9 }),
-    ],
-    [topColor, sideColor],
-  )
-  const ring = useMemo(() => {
-    if (!boulders) return []
-    const rng = mulberry32(seed + 99)
-    return points
-      .filter(() => rng() > 0.35)
-      .map(([x, z], i) => ({ x: x * 0.97, z: -z * 0.97, s: boulderSize * (0.6 + rng() * 0.7), seed: seed + i * 7, c: rng() > 0.5 ? C.rock : C.rockLight }))
-  }, [points, boulders, boulderSize, seed])
+  }, [terrain, palette])
   return (
-    <group position={position}>
-      <mesh geometry={geometry} material={materials} receiveShadow castShadow />
-      {ring.map((b, i) => (
-        <Rock key={i} position={[b.x, height * 0.55 - b.s * 0.5, b.z]} size={b.s} color={b.c} seed={b.seed} />
+    <mesh geometry={geometry} receiveShadow castShadow>
+      <meshStandardMaterial vertexColors flatShading roughness={0.95} />
+    </mesh>
+  )
+}
+
+/** Rocas redondeadas en la costa y en las laderas: el borde natural de la isla. */
+export function CoastRocks({ terrain }: { terrain: TerrainField }) {
+  const rocks = useMemo(() => {
+    const rng = mulberry32(terrain.seed + 303)
+    const coast = coastPoints(terrain, 64, 0.45)
+      .filter(() => rng() > 0.3)
+      .map(([x, z], i) => ({ x, z, y: terrain.height(x, z) - 0.25, s: 0.7 + rng() * 0.9, seed: i * 13 + 1, c: rng() > 0.5 ? C.rock : C.rockLight }))
+    const slopes = scatter(terrain, terrain.seed + 404, 26, (_x, _z, h, slope) => h > 0.8 && slope > 0.75).map(([x, y, z], i) => ({
+      x,
+      z,
+      y: y - 0.2,
+      s: 0.5 + rng() * 0.6,
+      seed: 500 + i * 7,
+      c: rng() > 0.5 ? C.rock : C.rockDark,
+    }))
+    return [...coast, ...slopes]
+  }, [terrain])
+  return (
+    <group>
+      {rocks.map((r, i) => (
+        <Rock key={i} position={[r.x, r.y, r.z]} size={r.s} seed={r.seed} color={r.c} />
       ))}
     </group>
   )
 }
 
-/** Playa de arena: una meseta bajita de arena con el borde mojado. */
-export function Beach({ radius, seed, position, squash = 1 }: { radius: number; seed: number; position: V3; squash?: number }) {
-  return (
-    <group>
-      <Terrace radius={radius * 1.15} height={0.18} seed={seed} position={position} squash={squash} topColor={C.sandWet} sideColor={C.sandWet} boulders={false} />
-      <Terrace radius={radius} height={0.32} seed={seed} position={position} squash={squash} topColor={C.sand} sideColor={C.sand} boulders={false} />
-    </group>
-  )
-}
-
-/** Camino de tierra: una cinta suave que sigue puntos de control. */
-export function Path({ points, width = 0.7, y, color = C.path }: { points: [number, number][]; width?: number; y: number; color?: string }) {
+/** Camino de tierra que sigue el terreno: una cinta suave apoyada sobre la hierba. */
+export function Path({ points, width = 0.8, terrain, color = C.path }: { points: [number, number][]; width?: number; terrain: TerrainField; color?: string }) {
   const geometry = useMemo(() => {
     const curve = new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0, z)))
-    const samples = curve.getPoints(Math.max(10, points.length * 8))
+    const samples = curve.getPoints(Math.max(12, points.length * 10))
     const positions: number[] = []
     const indices: number[] = []
     for (let i = 0; i < samples.length; i++) {
@@ -103,7 +103,11 @@ export function Path({ points, width = 0.7, y, color = C.path }: { points: [numb
       const prev = samples[Math.max(i - 1, 0)]
       const dir = new THREE.Vector3().subVectors(next, prev).normalize()
       const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(width / 2)
-      positions.push(p.x + side.x, 0, p.z + side.z, p.x - side.x, 0, p.z - side.z)
+      const ax = p.x + side.x
+      const az = p.z + side.z
+      const bx = p.x - side.x
+      const bz = p.z - side.z
+      positions.push(ax, terrain.height(ax, az) + 0.06, az, bx, terrain.height(bx, bz) + 0.06, bz)
       if (i < samples.length - 1) {
         const a = i * 2
         indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
@@ -114,37 +118,21 @@ export function Path({ points, width = 0.7, y, color = C.path }: { points: [numb
     geo.setIndex(indices)
     geo.computeVertexNormals()
     return geo
-  }, [points, width])
+  }, [points, width, terrain])
   return (
-    <mesh geometry={geometry} position={[0, y + 0.015, 0]} receiveShadow>
+    <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial color={color} roughness={1} side={THREE.DoubleSide} />
     </mesh>
   )
 }
 
-/** Escalera tallada en la roca entre dos niveles. Sube hacia -Z local. */
-export function Stairs({ position, rotation = 0, rise, run = 0.34, width = 1.3, steps }: { position: V3; rotation?: number; rise: number; run?: number; width?: number; steps?: number }) {
-  const n = steps ?? Math.max(3, Math.round(rise / 0.22))
-  const stepH = rise / n
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      {Array.from({ length: n }, (_, i) => (
-        <mesh key={i} position={[0, stepH * (i + 0.5), -run * i]} castShadow receiveShadow>
-          <boxGeometry args={[width, stepH, run * 1.08]} />
-          <Mat color={i % 2 ? C.rockLight : C.stone} flat />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
 /**
- * Mar en dos tonos: profundo y quieto a lo lejos; claro y con olas suaves junto a la isla.
- * Las olas son un desplazamiento de vértices low-poly (facetas visibles) recalculado cada frame.
+ * Mar: fondo profundo lejos, bajío claro junto a la isla y una lámina translúcida con olas
+ * low-poly recalculadas cada frame.
  */
 export function Water({ palette }: { palette: SeasonPalette }) {
   const mesh = useRef<THREE.Mesh>(null)
-  const geometry = useMemo(() => new THREE.PlaneGeometry(150, 150, 72, 72), [])
+  const geometry = useMemo(() => new THREE.PlaneGeometry(220, 220, 88, 88), [])
   const base = useMemo(() => geometry.attributes.position.array.slice() as Float32Array, [geometry])
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -153,34 +141,33 @@ export function Water({ palette }: { palette: SeasonPalette }) {
     for (let i = 0; i < arr.length; i += 3) {
       const x = base[i]
       const y = base[i + 1]
-      arr[i + 2] = Math.sin(x * 0.55 + t * 1.1) * 0.07 + Math.cos(y * 0.45 + t * 0.8 + x * 0.2) * 0.06
+      arr[i + 2] = Math.sin(x * 0.45 + t * 1.1) * 0.08 + Math.cos(y * 0.38 + t * 0.8 + x * 0.15) * 0.07
     }
     pos.needsUpdate = true
     geometry.computeVertexNormals()
   })
   return (
     <group>
-      {/* fondo: el color profundo se ve a través del agua translúcida solo lejos de la isla */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-        <circleGeometry args={[90, 48]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
+        <circleGeometry args={[130, 48]} />
         <meshStandardMaterial color={palette.waterDeep} roughness={0.6} />
       </mesh>
-      {/* bajío claro alrededor de la isla */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, -0.3, 3.5]}>
-        <circleGeometry args={[22, 48]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.35, 1]} scale={[1, ISLAND_RZ / ISLAND_RX, 1]}>
+        <circleGeometry args={[ISLAND_RX * 1.35, 56]} />
         <meshStandardMaterial color={palette.water} roughness={0.6} />
       </mesh>
-      <mesh ref={mesh} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0, 3.5]} receiveShadow>
+      <mesh ref={mesh} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 1]} receiveShadow>
         <meshStandardMaterial color={palette.water} roughness={0.22} metalness={0.08} flatShading transparent opacity={0.72} />
       </mesh>
-      <Ripple position={[-2.6, 0.03, 12.4]} delay={0} />
-      <Ripple position={[6.4, 0.03, 12.2]} delay={1.3} />
-      <Ripple position={[-9.6, 0.03, 4.2]} delay={2.1} />
+      <Ripple position={[-7, 0.03, 16.5]} delay={0} />
+      <Ripple position={[12, 0.03, 15]} delay={1.3} />
+      <Ripple position={[-20, 0.03, 4]} delay={2.1} />
+      <Ripple position={[20, 0.03, -6]} delay={0.7} />
     </group>
   )
 }
 
-/** Onda de espuma que crece y se desvanece, como el agua rompiendo en la orilla. */
+/** Onda de espuma que crece y se desvanece junto a la orilla. */
 function Ripple({ position, delay }: { position: V3; delay: number }) {
   const ref = useRef<THREE.Mesh>(null)
   useFrame(({ clock }) => {
@@ -191,7 +178,7 @@ function Ripple({ position, delay }: { position: V3; delay: number }) {
   })
   return (
     <mesh ref={ref} position={position} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.8, 1.0, 24]} />
+      <ringGeometry args={[0.9, 1.15, 24]} />
       <meshBasicMaterial color="#ffffff" transparent opacity={0.3} depthWrite={false} />
     </mesh>
   )

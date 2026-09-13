@@ -317,3 +317,26 @@ textarea {
   background: linear-gradient(90deg, var(--color-leaf), #8ccf62);
   transition: width 0.4s ease;
 }
+
+/* Cartel de solar en obras */
+.site-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+.site-sign__world {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b8432f;
+}
+.site-sign__name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 10px;
+  color: #3b2a14;
+}

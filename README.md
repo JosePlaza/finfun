@@ -2,7 +2,7 @@
 
 Juego web low poly para que los niños aprendan a ahorrar e invertir. **Un día real es un mes de isla.**
 
-Estado: **P1 · La Isla** (Mundo 1). Mundo 3D modular en tres niveles con faro, banco, casa, cueva con cofre y barca mercante; paga diaria, tarea de las bellotas, inflación, banco (cuenta remunerada), estaciones y el diario de Doña Tortuga. El concepto completo está en `docs/concepto.html`.
+Estado: **P1 · La Isla** (Mundo 1). Mundo 3D modular sobre un terreno continuo de varios niveles, con los 20 edificios del juego en el mapa (los de mundos futuros, en obras); paga diaria, tarea de las bellotas, inflación, banco (cuenta remunerada), estaciones y el diario de Doña Tortuga. El concepto completo está en `docs/concepto.html`.
 
 ## Arrancar
 
@@ -64,16 +64,30 @@ docs/concepto.html    Documento de concepto del juego
 
 ## El mundo es modular: cómo añadir un edificio
 
-1. **Modela con el kit.** Crea `src/scene/buildings/MiEdificio.tsx` y compón el edificio con las piezas de `kit/Parts.tsx`
-   (muros, tejados, puertas, ventanas, farolas…). Si necesitas una pieza nueva, añádela al kit para que la hereden los demás.
-   Colores solo desde `C` (palette.ts). La fachada mira a +Z; el mundo lo gira con `rotation`.
-2. **Regístralo.** Añade su id a `PlaceId` y su entrada en `PLACES` (`registry.ts`): posición sobre un nivel (`LEVELS`),
-   giro (π/4 mira a la cámara) y encuadre de cámara (`frameW × frameH` que debe caber, elevación, desviación).
-3. **Colócalo en la isla** en `Island.tsx` con `onTap={() => setView('mi-edificio')}` y, si procede, un camino hasta él.
-4. **Dale panel.** Añade su caso en `ui/Panels.tsx` y, si debe estar en el menú inferior, en `TABS` (`ui/Hud.tsx`).
+1. **Regístralo** en `BUILDINGS` (`src/scene/registry.ts`): id, nombre, mundo en que se desbloquea, qué enseña, posición (x, z),
+   giro (π/4 mira a la cámara), radio de explanada y, si tendrá panel propio, su `view` y encuadre de cámara.
+   El terreno reserva automáticamente una explanada plana bajo él y los caminos (`ROADS` en `Island.tsx`) lo unen al resto.
+2. **Dale receta** en `src/scene/buildings/Generic.tsx` (un `case` más) usando solo piezas del kit: muros, tejados, puertas,
+   ventanas, farolas, grúas, cúpulas, aspas… Si necesitas una pieza nueva, añádela al kit para que la hereden los demás.
+   Los edificios "héroe" con lógica propia (casa, banco, tienda, cueva, faro) tienen su archivo.
+3. Hasta que el jugador llega a su mundo, el edificio aparece como **solar en obras** con un cartel "Mundo N · nombre".
+4. Si debe tener panel, añade su caso en `ui/Panels.tsx` (y su pestaña en `TABS` de `ui/Hud.tsx` si va en el menú).
 
-Niveles: `playa 0.32`, `inferior 1.0` (exploración, cueva, muelle), `central 2.3` (edificios), `superior 3.7` (faro).
-Hay espacio reservado al este y al norte de la meseta central para nuevos edificios, y mar alrededor para islotes y puentes.
+### Terreno
+
+`src/scene/terrain.ts` define la isla como un campo de alturas continuo: una meseta que baja suavemente al mar, colinas y
+hondonadas (`HILLS`) que crean varios niveles, y una explanada aplanada bajo cada edificio con transición suave (sin escalones).
+La malla (`Ground` en `Terrain.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
+rocas de costa y bellotas se apoyan sobre esa función, así que mover una colina lo mueve todo.
+
+### Edificios y mundo en que se abren
+
+| Mundo | Edificios |
+| --- | --- |
+| 1 · La Isla | Casa, Banco, Tienda, Cueva del cofre, Faro (Doña Tortuga) |
+| 2 · El Ayuntamiento | Ayuntamiento (bonos), Hacienda (Don Búho), Escuela (carnés) |
+| 3 · El Mercado | Mercado de acciones, Panadería, Heladería, Puerto pesquero, Astillero |
+| 4 · La Tormenta | Molino, Posada, Granja, Cantera, Taller de juguetes, Observatorio, Casa del Fondo Isla |
 
 ## Navegación
 
