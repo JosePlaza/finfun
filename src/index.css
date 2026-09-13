@@ -148,3 +148,18 @@ textarea {
     animation: none;
   }
 }
+
+/* Carteles de madera en la escena (texto legible sobre el cartel 3D) */
+.sign-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: #3b2a14;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.sign-text--light {
+  color: #fff3c4;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}

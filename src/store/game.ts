@@ -16,7 +16,8 @@ import {
 } from '../sim'
 import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
 
-export type Panel = 'hucha' | 'tienda' | 'banco' | 'diario' | 'ayuda' | null
+/** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
+export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro'
 
 interface Store {
   game: GameState | null
@@ -24,7 +25,7 @@ interface Store {
   nowMs: number
   /** Solo para probar: adelanta el reloj del juego. Se guarda para poder seguir probando tras recargar. */
   devOffsetMs: number
-  panel: Panel
+  view: View
   toast: { text: string; id: number } | null
   /** Bellotas ya recogidas hoy (índices 0..4). Se reinicia cada mes de isla. */
   acornsFound: number[]
@@ -39,7 +40,7 @@ interface Store {
   withdraw: (cents: number) => void
   buy: (itemId: string) => void
   pickAcorn: (index: number) => void
-  setPanel: (p: Panel) => void
+  setView: (v: View) => void
   showToast: (text: string) => void
   devAdvanceDays: (days: number) => void
   devReset: () => void
@@ -73,7 +74,7 @@ export const useGame = create<Store>()(
         game: null,
         nowMs: Date.now(),
         devOffsetMs: 0,
-        panel: null,
+        view: 'isla',
         toast: null,
         acornsFound: [],
         acornsMonth: -1,
@@ -114,7 +115,7 @@ export const useGame = create<Store>()(
           const t = now()
           const seed = (Math.floor(Math.random() * 0xffffffff) ^ t) >>> 0
           const game = advanceTo(createGame({ islandName: name, seed, epochMs: t }), t)
-          set({ game, panel: null, acornsFound: [], acornsMonth: 0 })
+          set({ game, view: 'isla', acornsFound: [], acornsMonth: 0 })
           scheduleRemoteSave(game)
         },
 
@@ -131,7 +132,7 @@ export const useGame = create<Store>()(
         withdraw: (cents) => {
           const g = get().game
           if (!g) return
-          apply(simWithdraw(g, now(), cents), 'De vuelta a la hucha.')
+          apply(simWithdraw(g, now(), cents), 'De vuelta al cofre.')
         },
         buy: (itemId) => {
           const g = get().game
@@ -156,7 +157,7 @@ export const useGame = create<Store>()(
           }
         },
 
-        setPanel: (panel) => set({ panel }),
+        setView: (view) => set({ view }),
         showToast: (text) => {
           const id = ++toastSeq
           set({ toast: { text, id } })
@@ -170,7 +171,7 @@ export const useGame = create<Store>()(
           get().tick()
         },
         devReset: () => {
-          set({ game: null, devOffsetMs: 0, panel: null, acornsFound: [], acornsMonth: -1 })
+          set({ game: null, devOffsetMs: 0, view: 'isla', acornsFound: [], acornsMonth: -1 })
         },
       }
     },

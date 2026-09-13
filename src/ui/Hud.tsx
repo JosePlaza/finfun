@@ -1,5 +1,5 @@
 import { calendarOf, currentMonth, MONTH_NAMES } from '../sim'
-import { useGame, type Panel } from '../store/game'
+import { useGame, type View } from '../store/game'
 import { Amount } from './Coin'
 
 const SEASON_EMOJI: Record<string, string> = { primavera: '🌸', verano: '☀️', otoño: '🍂', invierno: '❄️' }
@@ -7,6 +7,8 @@ const SEASON_EMOJI: Record<string, string> = { primavera: '🌸', verano: '☀�
 export function TopBar() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
+  const view = useGame((s) => s.view)
+  const setView = useGame((s) => s.setView)
   const cal = calendarOf(currentMonth(game, nowMs))
   const total = game.huchaCents + game.bankCents
 
@@ -24,34 +26,43 @@ export function TopBar() {
           <Amount cents={total} size="lg" className="text-ink" />
         </div>
       </div>
+      {view !== 'isla' && (
+        <button
+          type="button"
+          onClick={() => setView('isla')}
+          className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-ink text-white font-display font-semibold text-[15px] shadow active:scale-95 transition"
+        >
+          <span aria-hidden="true">←</span> Volver a la isla
+        </button>
+      )}
     </div>
   )
 }
 
-const TABS: { id: Exclude<Panel, null>; label: string; icon: string }[] = [
-  { id: 'hucha', label: 'Hucha', icon: '🐷' },
-  { id: 'tienda', label: 'Tienda', icon: '🏪' },
+const TABS: { id: Exclude<View, 'isla'>; label: string; icon: string }[] = [
+  { id: 'casa', label: 'Casa', icon: '🏠' },
+  { id: 'cofre', label: 'Cofre', icon: '🪙' },
   { id: 'banco', label: 'Banco', icon: '🏦' },
-  { id: 'diario', label: 'Diario', icon: '📖' },
-  { id: 'ayuda', label: 'Ayuda', icon: '🐢' },
+  { id: 'tienda', label: 'Tienda', icon: '⛵' },
+  { id: 'faro', label: 'Faro', icon: '🐢' },
 ]
 
 export function BottomNav() {
-  const panel = useGame((s) => s.panel)
-  const setPanel = useGame((s) => s.setPanel)
+  const view = useGame((s) => s.view)
+  const setView = useGame((s) => s.setView)
   const game = useGame((s) => s.game)!
-  const badge = (id: string) => id === 'hucha' && game.mailboxCents > 0
+  const badge = (id: string) => id === 'casa' && game.mailboxCents > 0
 
   return (
-    <nav className="absolute inset-x-0 bottom-0 safe-bottom px-3 pointer-events-none">
+    <nav className="absolute inset-x-0 bottom-0 safe-bottom px-3 pointer-events-none z-30">
       <div className="pointer-events-auto mx-auto max-w-md bg-paper/95 backdrop-blur rounded-3xl shadow-lg px-1.5 py-1.5 grid grid-cols-5 gap-1">
         {TABS.map((t) => {
-          const active = panel === t.id
+          const active = view === t.id
           return (
             <button
               key={t.id}
               type="button"
-              onClick={() => setPanel(active ? null : t.id)}
+              onClick={() => setView(active ? 'isla' : t.id)}
               className={`relative h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95 ${
                 active ? 'bg-leaf-soft text-ink' : 'text-ink-2'
               }`}

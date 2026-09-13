@@ -17,17 +17,14 @@ import { Amount, CoinIcon } from './Coin'
 
 /* ---------- Contenedor: hoja inferior ---------- */
 
-function Sheet({ title, tone, children, onClose }: { title: string; tone: string; children: ReactNode; onClose: () => void }) {
+function Sheet({ title, tone, children, kicker }: { title: string; tone: string; children: ReactNode; kicker?: string }) {
   return (
-    <div className="absolute inset-0 z-20 flex flex-col justify-end pointer-events-none">
-      <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-ink/15 pointer-events-auto" />
-      <div className="sheet-enter pointer-events-auto relative mx-auto w-full max-w-md bg-paper rounded-t-[28px] shadow-2xl max-h-[78dvh] flex flex-col">
+    <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end pointer-events-none">
+      <div className="sheet-enter pointer-events-auto relative mx-auto w-full max-w-md bg-paper rounded-t-[28px] shadow-2xl max-h-[54dvh] flex flex-col">
         <div className={`h-1.5 w-12 rounded-full mx-auto mt-3 ${tone}`} />
-        <div className="flex items-center justify-between px-5 pt-3 pb-2">
-          <h2 className="font-display font-semibold text-2xl text-ink">{title}</h2>
-          <button type="button" onClick={onClose} className="w-10 h-10 rounded-full bg-paper-2 text-ink-2 text-xl leading-none active:scale-95">
-            ×
-          </button>
+        <div className="px-5 pt-2 pb-2">
+          {kicker && <div className="text-[11px] font-bold tracking-widest uppercase text-ink-3">{kicker}</div>}
+          <h2 className="font-display font-semibold text-2xl text-ink leading-tight">{title}</h2>
         </div>
         <div className="overflow-y-auto px-5 pb-[calc(96px+env(safe-area-inset-bottom))]">{children}</div>
       </div>
@@ -70,7 +67,7 @@ function Primary({ children, onClick, disabled, tone = 'bg-leaf' }: { children: 
 
 const KIND_ICON: Record<LedgerEvent['kind'], string> = {
   paga: '✉️',
-  recogida: '🐷',
+  recogida: '🪙',
   interes: '🏦',
   compra: '🛍️',
   tarea: '🌰',
@@ -110,14 +107,15 @@ function Ledger({ events }: { events: LedgerEvent[] }) {
 
 /* ---------- Paneles ---------- */
 
-function HuchaPanel({ onClose }: { onClose: () => void }) {
+function CasaPanel() {
   const game = useGame((s) => s.game)!
   const collect = useGame((s) => s.collect)
+  const setView = useGame((s) => s.setView)
   return (
-    <Sheet title="Hucha" tone="bg-acorn" onClose={onClose}>
+    <Sheet title="Tu casa" kicker="Aquí llega la paga" tone="bg-coral">
       <div className="grid grid-cols-2 gap-3">
-        <Big label="En la hucha" cents={game.huchaCents} />
         <Big label="En el buzón" cents={game.mailboxCents} />
+        <Big label="En el cofre" cents={game.huchaCents} />
       </div>
       {game.mailboxCents > 0 ? (
         <div className="mt-3">
@@ -126,13 +124,45 @@ function HuchaPanel({ onClose }: { onClose: () => void }) {
           </Primary>
         </div>
       ) : (
-        <p className="text-ink-3 text-sm mt-3 mb-0">La siguiente paga de {formatCents(PAGA_CENTS)} llega mañana.</p>
+        <p className="text-ink-3 text-sm mt-3 mb-0">El buzón está vacío. La siguiente paga de {formatCents(PAGA_CENTS)} llega mañana.</p>
       )}
       <div className="mt-4">
         <Tortuga>
-          La hucha guarda tu dinero, pero no lo hace crecer. Y cada año los precios de la tienda suben un poco. Si un dinero no lo vas a
-          usar pronto, el banco es mejor sitio.
+          Cada mes de isla (cada día tuyo) te llega la paga al buzón. Lo que recojas va al cofre de la cueva. Desde allí decides:
+          gastarlo en la barca, guardarlo o llevarlo al banco.
         </Tortuga>
+      </div>
+      <button type="button" onClick={() => setView('cofre')} className="mt-3 w-full h-12 rounded-2xl bg-paper-2 font-display font-semibold text-ink active:scale-[0.98] transition">
+        Ir al cofre →
+      </button>
+      <h3 className="font-display font-semibold text-ink mt-5 mb-1">Últimos movimientos</h3>
+      <Ledger events={game.ledger} />
+    </Sheet>
+  )
+}
+
+function CofrePanel() {
+  const game = useGame((s) => s.game)!
+  const setView = useGame((s) => s.setView)
+  return (
+    <Sheet title="El cofre del tesoro" kicker="Tu ahorro" tone="bg-acorn">
+      <div className="grid grid-cols-2 gap-3">
+        <Big label="En el cofre" cents={game.huchaCents} />
+        <Big label="En el banco" cents={game.bankCents} />
+      </div>
+      <div className="mt-4">
+        <Tortuga>
+          El cofre guarda tu dinero a buen recaudo, pero no lo hace crecer. Y cada año los precios de la barca suben un poco.
+          Si un dinero no lo vas a usar pronto, el banco es mejor sitio.
+        </Tortuga>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <button type="button" onClick={() => setView('banco')} className="h-12 rounded-2xl bg-leaf text-white font-display font-semibold active:scale-[0.98] transition">
+          Llevar al banco
+        </button>
+        <button type="button" onClick={() => setView('tienda')} className="h-12 rounded-2xl bg-paper-2 text-ink font-display font-semibold active:scale-[0.98] transition">
+          Ir a la barca
+        </button>
       </div>
       <h3 className="font-display font-semibold text-ink mt-5 mb-1">Últimos movimientos</h3>
       <Ledger events={game.ledger} />
@@ -140,15 +170,15 @@ function HuchaPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-function TiendaPanel({ onClose }: { onClose: () => void }) {
+function TiendaPanel() {
   const game = useGame((s) => s.game)!
   const buy = useGame((s) => s.buy)
   const hadInflation = game.inflationHistoryBps.length > 0
   const lastInf = game.inflationHistoryBps[game.inflationHistoryBps.length - 1]
   return (
-    <Sheet title="Tienda" tone="bg-coral" onClose={onClose}>
+    <Sheet title="La barca mercante" kicker="Tienda" tone="bg-coral">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-ink-2 text-sm">Tienes en la hucha</span>
+        <span className="text-ink-2 text-sm">Tienes en el cofre</span>
         <Amount cents={game.huchaCents} size="lg" />
       </div>
       {hadInflation && (
@@ -195,7 +225,7 @@ function TiendaPanel({ onClose }: { onClose: () => void }) {
 
 const QUICK = [5_00, 10_00, 20_00, 50_00]
 
-function BancoPanel({ onClose }: { onClose: () => void }) {
+function BancoPanel() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
   const deposit = useGame((s) => s.deposit)
@@ -207,7 +237,7 @@ function BancoPanel({ onClose }: { onClose: () => void }) {
     const month = currentMonth(game, nowMs)
     const daysLeft = Math.max(1, BANK_UNLOCK_MONTH - 1 - month)
     return (
-      <Sheet title="Banco de la Isla" tone="bg-slate" onClose={onClose}>
+      <Sheet title="Banco de la Isla" kicker="En construcción" tone="bg-slate">
         <div className="bg-slate-soft rounded-2xl p-4 text-center">
           <div className="text-4xl mb-1">🏗️</div>
           <div className="font-display font-semibold text-ink text-lg">En construcción</div>
@@ -217,7 +247,7 @@ function BancoPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="mt-4">
           <Tortuga>
-            El banco guarda tu dinero como la hucha, pero cada mes te da un poquito más solo por tenerlo allí. Mientras tanto, ve
+            El banco guarda tu dinero como el cofre, pero cada mes te da un poquito más solo por tenerlo allí. Mientras tanto, ve
             ahorrando: cuando abra, tendrás algo que llevar.
           </Tortuga>
         </div>
@@ -236,10 +266,10 @@ function BancoPanel({ onClose }: { onClose: () => void }) {
   const nextInterest = monthlyInterest(game.bankCents, game.taxesUnlocked).net
 
   return (
-    <Sheet title="Banco de la Isla" tone="bg-leaf" onClose={onClose}>
+    <Sheet title="Banco de la Isla" kicker="Cuenta remunerada · 2,5 % al año" tone="bg-leaf">
       <div className="grid grid-cols-2 gap-3">
         <Big label="En el banco" cents={game.bankCents} />
-        <Big label="En la hucha" cents={game.huchaCents} />
+        <Big label="En el cofre" cents={game.huchaCents} />
       </div>
       <p className="text-ink-2 text-sm mt-3 mb-0">
         Paga un {formatPct(BANK_RATE_BPS)} al año, repartido cada mes.{' '}
@@ -308,7 +338,7 @@ function BancoPanel({ onClose }: { onClose: () => void }) {
 
       <div className="mt-4">
         <Tortuga>
-          Aquí el dinero está tan seguro como en la hucha y lo puedes sacar cuando quieras. La diferencia: cada mes crece un poquito.
+          Aquí el dinero está tan seguro como en el cofre y lo puedes sacar cuando quieras. La diferencia: cada mes crece un poquito.
           Poquito, pero siempre.
         </Tortuga>
       </div>
@@ -316,85 +346,87 @@ function BancoPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-function DiarioPanel({ onClose }: { onClose: () => void }) {
+function FaroPanel() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
+  const [tab, setTab] = useState<'diario' | 'ayuda'>('diario')
   const cal = calendarOf(currentMonth(game, nowMs))
   const daysToYearEnd = Math.max(1, 12 - cal.monthOfYear)
   const entries = game.diary.slice().reverse()
   return (
-    <Sheet title="Diario de Doña Tortuga" tone="bg-sky" onClose={onClose}>
-      {entries.length === 0 ? (
-        <Tortuga>
-          Escribo una página al terminar cada año de isla. La primera, {daysToYearEnd <= 1 ? 'mañana' : `dentro de ${daysToYearEnd} días`}. Te
-          contaré qué ha pasado con tu dinero… y qué habría pasado si lo hubieras puesto en otro sitio.
-        </Tortuga>
+    <Sheet title="El faro de Doña Tortuga" kicker="Diario y ayuda" tone="bg-sky">
+      <div className="grid grid-cols-2 bg-paper-2 rounded-2xl p-1 mb-3">
+        {(['diario', 'ayuda'] as const).map((t) => (
+          <button key={t} type="button" onClick={() => setTab(t)} className={`h-10 rounded-xl font-display font-semibold transition ${tab === t ? 'bg-paper shadow text-ink' : 'text-ink-2'}`}>
+            {t === 'diario' ? 'Diario' : 'Cómo se juega'}
+          </button>
+        ))}
+      </div>
+      {tab === 'diario' ? (
+        entries.length === 0 ? (
+          <Tortuga>
+            Escribo una página al terminar cada año de isla. La primera, {daysToYearEnd <= 1 ? 'mañana' : `dentro de ${daysToYearEnd} días`}. Te
+            contaré qué ha pasado con tu dinero… y qué habría pasado si lo hubieras puesto en otro sitio.
+          </Tortuga>
+        ) : (
+          <div className="grid gap-4">
+            {entries.map((e) => (
+              <article key={e.year} className="bg-sky-soft rounded-2xl p-4">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="font-display font-semibold text-ink text-lg m-0">Año {e.year}</h3>
+                  <span className="text-xs font-bold tracking-widest uppercase text-ink-3">Inflación {formatPct(e.inflationBps)}</span>
+                </div>
+                {diaryParagraphs(e).map((p, i) => (
+                  <p key={i} className="text-[15px] leading-relaxed text-ink mt-2 mb-0">
+                    {p}
+                  </p>
+                ))}
+              </article>
+            ))}
+          </div>
+        )
       ) : (
-        <div className="grid gap-4">
-          {entries.map((e) => (
-            <article key={e.year} className="bg-sky-soft rounded-2xl p-4">
-              <div className="flex items-baseline justify-between">
-                <h3 className="font-display font-semibold text-ink text-lg m-0">Año {e.year}</h3>
-                <span className="text-xs font-bold tracking-widest uppercase text-ink-3">Inflación {formatPct(e.inflationBps)}</span>
-              </div>
-              {diaryParagraphs(e).map((p, i) => (
-                <p key={i} className="text-[15px] leading-relaxed text-ink mt-2 mb-0">
-                  {p}
-                </p>
-              ))}
-            </article>
-          ))}
+        <div className="grid gap-3 text-[15px] leading-relaxed text-ink">
+          <div className="bg-paper-2 rounded-2xl p-4">
+            <div className="font-display font-semibold text-lg">Un día real es un mes de isla</div>
+            <p className="m-0 text-ink-2">Cada tres días cambia la estación y cada doce se cierra un año. La isla sigue aunque no entres.</p>
+          </div>
+          <div className="bg-paper-2 rounded-2xl p-4">
+            <div className="font-display font-semibold text-lg">Cada día</div>
+            <p className="m-0 text-ink-2">
+              Llega la paga al buzón de tu casa (tócalo para recogerla), puedes buscar cinco bellotas escondidas por la isla y decidir qué
+              haces con tu dinero: gastarlo en la barca, guardarlo en el cofre o llevarlo al banco cuando abra.
+            </p>
+          </div>
+          <div className="bg-paper-2 rounded-2xl p-4">
+            <div className="font-display font-semibold text-lg">La moneda</div>
+            <p className="m-0 text-ink-2 flex items-center gap-1.5 flex-wrap">
+              El dinero de la isla es el euroLuky <CoinIcon size={16} />. Se parece a un euro, pero solo vale aquí.
+            </p>
+          </div>
+          <div className="bg-paper-2 rounded-2xl p-4">
+            <div className="font-display font-semibold text-lg">Muévete por la isla</div>
+            <p className="m-0 text-ink-2">Toca un edificio para ir hasta él. Arrastra con un dedo para girar la isla y usa dos dedos para acercarte.</p>
+          </div>
         </div>
       )}
     </Sheet>
   )
 }
 
-function AyudaPanel({ onClose }: { onClose: () => void }) {
-  return (
-    <Sheet title="Cómo funciona" tone="bg-leaf" onClose={onClose}>
-      <div className="grid gap-3 text-[15px] leading-relaxed text-ink">
-        <div className="bg-paper-2 rounded-2xl p-4">
-          <div className="font-display font-semibold text-lg">Un día real es un mes de isla</div>
-          <p className="m-0 text-ink-2">Cada tres días cambia la estación y cada doce se cierra un año. La isla sigue aunque no entres.</p>
-        </div>
-        <div className="bg-paper-2 rounded-2xl p-4">
-          <div className="font-display font-semibold text-lg">Cada día</div>
-          <p className="m-0 text-ink-2">
-            Llega la paga al buzón (tócalo para recogerla), puedes buscar cinco bellotas escondidas por la isla y decidir qué haces con tu
-            dinero: gastarlo en la tienda, guardarlo en la hucha o llevarlo al banco cuando abra.
-          </p>
-        </div>
-        <div className="bg-paper-2 rounded-2xl p-4">
-          <div className="font-display font-semibold text-lg">La moneda</div>
-          <p className="m-0 text-ink-2 flex items-center gap-1.5 flex-wrap">
-            El dinero de la isla es el euroLuky <CoinIcon size={16} />. Se parece a un euro, pero solo vale aquí.
-          </p>
-        </div>
-        <div className="bg-paper-2 rounded-2xl p-4">
-          <div className="font-display font-semibold text-lg">Mueve la isla</div>
-          <p className="m-0 text-ink-2">Arrastra con un dedo para girarla y usa dos dedos para acercarte o alejarte.</p>
-        </div>
-      </div>
-    </Sheet>
-  )
-}
-
 export function Panels() {
-  const panel = useGame((s) => s.panel)
-  const setPanel = useGame((s) => s.setPanel)
-  const close = () => setPanel(null)
-  switch (panel) {
-    case 'hucha':
-      return <HuchaPanel onClose={close} />
-    case 'tienda':
-      return <TiendaPanel onClose={close} />
+  const view = useGame((s) => s.view)
+  switch (view) {
+    case 'casa':
+      return <CasaPanel />
+    case 'cofre':
+      return <CofrePanel />
     case 'banco':
-      return <BancoPanel onClose={close} />
-    case 'diario':
-      return <DiarioPanel onClose={close} />
-    case 'ayuda':
-      return <AyudaPanel onClose={close} />
+      return <BancoPanel />
+    case 'tienda':
+      return <TiendaPanel />
+    case 'faro':
+      return <FaroPanel />
     default:
       return null
   }
