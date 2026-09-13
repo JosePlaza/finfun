@@ -2,7 +2,8 @@
  * TERRENO. La isla se compone de mesetas naturales (Terrace) apiladas en tres niveles,
  * con roca redondeada en los bordes, playas de arena, caminos y escaleras talladas.
  */
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mulberry32 } from '../sim/rng'
 import { C, type SeasonPalette } from './palette'
@@ -137,22 +138,61 @@ export function Stairs({ position, rotation = 0, rise, run = 0.34, width = 1.3, 
   )
 }
 
-/** Mar en dos tonos: profundo lejos, claro y luminoso junto a la isla. */
+/**
+ * Mar en dos tonos: profundo y quieto a lo lejos; claro y con olas suaves junto a la isla.
+ * Las olas son un desplazamiento de vértices low-poly (facetas visibles) recalculado cada frame.
+ */
 export function Water({ palette }: { palette: SeasonPalette }) {
+  const mesh = useRef<THREE.Mesh>(null)
+  const geometry = useMemo(() => new THREE.PlaneGeometry(150, 150, 72, 72), [])
+  const base = useMemo(() => geometry.attributes.position.array.slice() as Float32Array, [geometry])
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    const arr = pos.array as Float32Array
+    for (let i = 0; i < arr.length; i += 3) {
+      const x = base[i]
+      const y = base[i + 1]
+      arr[i + 2] = Math.sin(x * 0.55 + t * 1.1) * 0.07 + Math.cos(y * 0.45 + t * 0.8 + x * 0.2) * 0.06
+    }
+    pos.needsUpdate = true
+    geometry.computeVertexNormals()
+  })
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <circleGeometry args={[60, 48]} />
-        <meshStandardMaterial color={palette.waterDeep} roughness={0.3} metalness={0.05} />
+      {/* fondo: el color profundo se ve a través del agua translúcida solo lejos de la isla */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+        <circleGeometry args={[90, 48]} />
+        <meshStandardMaterial color={palette.waterDeep} roughness={0.6} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0, 3.5]} receiveShadow>
-        <circleGeometry args={[21, 48]} />
-        <meshStandardMaterial color={palette.water} roughness={0.25} metalness={0.05} transparent opacity={0.92} />
+      {/* bajío claro alrededor de la isla */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, -0.3, 3.5]}>
+        <circleGeometry args={[22, 48]} />
+        <meshStandardMaterial color={palette.water} roughness={0.6} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0.01, 3.5]}>
-        <ringGeometry args={[20.2, 21.4, 56]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.22} roughness={1} />
+      <mesh ref={mesh} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0.5, 0, 3.5]} receiveShadow>
+        <meshStandardMaterial color={palette.water} roughness={0.22} metalness={0.08} flatShading transparent opacity={0.72} />
       </mesh>
+      <Ripple position={[-2.6, 0.03, 12.4]} delay={0} />
+      <Ripple position={[6.4, 0.03, 12.2]} delay={1.3} />
+      <Ripple position={[-9.6, 0.03, 4.2]} delay={2.1} />
     </group>
+  )
+}
+
+/** Onda de espuma que crece y se desvanece, como el agua rompiendo en la orilla. */
+function Ripple({ position, delay }: { position: V3; delay: number }) {
+  const ref = useRef<THREE.Mesh>(null)
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const k = ((clock.getElapsedTime() + delay) % 3.2) / 3.2
+    ref.current.scale.setScalar(0.6 + k * 1.6)
+    ;(ref.current.material as THREE.MeshBasicMaterial).opacity = 0.35 * (1 - k)
+  })
+  return (
+    <mesh ref={ref} position={position} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.8, 1.0, 24]} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0.3} depthWrite={false} />
+    </mesh>
   )
 }

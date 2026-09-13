@@ -41,11 +41,15 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     yearTasksCents: 0,
     yearBankInterestCents: 0,
     totalTasksCents: 0,
+    tasksCompleted: 0,
   }
 }
 
 function clone(state: GameState): GameState {
-  return structuredClone(state)
+  const c = structuredClone(state)
+  // Campos añadidos después de la v1: valores por defecto para partidas antiguas.
+  c.tasksCompleted ??= 0
+  return c
 }
 
 function log(state: GameState, ev: LedgerEvent) {
@@ -238,6 +242,7 @@ export function completeTask(input: GameState, nowMs: number): ActionResult {
   state.huchaCents += reward
   state.yearTasksCents += reward
   state.totalTasksCents += reward
+  state.tasksCompleted += 1
   log(state, { kind: 'tarea', month, amountCents: reward, label: 'Recogiste bellotas' })
   return { ok: true, state }
 }

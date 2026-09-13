@@ -38,6 +38,43 @@ export function Pier({ position, rotation = 0, length = 4 }: { position: V3; rot
   )
 }
 
+/** Bote de remos amarrado al muelle: se balancea con el agua. Pura vida para la escena. */
+export function Rowboat({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  const ref = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.getElapsedTime()
+    ref.current.rotation.z = Math.sin(t * 1.3) * 0.05
+    ref.current.rotation.x = Math.sin(t * 0.9 + 0.5) * 0.03
+    ref.current.position.y = position[1] + Math.sin(t * 1.5) * 0.035
+  })
+  return (
+    <group ref={ref} position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.18, 0]} scale={[1, 0.5, 1.9]} castShadow>
+        <cylinderGeometry args={[0.5, 0.3, 0.5, 7]} />
+        <Mat color={C.roofRed} flat />
+      </mesh>
+      <Box size={[0.8, 0.05, 1.7]} position={[0, 0.36, 0]} color={C.woodLight} />
+      <Box size={[0.7, 0.06, 0.16]} position={[0, 0.44, 0.3]} color={C.wood} />
+      <Box size={[0.7, 0.06, 0.16]} position={[0, 0.44, -0.4]} color={C.wood} />
+      {/* remos */}
+      <mesh position={[0.55, 0.42, 0.1]} rotation={[0, 0.3, 0.5]}>
+        <cylinderGeometry args={[0.025, 0.03, 1.4, 5]} />
+        <Mat color={C.woodLight} />
+      </mesh>
+      <mesh position={[-0.5, 0.42, -0.1]} rotation={[0, -0.3, -0.5]}>
+        <cylinderGeometry args={[0.025, 0.03, 1.4, 5]} />
+        <Mat color={C.woodLight} />
+      </mesh>
+      {/* cuerda hacia el muelle */}
+      <mesh position={[-0.55, 0.5, 0.6]} rotation={[0, 0, 1.2]}>
+        <cylinderGeometry args={[0.012, 0.012, 1.0, 4]} />
+        <Mat color={C.plasterWarm} />
+      </mesh>
+    </group>
+  )
+}
+
 /**
  * LA BARCA MERCANTE · amarrada al muelle, carga cajas, barriles y sacos: es la TIENDA del juego.
  * Se balancea suavemente con el agua.
@@ -90,7 +127,7 @@ export function MerchantBoat({ position, rotation = 0, onTap }: { position: V3; 
         <Sack position={[0.35, 0.54, -0.6]} />
         <Box size={[0.9, 0.08, 0.5]} position={[0, 0.58, -0.9]} color={C.wood} />
       </TapZone>
-      <Label text="Tienda" sub="la barca mercante" y={3.2} />
+      <Label text="Barca mercante" sub="trae la mercancía de la tienda" y={3.2} />
     </group>
   )
 }

@@ -17,7 +17,7 @@ import {
 import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
-export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro'
+export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'misiones'
 
 interface Store {
   game: GameState | null

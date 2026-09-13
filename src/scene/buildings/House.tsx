@@ -1,5 +1,7 @@
 import { C, type SeasonPalette } from '../palette'
+import { Html } from '@react-three/drei'
 import { Barrel, Box, Chimney, Crate, Door, Fence, FloatingCoin, Gable, GableRoof, Label, Snow, TapZone, Wall, Window } from '../kit/Parts'
+import { formatCents } from '../../sim'
 import { Bush, Flowers, GrassTuft } from '../kit/Nature'
 
 type V3 = [number, number, number]
@@ -21,7 +23,6 @@ export function House({ position, rotation = 0, palette, night, mailboxCents, on
   const D = 2.2
   const H = 2.1
   const RH = 1.15
-  const coins = Math.min(6, Math.ceil(mailboxCents / 30_00))
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <TapZone size={[W + 0.6, H + RH + 0.5, D + 0.6]} onTap={onTap}>
@@ -67,7 +68,25 @@ export function House({ position, rotation = 0, palette, night, mailboxCents, on
         <Barrel position={[-W / 2 - 0.55, 0, -0.35]} h={0.5} />
       </group>
 
-      {/* Buzón: la paga llega aquí */}
+      {/* Bocadillo con la paga pendiente: flota sobre la casa y se recoge al tocarlo */}
+      {mailboxCents > 0 && (
+        <group position={[0, H + RH + 0.9, 0]}>
+          <Html center distanceFactor={12} zIndexRange={[20, 0]}>
+            <button type="button" className="coin-bubble" onClick={onMailbox}>
+              <span className="coin-bubble__coins" aria-hidden="true">
+                <i /><i /><i />
+              </span>
+              <span className="coin-bubble__amount">+{formatCents(mailboxCents)}</span>
+              <span className="coin-bubble__hint">¡Toca para recoger tu paga!</span>
+            </button>
+          </Html>
+          {[0, 1, 2].map((i) => (
+            <FloatingCoin key={i} index={i} base={-0.5} radius={0.45} />
+          ))}
+        </group>
+      )}
+
+      {/* Buzón: decoración de la casa; la banderita sube cuando hay paga */}
       <TapZone size={[1.2, 1.8, 1.2]} position={[1.9, 0, D / 2 + 1.3]} onTap={onMailbox}>
         <Box size={[0.08, 0.85, 0.08]} position={[0, 0.42, 0]} color={C.woodLight} />
         <Box size={[0.3, 0.26, 0.48]} position={[0, 0.95, 0]} color={mailboxCents > 0 ? C.red : C.metal} />
@@ -76,13 +95,9 @@ export function House({ position, rotation = 0, palette, night, mailboxCents, on
           <meshStandardMaterial color={mailboxCents > 0 ? C.red : C.metal} roughness={0.8} />
         </mesh>
         <Box size={[0.04, 0.22, 0.12]} position={[0.18, mailboxCents > 0 ? 1.2 : 1.0, -0.1]} rotation={[0, 0, mailboxCents > 0 ? 0 : Math.PI / 2]} color={C.gold} />
-        {Array.from({ length: coins }, (_, i) => (
-          <FloatingCoin key={i} index={i} base={1.35} />
-        ))}
-        <Label text={mailboxCents > 0 ? 'Paga' : 'Buzón'} sub={mailboxCents > 0 ? '¡Toca para recoger!' : 'vacío'} tone={mailboxCents > 0 ? 'coin' : 'default'} y={1.75} />
       </TapZone>
 
-      <Label text="Casa" y={H + RH + 0.7} />
+      {mailboxCents === 0 && <Label text="Casa" y={H + RH + 0.7} />}
     </group>
   )
 }

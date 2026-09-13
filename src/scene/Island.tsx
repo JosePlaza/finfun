@@ -15,7 +15,8 @@ import { House } from './buildings/House'
 import { Bank } from './buildings/Bank'
 import { Lighthouse } from './buildings/Lighthouse'
 import { Cave } from './buildings/Cave'
-import { MerchantBoat, Pier } from './buildings/Pier'
+import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
+import { Shop } from './buildings/Shop'
 
 type V3 = [number, number, number]
 const { playa: PLAYA, inferior: L1, central: L2, superior: L3 } = LEVELS
@@ -36,10 +37,14 @@ function acornSpotsFor(seed: number, month: number): number[] {
   return idx.slice(0, TASK_ACORNS)
 }
 
-function isNightNow(): boolean {
+/**
+ * Momento del día. Nunca oscurecemos la isla: por la tarde-noche el cielo se vuelve cálido,
+ * se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad.
+ */
+function isEveningNow(): boolean {
   const forced = new URLSearchParams(location.search).get('hour')
   const h = forced ? Number(forced) : new Date().getHours()
-  return h < 7 || h >= 20
+  return h < 8 || h >= 19
 }
 
 /**
@@ -65,12 +70,13 @@ function CameraRig({ controls }: { controls: React.RefObject<OrbitControlsImpl |
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
-      const pose = view === 'isla' ? islandPose(fov, aspect, portrait) : cameraPoseFor(PLACES[view], fov, aspect, portrait ? 0.5 : 0.2)
+      const overview = view === 'isla' || view === 'misiones'
+      const pose = overview ? islandPose(fov, aspect, portrait) : cameraPoseFor(PLACES[view], fov, aspect, portrait ? 0.5 : 0.2)
       goalPos.current.set(...pose.position)
       goalTarget.current.set(...pose.target)
     }
 
-    const free = view === 'isla'
+    const free = view === 'isla' || view === 'misiones'
     ctl.enabled = free && !flying.current
     if (flying.current || !free) {
       const a = 1 - Math.exp(-4 * dt)
@@ -94,7 +100,7 @@ function Scene() {
   const month = currentMonth(game, nowMs)
   const cal = calendarOf(month)
   const palette = PALETTES[cal.season]
-  const night = isNightNow()
+  const night = isEveningNow()
   const taskAvailable = game.taskDoneMonth < month
   const spots = useMemo(() => acornSpotsFor(game.seed, month), [game.seed, month])
   const has = (id: string) => game.purchases.some((p) => p.itemId === id)
@@ -103,14 +109,14 @@ function Scene() {
 
   return (
     <>
-      <color attach="background" args={[night ? '#22344a' : palette.sky]} />
-      <fog attach="fog" args={[night ? '#22344a' : palette.skyBottom, 70, 190]} />
-      <ambientLight intensity={night ? 0.3 : palette.ambient} color={night ? '#9db4d6' : '#ffffff'} />
-      <hemisphereLight intensity={0.55} color={palette.sky} groundColor={palette.water} />
+      <color attach="background" args={[night ? '#f0b98f' : palette.sky]} />
+      <fog attach="fog" args={[night ? '#ffd9bd' : palette.skyBottom, 70, 190]} />
+      <ambientLight intensity={night ? palette.ambient * 0.9 : palette.ambient} color={night ? '#ffe2c8' : '#ffffff'} />
+      <hemisphereLight intensity={0.55} color={night ? '#f5c9a3' : palette.sky} groundColor={palette.water} />
       <directionalLight
-        position={[10, 14, 8]}
-        intensity={night ? 0.45 : palette.sunIntensity}
-        color={night ? '#b9c8e6' : palette.sun}
+        position={night ? [14, 7, 10] : [10, 14, 8]}
+        intensity={night ? palette.sunIntensity * 0.85 : palette.sunIntensity}
+        color={night ? '#ffb97a' : palette.sun}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0003}
@@ -143,6 +149,7 @@ function Scene() {
       <Path y={L2} points={[[0.4, 2.8], [0.3, 1.0], [0.2, -1.1]]} width={0.6} />
       <Path y={L2} points={[[2.4, 3.0], [2.3, 4.4], [2.3, 5.8]]} width={0.6} />
       <Path y={L2} points={[[-1.8, 3.4], [-3.2, 5.0], [-4.0, 6.2]]} width={0.6} />
+      <Path y={L2} points={[[0.4, 2.8], [0.2, 4.0], [0.4, 5.0]]} width={0.6} />
       <Path y={L1} points={[[2.4, 6.8], [3.4, 7.0], [4.6, 7.3], [5.4, 7.6]]} width={0.6} />
       <Path y={PLAYA} points={[[-4.0, 7.0], [-3.9, 8.8], [-3.8, 10.4]]} width={0.7} color={C.sandWet} />
 
@@ -151,8 +158,10 @@ function Scene() {
       <Bank position={banco.position} rotation={banco.rotation} palette={palette} night={night} unlocked={game.bankUnlocked} cents={game.bankCents} onTap={() => setView('banco')} />
       <Lighthouse position={faro.position} rotation={faro.rotation} palette={palette} night={night} onTap={() => setView('faro')} />
       <Cave position={cofre.position} rotation={cofre.rotation} palette={palette} cents={game.huchaCents} onTap={() => setView('cofre')} />
+      <Shop position={tienda.position} rotation={tienda.rotation} palette={palette} night={night} onTap={() => setView('tienda')} />
       <Pier position={[-3.8, 0, 10.6]} rotation={0.05} length={4.4} />
-      <MerchantBoat position={tienda.position} rotation={tienda.rotation} onTap={() => setView('tienda')} />
+      <MerchantBoat position={[-2.0, 0.04, 13.0]} rotation={0.25} onTap={() => setView('tienda')} />
+      <Rowboat position={[-4.9, 0.02, 12.6]} rotation={-0.35} />
 
       {/* ===== VEGETACIÓN Y ROCAS ===== */}
       <Palm position={[7.6, L2, -2.0]} h={3.4} lean={0.3} rotation={1.1} palette={palette} />
@@ -165,7 +174,6 @@ function Scene() {
       <Palm position={[-0.4, PLAYA, 10.0]} h={2.4} lean={0.35} rotation={0.9} palette={palette} scale={0.8} />
       <Palm position={[6.6, L2, 4.6]} h={2.6} lean={0.3} rotation={2.6} palette={palette} scale={0.85} />
       <Bush position={[2.8, L2, -4.6]} palette={palette} />
-      <Bush position={[-1.0, L2, 5.4]} palette={palette} scale={0.8} />
       <Bush position={[7.4, L2, 2.8]} palette={palette} scale={0.7} />
       <Bush position={[-7.0, L2, 5.2]} palette={palette} scale={0.9} />
       <Bush position={[0.4, L3, -6.2]} palette={palette} scale={0.8} />

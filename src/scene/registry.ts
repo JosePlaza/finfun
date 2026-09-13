@@ -59,9 +59,9 @@ export const PLACES: Record<PlaceId, Place> = {
   tienda: {
     id: 'tienda',
     label: 'Tienda',
-    position: [-2.2, 0.04, 12.8],
-    rotation: 0.25,
-    camera: { frameW: 7, frameH: 5.5, elev: 0.55, side: 0.4, lookUp: 1.4 },
+    position: [-0.4, LEVELS.central, 5.4],
+    rotation: FACE_CAMERA + 0.5,
+    camera: { frameW: 8.5, frameH: 6, elev: 0.55, side: 0.2, lookUp: 1.5 },
   },
 }
 

@@ -79,7 +79,9 @@ Hay espacio reservado al este y al norte de la meseta central para nuevos edific
 
 No hay escena estática: tocar un edificio (o su pestaña del menú) hace que la cámara vuele hasta él y se abra su panel;
 "Volver a la isla" devuelve la vista general, donde se puede girar (un dedo) y acercar (dos dedos). Lugares actuales:
-Casa (buzón y paga), Cofre en la cueva (ahorro), Banco (cuenta remunerada), Tienda en la barca mercante y Faro de Doña Tortuga (diario y ayuda).
+Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre en la cueva (ahorro), Banco (cuenta remunerada), Tienda (catálogo con tarjetas; la barca mercante del muelle trae la mercancía) y Faro de Doña Tortuga (diario y ayuda). Las misiones del mundo (`src/sim/missions.ts`) se ven en el chip de la esquina superior y en su hoja; completarlas todas abre el siguiente mundo. Otro chip avisa cuando quedan bellotas por recoger.
+
+Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo se vuelve cálido, se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad. El agua tiene olas low-poly animadas y hay barcas que se balancean en el muelle.
 
 ## Reglas de la economía (Mundo 1)
 

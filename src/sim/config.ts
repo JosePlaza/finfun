@@ -41,14 +41,16 @@ export interface ShopItemDef {
   description: string
   /** IVA que muestra la etiqueta, en %. Solo informativo. */
   ivaPct: number
+  /** Icono del catálogo. */
+  icon: string
 }
 
 export const SHOP_ITEMS: ShopItemDef[] = [
-  { id: 'helado', name: 'Helado', basePriceCents: 2_00, kind: 'consumible', description: 'Se derrite, pero qué rico.', ivaPct: 10 },
-  { id: 'cometa', name: 'Cometa', basePriceCents: 25_00, kind: 'objeto', description: 'Vuela sobre la meseta cuando hay viento.', ivaPct: 21 },
-  { id: 'balon', name: 'Balón', basePriceCents: 40_00, kind: 'objeto', description: 'Para la explanada junto a la casa.', ivaPct: 21 },
-  { id: 'bici', name: 'Bici', basePriceCents: 180_00, kind: 'objeto', description: 'Con ella se abre el camino al Ayuntamiento.', ivaPct: 21 },
-  { id: 'telescopio', name: 'Telescopio', basePriceCents: 450_00, kind: 'objeto', description: 'Para mirar el continente desde el acantilado.', ivaPct: 21 },
+  { id: 'helado', name: 'Helado', basePriceCents: 2_00, kind: 'consumible', description: 'Se derrite, pero qué rico.', ivaPct: 10, icon: '🍦' },
+  { id: 'cometa', name: 'Cometa', basePriceCents: 25_00, kind: 'objeto', description: 'Vuela sobre la meseta cuando hay viento.', ivaPct: 21, icon: '🪁' },
+  { id: 'balon', name: 'Balón', basePriceCents: 40_00, kind: 'objeto', description: 'Para la explanada junto a la casa.', ivaPct: 21, icon: '⚽' },
+  { id: 'bici', name: 'Bici', basePriceCents: 180_00, kind: 'objeto', description: 'Con ella se abre el camino al Ayuntamiento.', ivaPct: 21, icon: '🚲' },
+  { id: 'telescopio', name: 'Telescopio', basePriceCents: 450_00, kind: 'objeto', description: 'Para mirar el continente desde el acantilado.', ivaPct: 21, icon: '🔭' },
 ]
 
 /** El objeto cuya compra desbloquea el Mundo 2. */

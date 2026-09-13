@@ -7,6 +7,7 @@ import {
   diaryParagraphs,
   formatCents,
   formatPct,
+  missionsFor,
   monthlyInterest,
   PAGA_CENTS,
   SHOP_ITEMS,
@@ -135,6 +136,7 @@ function CasaPanel() {
       <button type="button" onClick={() => setView('cofre')} className="mt-3 w-full h-12 rounded-2xl bg-paper-2 font-display font-semibold text-ink active:scale-[0.98] transition">
         Ir al cofre →
       </button>
+      <MyThings />
       <h3 className="font-display font-semibold text-ink mt-5 mb-1">Últimos movimientos</h3>
       <Ledger events={game.ledger} />
     </Sheet>
@@ -170,13 +172,99 @@ function CofrePanel() {
   )
 }
 
+/** Lo que el jugador ha comprado: se ve en la isla y aquí, como colección. */
+function MyThings() {
+  const game = useGame((s) => s.game)!
+  const setView = useGame((s) => s.setView)
+  const owned = SHOP_ITEMS.filter((d) => d.kind === 'objeto' && game.purchases.some((p) => p.itemId === d.id))
+  const eaten = game.purchases.filter((p) => p.itemId === 'helado').length
+  return (
+    <div className="mt-5">
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="font-display font-semibold text-ink m-0">Mis cosas</h3>
+        <button type="button" onClick={() => setView('tienda')} className="text-sm font-bold text-coral">
+          Ver catálogo →
+        </button>
+      </div>
+      {owned.length === 0 && eaten === 0 ? (
+        <div className="bg-paper-2 rounded-2xl p-4 text-ink-2 text-sm">
+          Todavía no tienes nada. Lo que compres en la tienda aparecerá en tu isla y aquí.
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-2">
+          {owned.map((d) => (
+            <div key={d.id} className="item-card item-card--owned !p-2 !gap-1">
+              <div className="item-card__icon !h-14 !text-3xl">{d.icon}</div>
+              <div className="font-display font-semibold text-[12px] text-ink text-center leading-tight">{d.name}</div>
+            </div>
+          ))}
+          {eaten > 0 && (
+            <div className="item-card !p-2 !gap-1">
+              <div className="item-card__icon !h-14 !text-3xl">🍦</div>
+              <div className="font-display font-semibold text-[12px] text-ink text-center leading-tight">×{eaten}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MisionesPanel() {
+  const game = useGame((s) => s.game)!
+  const setView = useGame((s) => s.setView)
+  const board = missionsFor(game)
+  return (
+    <Sheet title={`Mundo ${board.world} · ${board.worldName}`} kicker={`Misiones · ${board.completed} de ${board.total}`} tone="bg-sky">
+      <div className="progress mb-3">
+        <i style={{ width: `${(board.completed / board.total) * 100}%` }} />
+      </div>
+      <Tortuga>
+        Completa las misiones para abrir el siguiente mundo: <b>{board.reward}</b>. No hay prisa: la isla no se va a ninguna parte.
+      </Tortuga>
+      <ul className="grid gap-2.5 mt-3">
+        {board.missions.map((mi) => (
+          <li key={mi.id} className={`rounded-2xl p-3.5 flex items-center gap-3 ${mi.done ? 'bg-leaf-soft' : 'bg-paper-2'}`}>
+            <div className={`w-12 h-12 rounded-xl grid place-items-center text-2xl shrink-0 ${mi.done ? 'bg-leaf text-white' : 'bg-paper'}`}>
+              {mi.done ? '✓' : mi.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className={`font-display font-semibold text-[16px] leading-tight ${mi.done ? 'text-leaf line-through' : 'text-ink'}`}>{mi.title}</div>
+              {!mi.done && <div className="text-ink-2 text-[12.5px] leading-snug mt-0.5">{mi.hint}</div>}
+              {!mi.done && mi.goal > 1 && (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="progress flex-1 !h-2">
+                    <i style={{ width: `${(mi.progress / mi.goal) * 100}%` }} />
+                  </div>
+                  <span className="text-[11px] font-bold text-ink-3 tabular-nums">
+                    {mi.goal >= 100 ? `${formatCents(mi.progress)} / ${formatCents(mi.goal)}` : `${mi.progress} / ${mi.goal}`}
+                  </span>
+                </div>
+              )}
+            </div>
+            {!mi.done && (
+              <button
+                type="button"
+                onClick={() => setView(mi.place)}
+                className="shrink-0 h-10 px-3 rounded-xl bg-sky text-white font-display font-semibold text-sm active:scale-95 transition"
+              >
+                Ir
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Sheet>
+  )
+}
+
 function TiendaPanel() {
   const game = useGame((s) => s.game)!
   const buy = useGame((s) => s.buy)
   const hadInflation = game.inflationHistoryBps.length > 0
   const lastInf = game.inflationHistoryBps[game.inflationHistoryBps.length - 1]
   return (
-    <Sheet title="La barca mercante" kicker="Tienda" tone="bg-coral">
+    <Sheet title="La tienda" kicker="Catálogo" tone="bg-coral">
       <div className="flex items-center justify-between mb-3">
         <span className="text-ink-2 text-sm">Tienes en el cofre</span>
         <Amount cents={game.huchaCents} size="lg" />
@@ -188,32 +276,37 @@ function TiendaPanel() {
           </Tortuga>
         </div>
       )}
-      <ul className="grid gap-2.5">
+      <ul className="grid grid-cols-2 gap-2.5">
         {SHOP_ITEMS.map((def) => {
           const st = game.shop.find((s) => s.id === def.id)!
           const owned = def.kind === 'objeto' && game.purchases.some((p) => p.itemId === def.id)
           const can = game.huchaCents >= st.priceCents && !owned
           const changed = st.previousPriceCents !== st.priceCents
           return (
-            <li key={def.id} className="bg-paper-2 rounded-2xl p-3.5 flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="font-display font-semibold text-ink text-[17px]">{def.name}</div>
-                <div className="text-ink-3 text-[12.5px] leading-snug">{def.description}</div>
-                <div className="flex items-baseline gap-2 mt-1">
-                  {changed && <span className="text-ink-3 text-sm line-through tabular-nums">{formatCents(st.previousPriceCents)}</span>}
-                  <Amount cents={st.priceCents} size="md" />
-                  <span className="text-[10px] text-ink-3">IVA {def.ivaPct} % incl.</span>
-                </div>
+            <li key={def.id} className={`item-card ${owned ? 'item-card--owned' : can ? 'item-card--can' : ''}`}>
+              {owned && <span className="ribbon">Tuyo ✓</span>}
+              <div className="item-card__icon">{def.icon}</div>
+              <div>
+                <div className="font-display font-semibold text-ink text-[17px] leading-tight">{def.name}</div>
+                <div className="text-ink-3 text-[12px] leading-snug mt-0.5">{def.description}</div>
               </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="price-tag">
+                  <CoinIcon size={14} />
+                  {formatCents(st.priceCents)}
+                </span>
+                {changed && <span className="text-ink-3 text-xs line-through tabular-nums">{formatCents(st.previousPriceCents)}</span>}
+              </div>
+              <div className="text-[10px] text-ink-3 -mt-1">IVA {def.ivaPct} % incluido</div>
               <button
                 type="button"
                 disabled={!can}
                 onClick={() => buy(def.id)}
-                className={`shrink-0 h-12 px-4 rounded-xl font-display font-semibold active:scale-95 transition ${
-                  owned ? 'bg-leaf-soft text-leaf' : can ? 'bg-coral text-white shadow' : 'bg-line/60 text-ink-3'
+                className={`h-11 rounded-xl font-display font-semibold active:scale-95 transition ${
+                  owned ? 'bg-leaf/15 text-leaf' : can ? 'bg-coral text-white shadow' : 'bg-line/70 text-ink-3'
                 }`}
               >
-                {owned ? 'Tuyo' : 'Comprar'}
+                {owned ? 'En tu isla' : can ? 'Comprar' : 'Te falta dinero'}
               </button>
             </li>
           )
@@ -427,6 +520,8 @@ export function Panels() {
       return <TiendaPanel />
     case 'faro':
       return <FaroPanel />
+    case 'misiones':
+      return <MisionesPanel />
     default:
       return null
   }

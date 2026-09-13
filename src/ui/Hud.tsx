@@ -1,4 +1,4 @@
-import { calendarOf, currentMonth, MONTH_NAMES } from '../sim'
+import { calendarOf, currentMonth, missionsFor, MONTH_NAMES, TASK_ACORNS } from '../sim'
 import { useGame, type View } from '../store/game'
 import { Amount } from './Coin'
 
@@ -9,8 +9,13 @@ export function TopBar() {
   const nowMs = useGame((s) => s.nowMs)
   const view = useGame((s) => s.view)
   const setView = useGame((s) => s.setView)
-  const cal = calendarOf(currentMonth(game, nowMs))
+  const acornsFound = useGame((s) => s.acornsFound)
+  const month = currentMonth(game, nowMs)
+  const cal = calendarOf(month)
   const total = game.huchaCents + game.bankCents
+  const board = missionsFor(game)
+  const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
+  const showChips = view === 'isla'
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 safe-top px-3">
@@ -34,6 +39,39 @@ export function TopBar() {
         >
           <span aria-hidden="true">←</span> Volver a la isla
         </button>
+      )}
+      {showChips && (
+        <div className="mt-2 flex flex-col items-start gap-1.5">
+          <button
+            type="button"
+            onClick={() => setView('misiones')}
+            className="pointer-events-auto quest-chip"
+          >
+            <span className="quest-chip__icon" aria-hidden="true">📜</span>
+            <span className="min-w-0">
+              <span className="block text-[10px] font-bold tracking-widest uppercase text-ink-3 leading-none">
+                Misión {board.completed + 1 > board.total ? board.total : board.completed + 1} de {board.total}
+              </span>
+              <span className="block font-display font-semibold text-[14px] leading-tight truncate max-w-[56vw]">
+                {board.next ? board.next.title : '¡Mundo completado!'}
+              </span>
+            </span>
+            <span className="quest-chip__arrow" aria-hidden="true">›</span>
+          </button>
+          {acornsLeft > 0 && (
+            <div className="pointer-events-auto quest-chip quest-chip--acorn">
+              <span className="quest-chip__icon" aria-hidden="true">🌰</span>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold tracking-widest uppercase leading-none opacity-80">
+                  Hoy hay bellotas
+                </span>
+                <span className="block font-display font-semibold text-[14px] leading-tight">
+                  Quedan {acornsLeft} escondidas · recógelas y gana dinero
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

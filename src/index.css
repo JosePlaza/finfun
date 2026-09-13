@@ -163,3 +163,157 @@ textarea {
   color: #fff3c4;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
+
+/* Bocadillo de paga sobre la casa: la señal más evidente de "hay dinero que recoger" */
+.coin-bubble {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px 9px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 6px 18px rgba(30, 52, 54, 0.22), 0 0 0 3px var(--color-coin);
+  font-family: var(--font-display);
+  cursor: pointer;
+  animation: bubble-bounce 1.4s ease-in-out infinite;
+  white-space: nowrap;
+}
+.coin-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--color-paper);
+  box-shadow: 3px 3px 0 0 var(--color-coin);
+  border-radius: 2px;
+}
+.coin-bubble__coins {
+  display: flex;
+  gap: 3px;
+}
+.coin-bubble__coins i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe08a, var(--color-coin) 60%, var(--color-coin-dark));
+  box-shadow: inset 0 0 0 2px rgba(184, 134, 43, 0.6);
+}
+.coin-bubble__amount {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #7a5410;
+}
+.coin-bubble__hint {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-ink-2);
+}
+@keyframes bubble-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin-bubble { animation: none; }
+}
+
+/* Chips de misión y de bellotas bajo la barra superior */
+.quest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px 0 8px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-ink);
+  text-align: left;
+  box-shadow: 0 2px 10px rgba(30, 52, 54, 0.12);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.quest-chip:active { transform: scale(0.97); }
+.quest-chip__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--color-sky-soft);
+  font-size: 17px;
+}
+.quest-chip__arrow { color: var(--color-ink-3); font-size: 20px; line-height: 1; }
+.quest-chip--acorn { background: var(--color-acorn); color: #fff7ea; }
+.quest-chip--acorn .quest-chip__icon { background: rgba(255, 255, 255, 0.22); }
+
+/* Tarjetas de catálogo: UI de juego */
+.item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
+  background: var(--color-paper-2);
+  border: 2px solid transparent;
+}
+.item-card--owned { border-color: var(--color-leaf); background: var(--color-leaf-soft); }
+.item-card--can { border-color: var(--color-coin); }
+.item-card__icon {
+  height: 72px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  background: linear-gradient(180deg, #ffffff, #eef4f1);
+  box-shadow: inset 0 -3px 0 rgba(30, 52, 54, 0.08);
+}
+.item-card--owned .item-card__icon { background: linear-gradient(180deg, #ffffff, #dff0e5); }
+.ribbon {
+  position: absolute;
+  top: 10px;
+  right: -6px;
+  padding: 3px 10px;
+  border-radius: 8px 0 0 8px;
+  background: var(--color-leaf);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(30, 52, 54, 0.15);
+}
+.price-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #7a5410;
+  box-shadow: 0 0 0 2px var(--color-coin) inset;
+  font-variant-numeric: tabular-nums;
+}
+.progress {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+.progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-leaf), #8ccf62);
+  transition: width 0.4s ease;
+}

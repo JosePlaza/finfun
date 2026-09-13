@@ -91,4 +91,6 @@ export interface GameState {
   yearBankInterestCents: number
   /** Total de euroLukys ganados con tareas en toda la partida. */
   totalTasksCents: number
+  /** Días (meses de isla) en los que se completó la tarea de las bellotas. */
+  tasksCompleted: number
 }
