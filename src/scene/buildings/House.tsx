@@ -71,7 +71,7 @@ export function House({ position, rotation = 0, palette, night, mailboxCents, on
       {/* Bocadillo con la paga pendiente: flota sobre la casa y se recoge al tocarlo */}
       {mailboxCents > 0 && (
         <group position={[0, H + RH + 0.9, 0]}>
-          <Html center distanceFactor={12} zIndexRange={[20, 0]}>
+          <Html center distanceFactor={12} zIndexRange={[8, 0]}>
             <button type="button" className="coin-bubble" onClick={onMailbox}>
               <span className="coin-bubble__coins" aria-hidden="true">
                 <i /><i /><i />

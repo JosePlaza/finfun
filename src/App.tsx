@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
-import { BottomNav, TopBar } from './ui/Hud'
+import { TopBar } from './ui/Hud'
 import { NameIsland } from './ui/NameIsland'
 import { Panels } from './ui/Panels'
 import { Toast } from './ui/Toast'
@@ -41,7 +41,6 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden">
       <Island />
       <TopBar />
-      <BottomNav />
       <Panels />
       <Toast />
       {isDevMode && <DevBar />}

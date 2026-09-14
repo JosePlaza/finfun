@@ -19,6 +19,8 @@ import { Cave } from './buildings/Cave'
 import { Shop } from './buildings/Shop'
 import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
 import { GenericBuilding } from './buildings/Generic'
+import { Ambient } from './Ambient'
+import { forwardOf } from './registry'
 
 type V3 = [number, number, number]
 
@@ -95,12 +97,12 @@ function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitCon
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
-      const overview = view === 'isla' || view === 'misiones'
+      const overview = view === 'isla' || view === 'misiones' || view === 'eventos' || view === 'patrimonio'
       const pose = overview ? islandPose(fov, aspect, portrait) : cameraPoseFor(BUILDING_BY_ID[view], positions[view], fov, aspect, portrait ? 0.5 : 0)
       goalPos.current.set(...pose.position)
       goalTarget.current.set(...pose.target)
     }
-    const free = view === 'isla' || view === 'misiones'
+    const free = view === 'isla' || view === 'misiones' || view === 'eventos' || view === 'patrimonio'
     ctl.enabled = free && !flying.current
     if (flying.current || !free) {
       const a = 1 - Math.exp(-4 * dt)
@@ -167,6 +169,17 @@ function Scene() {
   const roads = useMemo(() => ROADS.map(([a, b]) => roadPoints(a, b, terrain.seed)), [terrain])
   const at = (x: number, z: number): V3 => [x, terrain.height(x, z), z]
 
+  // Rutas de paseo: pasan por delante de la puerta de cada edificio del bucle.
+  const walkerRoutes = useMemo(() => {
+    const front = (id: BuildingId): [number, number] => {
+      const b = BUILDING_BY_ID[id]
+      const [fx, fz] = forwardOf(b.rotation)
+      return [b.x + fx * (b.footprint + 0.6), b.z + fz * (b.footprint + 0.6)]
+    }
+    const loop = (ids: BuildingId[]) => ids.map(front)
+    return [loop(['casa', 'tienda', 'banco', 'ayuntamiento', 'escuela']), loop(['cofre', 'puerto', 'astillero', 'panaderia', 'mercado', 'casa'])]
+  }, [])
+
   const tapBuilding = (id: BuildingId) => {
     const def = BUILDING_BY_ID[id]
     if (def.view) return setView(def.view)
@@ -227,6 +240,7 @@ function Scene() {
       <Rowboat position={[PIER.x - 1.2, 0.02, PIER.z + 2.6]} rotation={-0.35} />
 
       <Vegetation terrain={terrain} palette={palette} />
+      <Ambient terrain={terrain} walkerRoutes={walkerRoutes} />
 
       {/* ===== OBJETOS COMPRADOS ===== */}
       {has('cometa') && <Kite position={at(6.5, 6.5)} />}

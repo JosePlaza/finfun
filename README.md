@@ -89,11 +89,24 @@ rocas de costa y bellotas se apoyan sobre esa función, así que mover una colin
 | 3 · El Mercado | Mercado de acciones, Panadería, Heladería, Puerto pesquero, Astillero |
 | 4 · La Tormenta | Molino, Posada, Granja, Cantera, Taller de juguetes, Observatorio, Casa del Fondo Isla |
 
-## Navegación
+## Navegación e interfaz
 
-No hay escena estática: tocar un edificio (o su pestaña del menú) hace que la cámara vuele hasta él y se abra su panel;
-"Volver a la isla" devuelve la vista general, donde se puede girar (un dedo) y acercar (dos dedos). Lugares actuales:
-Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre en la cueva (ahorro), Banco (cuenta remunerada), Tienda (catálogo con tarjetas; la barca mercante del muelle trae la mercancía) y Faro de Doña Tortuga (diario y ayuda). Las misiones del mundo (`src/sim/missions.ts`) se ven en el chip de la esquina superior y en su hoja; completarlas todas abre el siguiente mundo. Otro chip avisa cuando quedan bellotas por recoger.
+No hay menú inferior ni escena estática: por la isla se navega tocando los edificios. La cámara vuela hasta el lugar y se abre su
+panel; la ✕ roja devuelve la vista general, donde se puede girar (un dedo) y acercar (dos dedos). Lugares actuales:
+Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre en la cueva (ahorro), Banco (cuenta remunerada), Tienda (catálogo con tarjetas; la barca mercante del muelle trae la mercancía) y Faro de Doña Tortuga (diario y ayuda).
+
+HUD (`src/ui/Hud.tsx`): arriba a la izquierda, el nombre de la isla y el año/mes; debajo, en vertical, los botones **Misiones** y **Eventos**
+(este último con un bullet rojo animado y el número de cosas pendientes: paga en el buzón, bellotas, banco recién abierto, diario nuevo,
+misión completada, mundo nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, el **patrimonio**: al pulsarlo se desglosa dónde está
+cada parte (cofre, banco, bonos, acciones, fondo; los que aún no existen aparecen bloqueados con el mundo en que abren).
+
+El kit visual de la interfaz vive en `src/index.css` (clases `g-*`): botones con degradado, contorno blanco de 4 px y sombra "profunda" de 7 px
+que se hunde al pulsar; paneles crema con doble borde y cinta de título; cierre circular rojo medio fuera de la esquina; barras con carril
+hundido y relleno a rayas. Tipografías: Baloo 2 (títulos, mayúsculas) y Nunito (texto). Paleta: verde, azul, naranja, morado, rojo, crema, cielo y tinta.
+
+Vida en el mapa (`src/scene/Ambient.tsx`): nubes a la deriva por el norte de la isla (proyectan sombra en el mar), bandadas de pájaros en V,
+sombras de bancos de peces bajo el agua, y personajes (el niño de la gorra roja y la Liebre) que pasean por los caminos entre edificios.
+Todo es determinista a partir de la semilla de la isla y muy barato de dibujar.
 
 Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo se vuelve cálido, se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad. El agua tiene olas low-poly animadas y hay barcas que se balancean en el muelle.
 

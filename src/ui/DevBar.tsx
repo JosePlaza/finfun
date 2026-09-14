@@ -7,7 +7,7 @@ export function DevBar() {
   const offset = useGame((s) => s.devOffsetMs)
   const days = Math.round(offset / 86_400_000)
   return (
-    <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+100px)] z-40 flex items-center gap-1 bg-ink/80 text-white rounded-xl px-2 py-1 text-xs font-mono">
+    <div className="absolute right-3 top-[calc(env(safe-area-inset-top)+76px)] z-40 opacity-80 flex items-center gap-1 bg-ink/80 text-white rounded-xl px-2 py-1 text-xs font-mono">
       <span className="opacity-70 mr-1">dev {days >= 0 ? '+' : ''}{days}d</span>
       <button type="button" onClick={() => devAdvanceDays(1)} className="px-2 py-1 rounded bg-white/15 active:bg-white/30">
         +1 día

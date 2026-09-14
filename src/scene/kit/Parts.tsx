@@ -339,7 +339,7 @@ export function Sign({ text, position = [0, 0, 0], w = 1.5, tone = 'wood' }: { t
       <Box size={[w, 0.42, 0.08]} color={tone === 'navy' ? C.navy : C.wood} />
       <Box size={[w + 0.08, 0.06, 0.1]} position={[0, 0.22, 0]} color={C.woodDark} />
       <Box size={[w + 0.08, 0.06, 0.1]} position={[0, -0.22, 0]} color={C.woodDark} />
-      <Html position={[0, 0, 0.06]} center transform distanceFactor={4} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 0, 0.06]} center transform distanceFactor={4} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div className={`sign-text ${tone === 'navy' ? 'sign-text--light' : ''}`}>{text}</div>
       </Html>
     </group>
@@ -397,7 +397,7 @@ export function CoinEmblem({ position = [0, 0, 0], r = 0.3 }: { position?: V3; r
 /** Etiqueta flotante de lugar: nombre y, opcionalmente, una cantidad con la moneda. */
 export function Label({ text, sub, amount, tone = 'default', y = 1.6 }: { text: string; sub?: string; amount?: string; tone?: 'default' | 'coin' | 'locked'; y?: number }) {
   return (
-    <Html position={[0, y, 0]} center distanceFactor={12} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <Html position={[0, y, 0]} center distanceFactor={12} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
       <div className={`scene-label scene-label--${tone}`}>
         <span>{text}</span>
         {sub && <small>{sub}</small>}

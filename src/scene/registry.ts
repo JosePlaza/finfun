@@ -138,16 +138,17 @@ export function cameraPoseFor(def: BuildingDef, position: V3, fovDeg: number, as
 
 /** Vista general de la isla: encuadra la isla entera desde el sureste, elevada. */
 export const ISLAND_VIEW = {
-  target: [0.5, 2.0, 1.5] as V3,
+  target: [0.5, 3.6, 1.5] as V3,
   dir: unit(0.62, 0.66, 0.7),
   frameW: 44,
-  frameH: 38,
+  frameH: 41,
 }
 
 export function islandPose(fovDeg: number, aspect: number, portrait = false): { position: V3; target: V3 } {
   // En vertical dejamos que los bordes se recorten: importa ver el centro con detalle.
-  const d = fitDistance(portrait ? 30 : ISLAND_VIEW.frameW, ISLAND_VIEW.frameH, fovDeg, aspect)
-  const t = ISLAND_VIEW.target
+  const d = fitDistance(portrait ? 30 : ISLAND_VIEW.frameW, portrait ? 38 : ISLAND_VIEW.frameH, fovDeg, aspect)
+  // En vertical el HUD ocupa la parte alta, así que centramos la isla algo más abajo.
+  const t: V3 = portrait ? [ISLAND_VIEW.target[0], 1.6, ISLAND_VIEW.target[2]] : ISLAND_VIEW.target
   const dir = ISLAND_VIEW.dir
   return { target: t, position: [t[0] + dir[0] * d, t[1] + dir[1] * d, t[2] + dir[2] * d] }
 }

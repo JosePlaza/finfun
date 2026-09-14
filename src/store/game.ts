@@ -10,6 +10,7 @@ import {
   currentMonth,
   deposit as simDeposit,
   TASK_ACORNS,
+  missionsFor,
   withdraw as simWithdraw,
   type ActionResult,
   type GameState,
@@ -17,7 +18,7 @@ import {
 import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
-export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'misiones'
+export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'misiones' | 'eventos' | 'patrimonio'
 
 interface Store {
   game: GameState | null
@@ -31,6 +32,11 @@ interface Store {
   acornsFound: number[]
   acornsMonth: number
   ready: boolean
+  /** Marcas de "ya visto" para los avisos de eventos. */
+  seenDiary: number
+  seenBankOpen: boolean
+  seenWorld: number
+  seenMissions: number
 
   boot: () => Promise<void>
   tick: () => void
@@ -79,6 +85,10 @@ export const useGame = create<Store>()(
         acornsFound: [],
         acornsMonth: -1,
         ready: false,
+        seenDiary: 0,
+        seenBankOpen: false,
+        seenWorld: 1,
+        seenMissions: 0,
 
         boot: async () => {
           await syncClock()
@@ -157,7 +167,18 @@ export const useGame = create<Store>()(
           }
         },
 
-        setView: (view) => set({ view }),
+        setView: (view) => {
+          const g = get().game
+          const patch: Partial<Store> = { view }
+          // Abrir el lugar correspondiente marca sus avisos como vistos.
+          if (g && view === 'faro') patch.seenDiary = g.diary.length
+          if (g && view === 'banco' && g.bankUnlocked) patch.seenBankOpen = true
+          if (g && view === 'misiones') {
+            patch.seenWorld = g.world
+            patch.seenMissions = missionsFor(g).completed
+          }
+          set(patch)
+        },
         showToast: (text) => {
           const id = ++toastSeq
           set({ toast: { text, id } })
@@ -177,7 +198,7 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs }),
+      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions }),
     },
   ),
 )
