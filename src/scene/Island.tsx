@@ -11,6 +11,7 @@ import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, islandPose
 import { makeTerrain, scatter, type Terrain } from './terrain'
 import { CoastRocks, Ground, Path, Water } from './Landscape'
 import { Acorn, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
+import { Plinth } from './kit/Parts'
 import { Ball, Bike, Kite, Telescope } from './kit/Objects'
 import { House } from './buildings/House'
 import { Bank } from './buildings/Bank'
@@ -26,8 +27,8 @@ type V3 = [number, number, number]
 
 /** Lugares (x, z) donde pueden aparecer bellotas; la altura se toma del terreno. */
 const ACORN_XZ: [number, number][] = [
-  [1, 3], [7, -3], [-8, 3], [2, -6], [-5, -5], [-11, -10], [5, 14], [11, 13], [-2, 14], [-9, 13], [13, -12], [-1, 8],
-  [15, 3], [-16, -1], [6, -12], [-12, 5], [10, 6], [-6, 6],
+  [-2, 6], [6, -1], [-12, 3], [-2, -8], [-9, -8], [-17, -14], [5, 19], [13, 19], [-2, 19], [-12, 18], [20, -17], [-3, 12],
+  [21, 1], [-23, 0], [11, -14], [-16, 7], [14, 9], [-6, 10], [-10, -18], [1, -20], [7, 8], [-13, -4],
 ]
 
 function acornSpotsFor(seed: number, month: number): number[] {
@@ -118,11 +119,11 @@ function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitCon
 /** Vegetación repartida por la isla evitando las explanadas de los edificios y los caminos. */
 function Vegetation({ terrain, palette }: { terrain: Terrain; palette: SeasonPalette }) {
   const items = useMemo(() => {
-    const farFromSites = (x: number, z: number, margin: number) => SITES.every((s) => Math.hypot(x - s.x, z - s.z) > s.r + margin)
-    const palms = scatter(terrain, terrain.seed + 11, 34, (x, z, h, slope) => h > 0.5 && h < 3.2 && slope < 0.7 && farFromSites(x, z, 1.4))
-    const bushes = scatter(terrain, terrain.seed + 22, 40, (x, z, h, slope) => h > 0.8 && slope < 0.8 && farFromSites(x, z, 0.8))
-    const flowers = scatter(terrain, terrain.seed + 33, 30, (x, z, h, slope) => h > 0.9 && slope < 0.5 && farFromSites(x, z, 0.6))
-    const tufts = scatter(terrain, terrain.seed + 44, 40, (x, z, h, slope) => h > 0.7 && slope < 0.9 && farFromSites(x, z, 0.5))
+    const farFromSites = (x: number, z: number, margin: number) => SITES.every((s) => Math.hypot(x - s.x, z - s.z) > s.r * 1.25 + margin)
+    const palms = scatter(terrain, terrain.seed + 11, 52, (x, z, h, slope) => h > 0.5 && h < 3.2 && slope < 0.7 && farFromSites(x, z, 1.4))
+    const bushes = scatter(terrain, terrain.seed + 22, 64, (x, z, h, slope) => h > 0.8 && slope < 0.8 && farFromSites(x, z, 0.8))
+    const flowers = scatter(terrain, terrain.seed + 33, 48, (x, z, h, slope) => h > 0.9 && slope < 0.5 && farFromSites(x, z, 0.6))
+    const tufts = scatter(terrain, terrain.seed + 44, 64, (x, z, h, slope) => h > 0.7 && slope < 0.9 && farFromSites(x, z, 0.5))
     const rng = mulberry32(terrain.seed + 55)
     return {
       palms: palms.map((p) => ({ p, h: 2.4 + rng() * 1.2, lean: 0.15 + rng() * 0.3, rot: rng() * Math.PI * 2, s: 0.8 + rng() * 0.35 })),
@@ -215,6 +216,10 @@ function Scene() {
       ))}
 
       {/* ===== EDIFICIOS ===== */}
+      {/* Zócalos: base sólida bajo cada edificio (la cueva es roca por sí misma) */}
+      {BUILDINGS.filter((def) => def.id !== 'cofre').map((def) => (
+        <Plinth key={`plinth-${def.id}`} radius={def.footprint * 1.05} position={positions[def.id]} />
+      ))}
       {BUILDINGS.map((def) => {
         const pos = positions[def.id]
         const unlocked = game.world >= def.world

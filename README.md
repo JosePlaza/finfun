@@ -77,7 +77,7 @@ docs/concepto.html    Documento de concepto del juego
 
 `src/scene/terrain.ts` define la isla como un campo de alturas continuo: una meseta que baja suavemente al mar, colinas y
 hondonadas (`HILLS`) que crean varios niveles, y una explanada aplanada bajo cada edificio con transición suave (sin escalones).
-La malla (`Ground` en `Landscape.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
+Cada edificio se asienta sobre un **zócalo** (`Plinth` en `kit/Parts.tsx`): un disco de arena a ras de la explanada y un faldón de roca hundido en el terreno, de modo que nunca queda nada en el aire aunque la ladera caiga junto a él. Las explanadas son planas hasta 1,25 veces la huella del edificio y entre huellas hay al menos ~3 unidades libres (isla de 56 × 46 unidades). La malla (`Ground` en `Landscape.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
 rocas de costa y bellotas se apoyan sobre esa función, así que mover una colina lo mueve todo.
 
 ### Edificios y mundo en que se abren

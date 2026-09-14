@@ -23,20 +23,20 @@ export interface Hill {
 }
 
 /** Semiejes de la isla: la costa se sitúa donde r ≈ 1. */
-export const ISLAND_RX = 21
-export const ISLAND_RZ = 17
+export const ISLAND_RX = 28
+export const ISLAND_RZ = 23
 
 /** Colinas y hondonadas que dan los niveles de la isla. */
 export const HILLS: Hill[] = [
-  { x: -8, z: -8, s: 5.2, a: 4.2 }, // pico del faro (noroeste)
-  { x: -2, z: -8, s: 3.6, a: 1.4 }, // loma del observatorio (norte)
-  { x: 10, z: -6, s: 4.6, a: 2.0 }, // cresta noreste (mercado / cantera)
-  { x: -14, z: -6, s: 3.4, a: 1.2 }, // loma del molino (oeste)
-  { x: 9, z: 1, s: 6.0, a: 0.6 }, // meseta este (casa)
-  { x: 7, z: 11, s: 5.2, a: -1.5 }, // hondonada sur: la cueva y el puerto
-  { x: -5, z: 12, s: 4.6, a: -2.3 }, // playa suroeste
-  { x: 14, z: 6, s: 4.0, a: -1.0 }, // costa este baja: astillero
-  { x: -12, z: 9, s: 3.8, a: -0.9 }, // costa oeste baja
+  { x: -12.5, z: -12.5, s: 6.8, a: 5.0 }, // pico del faro (noroeste)
+  { x: 0, z: -11, s: 4.8, a: 1.4 }, // loma del observatorio (norte)
+  { x: 12, z: -8, s: 6.0, a: 2.6 }, // cresta noreste (mercado / cantera)
+  { x: -19, z: -8, s: 4.4, a: 1.2 }, // loma del molino (oeste)
+  { x: 12, z: 2, s: 7.8, a: 0.6 }, // meseta este (casa)
+  { x: 9, z: 15, s: 6.8, a: -1.5 }, // hondonada sur: la cueva y el puerto
+  { x: -7, z: 16, s: 6.0, a: -2.3 }, // playa suroeste
+  { x: 19, z: 8, s: 5.2, a: -1.0 }, // costa este baja: astillero
+  { x: -16, z: 12, s: 5.0, a: -0.9 }, // costa oeste baja
 ]
 
 function smoothstep(e0: number, e1: number, x: number): number {
@@ -80,7 +80,7 @@ export function makeTerrain(seed: number, sites: Site[]): Terrain {
   const levels = sites.map((s) => {
     // La explanada toma la altura media del terreno bajo su huella y la redondea a medios metros:
     // así los edificios cercanos quedan a niveles reconocibles y las rampas entre ellos son claras.
-    const samples = [raw(s.x, s.z), raw(s.x + s.r * 0.5, s.z), raw(s.x - s.r * 0.5, s.z), raw(s.x, s.z + s.r * 0.5), raw(s.x, s.z - s.r * 0.5)]
+    const samples = [raw(s.x, s.z), raw(s.x + s.r, s.z), raw(s.x - s.r, s.z), raw(s.x, s.z + s.r), raw(s.x, s.z - s.r)]
     const mean = samples.reduce((a, b) => a + b, 0) / samples.length
     return Math.max(0.6, Math.round(mean * 2) / 2)
   })
@@ -89,9 +89,9 @@ export function makeTerrain(seed: number, sites: Site[]): Terrain {
     for (let i = 0; i < sites.length; i++) {
       const s = sites[i]
       const d = Math.hypot(x - s.x, z - s.z)
-      if (d > s.r * 2.2) continue
-      // Plana dentro de r, transición suave hasta 2,2 r.
-      const k = 1 - smoothstep(s.r, s.r * 2.2, d)
+      if (d > s.r * 2.4) continue
+      // Plana hasta 1,25 r (margen libre alrededor del edificio), transición suave hasta 2,4 r.
+      const k = 1 - smoothstep(s.r * 1.25, s.r * 2.4, d)
       h = h + (levels[i] - h) * k
     }
     return h

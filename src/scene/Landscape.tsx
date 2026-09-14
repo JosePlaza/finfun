@@ -25,8 +25,8 @@ export function Ground({ terrain, palette }: { terrain: TerrainField; palette: S
   const geometry = useMemo(() => {
     const W = ISLAND_RX * 2 * 1.35
     const D = ISLAND_RZ * 2 * 1.35
-    const segX = 132
-    const segZ = 108
+    const segX = 168
+    const segZ = 140
     const geo = new THREE.PlaneGeometry(W, D, segX, segZ)
     geo.rotateX(-Math.PI / 2) // plano en XZ, +Y arriba
     const pos = geo.attributes.position as THREE.BufferAttribute
@@ -68,10 +68,10 @@ export function Ground({ terrain, palette }: { terrain: TerrainField; palette: S
 export function CoastRocks({ terrain }: { terrain: TerrainField }) {
   const rocks = useMemo(() => {
     const rng = mulberry32(terrain.seed + 303)
-    const coast = coastPoints(terrain, 64, 0.45)
+    const coast = coastPoints(terrain, 84, 0.45)
       .filter(() => rng() > 0.3)
       .map(([x, z], i) => ({ x, z, y: terrain.height(x, z) - 0.25, s: 0.7 + rng() * 0.9, seed: i * 13 + 1, c: rng() > 0.5 ? C.rock : C.rockLight }))
-    const slopes = scatter(terrain, terrain.seed + 404, 26, (_x, _z, h, slope) => h > 0.8 && slope > 0.75).map(([x, y, z], i) => ({
+    const slopes = scatter(terrain, terrain.seed + 404, 40, (_x, _z, h, slope) => h > 0.8 && slope > 0.75).map(([x, y, z], i) => ({
       x,
       z,
       y: y - 0.2,

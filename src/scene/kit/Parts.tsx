@@ -332,6 +332,26 @@ export function Sack({ position = [0, 0, 0] }: { position?: V3 }) {
   )
 }
 
+/**
+ * Zócalo: la base sólida sobre la que se asienta cada edificio. Un disco de piedra a ras de la
+ * explanada y un faldón de roca que se hunde en el terreno, de modo que aunque la ladera caiga
+ * junto al edificio nunca quede nada "en el aire". Mismo material que las rocas de la isla.
+ */
+export function Plinth({ radius, position = [0, 0, 0] }: { radius: number; position?: V3 }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.06, 0]} receiveShadow>
+        <cylinderGeometry args={[radius, radius + 0.25, 0.24, 14]} />
+        <Mat color={C.sand} flat />
+      </mesh>
+      <mesh position={[0, -1.7, 0]}>
+        <cylinderGeometry args={[radius + 0.25, radius + 1.9, 3.4, 14]} />
+        <Mat color={C.rock} flat />
+      </mesh>
+    </group>
+  )
+}
+
 /** Cartel de madera con texto legible (HTML sobre la escena). */
 export function Sign({ text, position = [0, 0, 0], w = 1.5, tone = 'wood' }: { text: string; position?: V3; w?: number; tone?: 'wood' | 'navy' }) {
   return (
