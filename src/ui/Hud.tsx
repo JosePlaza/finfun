@@ -49,13 +49,11 @@ export function TopBar() {
       {/* Botones verticales: Misiones y Eventos */}
       {onIsland && (
         <div className="mt-3 flex flex-col items-start gap-3.5">
-          <button type="button" onClick={() => setView('misiones')} className="pointer-events-auto g-hud-btn g-hud-btn--purple" aria-label="Misiones">
+          <button type="button" onClick={() => setView('misiones')} className="pointer-events-auto g-hud-btn g-hud-btn--purple" aria-label="Misiones" title="Misiones">
             <span className="g-hud-btn__icon" aria-hidden="true">📜</span>
-            <span className="g-hud-btn__label">Misiones</span>
           </button>
-          <button type="button" onClick={() => setView('eventos')} className="pointer-events-auto g-hud-btn g-hud-btn--orange" aria-label="Eventos pendientes">
+          <button type="button" onClick={() => setView('eventos')} className="pointer-events-auto g-hud-btn g-hud-btn--orange" aria-label="Eventos pendientes" title="Eventos">
             <span className="g-hud-btn__icon" aria-hidden="true">🔔</span>
-            <span className="g-hud-btn__label">Eventos</span>
             {events.length > 0 && <span className="g-badge">{events.length}</span>}
           </button>
         </div>

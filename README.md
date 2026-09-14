@@ -52,7 +52,7 @@ src/
                    Column, Steps, Lantern, Crate, Barrel, Sack, Sign, FlagPole, CoinEmblem, Label, TapZone…
     kit/Nature.tsx Palm, Bush, Flowers, GrassTuft, Rock, RockCluster, Acorn
     kit/Objects.tsx Objetos comprados (cometa, balón, bici, telescopio)
-    Terrain.tsx    Terrace (meseta natural con roca en el borde), Beach, Path, Stairs, Water
+    Landscape.tsx  Ground (malla del terreno), CoastRocks, Path, Water
     buildings/     Un archivo por lugar, montado SOLO con piezas del kit: House, Bank, Lighthouse, Cave (+Chest), Pier (+MerchantBoat)
     registry.ts    Niveles de terreno, lugares (posición, giro, encuadre de cámara) y cálculo de poses
     Island.tsx     Composición de la isla + CameraRig (la cámara vuela al lugar activo)
@@ -77,7 +77,7 @@ docs/concepto.html    Documento de concepto del juego
 
 `src/scene/terrain.ts` define la isla como un campo de alturas continuo: una meseta que baja suavemente al mar, colinas y
 hondonadas (`HILLS`) que crean varios niveles, y una explanada aplanada bajo cada edificio con transición suave (sin escalones).
-La malla (`Ground` en `Terrain.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
+La malla (`Ground` en `Landscape.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
 rocas de costa y bellotas se apoyan sobre esa función, así que mover una colina lo mueve todo.
 
 ### Edificios y mundo en que se abren
