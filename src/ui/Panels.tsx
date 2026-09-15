@@ -267,6 +267,8 @@ function EventosPanel() {
   const setView = useGame((s) => s.setView)
   const collect = useGame((s) => s.collect)
   const openWheel = useGame((s) => s.openWheel)
+  const hintAcorn = useGame((s) => s.hintAcorn)
+  const revealAcorns = useGame((s) => s.revealAcorns)
   const month = currentMonth(game, nowMs)
   const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
   const events = pendingEvents(game, acornsLeft, seen)
@@ -293,6 +295,15 @@ function EventosPanel() {
                 <button type="button" onClick={() => openWheel(true)} className="g-btn g-btn--purple g-btn--sm">
                   Girar
                 </button>
+              ) : e.id === 'bellotas' ? (
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <button type="button" onClick={hintAcorn} className="g-btn g-btn--blue g-btn--sm" title="Te enseña dónde está una de las que faltan">
+                    Pista
+                  </button>
+                  <button type="button" onClick={revealAcorns} className="g-btn g-btn--cream g-btn--sm" title="Te enseña todas, pero hoy no hay premio">
+                    Resolver
+                  </button>
+                </div>
               ) : (
                 <button type="button" onClick={() => setView(e.view)} className="g-btn g-btn--blue g-btn--sm">
                   Ir

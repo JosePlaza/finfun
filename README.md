@@ -113,7 +113,9 @@ huerto y el banquero saludando cuando abre el banco. Todo es determinista a part
 
 Bellotas (`src/scene/acorns.ts`): sus sitios se calculan sobre el terreno (tierra firme, poca pendiente, fuera de las explanadas) y flotan por
 encima de la hierba; el filtro de eventos del `Canvas` da prioridad a la bellota sobre cualquier zona de toque de edificio, así que siempre se
-pueden recoger.
+pueden recoger. En Eventos, la fila de las bellotas tiene **Pista** (la cámara vuela hasta una de las que faltan y un haz de luz dorado la
+señala hasta que la recoges) y **Resolver** (enseña todas las que faltaban con haces rojos, pero la tarea del día se da por hecha sin premio;
+`forfeitTask` en el motor).
 
 Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo se vuelve cálido, se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad. El agua tiene olas low-poly animadas y hay barcas que se balancean en el muelle.
 

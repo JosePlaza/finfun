@@ -202,3 +202,31 @@ export function Acorn({ position, onPick }: { position: V3; onPick: () => void }
     </group>
   )
 }
+
+/** Haz de luz dorado que señala un punto del suelo (pista de bellota). Pulsa despacio para llamar la atención. */
+export function Beacon({ position, color = C.gold }: { position: V3; color?: string }) {
+  const ref = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.getElapsedTime()
+    const k = 1 + Math.sin(t * 3) * 0.08
+    ref.current.scale.set(k, 1, k)
+    ref.current.rotation.y = t * 0.6
+  })
+  return (
+    <group ref={ref} position={position}>
+      <mesh position={[0, 4, 0]}>
+        <cylinderGeometry args={[0.25, 0.8, 8, 12, 1, true]} />
+        <meshBasicMaterial color={color} transparent opacity={0.55} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.7, 1.0, 24]} />
+        <meshBasicMaterial color={color} transparent opacity={0.8} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.3, 1.5, 24]} />
+        <meshBasicMaterial color={color} transparent opacity={0.4} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}

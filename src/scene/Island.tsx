@@ -3,15 +3,15 @@ import { Canvas, events as defaultEvents, useFrame, useThree } from '@react-thre
 import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
-import { calendarOf, currentMonth, TASK_ACORNS } from '../sim'
-import { mulberry32, rngFor } from '../sim/rng'
+import { calendarOf, currentMonth } from '../sim'
+import { mulberry32 } from '../sim/rng'
 import { useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
-import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, islandPose, PIER, SITES, type BuildingDef, type BuildingId } from './registry'
+import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, fitDistance, ISLAND_VIEW, islandPose, PIER, SITES, type BuildingDef, type BuildingId } from './registry'
 import { makeTerrain, scatter, type Terrain } from './terrain'
-import { acornSpotsOn } from './acorns'
+import { acornSpotsFor, acornSpotsOn } from './acorns'
 import { CoastRocks, Ground, Path, Water } from './Landscape'
-import { Acorn, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
+import { Acorn, Beacon, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
 import { Plinth } from './kit/Parts'
 import { Ball, Bike, Kite, Telescope } from './kit/Objects'
 import { House } from './buildings/House'
@@ -25,17 +25,6 @@ import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } 
 import { forwardOf } from './registry'
 
 type V3 = [number, number, number]
-
-/** Qué cinco lugares tocan hoy (determinista por semilla y mes). */
-function acornSpotsFor(seed: number, month: number, count: number): number[] {
-  const rng = rngFor(seed, month, 41)
-  const idx = Array.from({ length: count }, (_, i) => i)
-  for (let i = idx.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[idx[i], idx[j]] = [idx[j], idx[i]]
-  }
-  return idx.slice(0, TASK_ACORNS)
-}
 
 /**
  * Momento del día. Nunca oscurecemos la isla: por la tarde-noche el cielo se vuelve cálido,
@@ -103,9 +92,17 @@ function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number
  */
 const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio'])
 
-function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3> }) {
+function CameraRig({ controls, positions, terrain }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3>; terrain: Terrain }) {
+  /** Vista cercana de un punto del suelo (pista de bellota): mismo ángulo que la vista general, mucho más cerca. */
+  const focusPose = (x: number, z: number, fov: number, aspect: number) => {
+    const t: V3 = [x, terrain.height(x, z) + 0.5, z]
+    const d = fitDistance(14, 12, fov, aspect)
+    const dir = ISLAND_VIEW.dir
+    return { target: t, position: [t[0] + dir[0] * d, t[1] + dir[1] * d, t[2] + dir[2] * d] as V3 }
+  }
   const view = useGame((s) => s.view)
   const infoBuilding = useGame((s) => s.infoBuilding)
+  const focusPoint = useGame((s) => s.focusPoint)
   const { camera, size } = useThree()
   const goalPos = useRef(new THREE.Vector3())
   const goalTarget = useRef(new THREE.Vector3())
@@ -120,11 +117,16 @@ function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitCon
     const fov = (camera as THREE.PerspectiveCamera).fov
     // Qué edificio mira la cámara: el lugar de la vista, o el edificio de la ficha.
     const target: BuildingId | null = view === 'edificio' ? infoBuilding : OVERVIEW_VIEWS.has(view) ? null : (view as BuildingId)
-    const key = `${view}:${target ?? ''}:${portrait ? 'p' : 'l'}`
+    const focus = view === 'isla' ? focusPoint : null
+    const key = `${view}:${target ?? ''}:${focus ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
-      const pose = target ? cameraPoseFor(BUILDING_BY_ID[target], positions[target], fov, aspect, portrait ? 0.5 : 0) : islandPose(fov, aspect, portrait)
+      const pose = focus
+        ? focusPose(focus[0], focus[1], fov, aspect)
+        : target
+          ? cameraPoseFor(BUILDING_BY_ID[target], positions[target], fov, aspect, portrait ? 0.5 : 0)
+          : islandPose(fov, aspect, portrait)
       goalPos.current.set(...pose.position)
       goalTarget.current.set(...pose.target)
     }
@@ -179,6 +181,8 @@ function Scene() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
   const acornsFound = useGame((s) => s.acornsFound)
+  const acornHint = useGame((s) => s.acornHint)
+  const acornReveal = useGame((s) => s.acornReveal)
   const { collect, setView, pickAcorn, showBuilding } = useGame.getState()
   const controls = useRef<OrbitControlsImpl>(null)
 
@@ -335,11 +339,18 @@ function Scene() {
       {has('telescopio') && <Telescope position={at(-10.5, -10.5)} />}
 
       {/* ===== BELLOTAS DEL DÍA ===== */}
-      {taskAvailable &&
+      {(taskAvailable || acornReveal) &&
         spots.map((spotIndex, i) => {
           if (acornsFound.includes(i)) return null
           const [x, z] = acornSpots[spotIndex]
-          return <Acorn key={`${month}-${i}`} position={at(x, z)} onPick={() => pickAcorn(i)} />
+          const pos = at(x, z)
+          const showBeacon = acornReveal || acornHint === i
+          return (
+            <group key={`${month}-${i}`}>
+              <Acorn position={pos} onPick={() => taskAvailable && pickAcorn(i)} />
+              {showBeacon && <Beacon position={pos} color={acornReveal ? '#ff8a7a' : undefined} />}
+            </group>
+          )
         })}
 
       <OrbitControls
@@ -353,7 +364,7 @@ function Scene() {
         maxPolarAngle={1.25}
         touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
       />
-      <CameraRig controls={controls} positions={positions} />
+      <CameraRig controls={controls} positions={positions} terrain={terrain} />
     </>
   )
 }

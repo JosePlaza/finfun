@@ -185,6 +185,16 @@ function payTax(state: GameState, cents: number): number {
   return cents - left
 }
 
+/** El jugador pide ver dónde estaban todas las bellotas: la tarea de hoy se da por terminada sin premio. */
+export function forfeitTask(input: GameState, nowMs: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  const month = currentMonth(state, nowMs)
+  if (state.taskDoneMonth >= month) return { ok: false, reason: 'Hoy ya no quedan bellotas por recoger.' }
+  state.taskDoneMonth = month
+  log(state, { kind: 'tarea', month, amountCents: 0, label: 'Pediste ver las bellotas: hoy sin premio' })
+  return done(state)
+}
+
 /** Patrimonio en bonos (lo prestado, pendiente de devolver). */
 export function bondsTotal(state: GameState): number {
   return state.bonds.reduce((a, b) => a + b.principalCents, 0)

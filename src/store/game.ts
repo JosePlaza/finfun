@@ -12,6 +12,7 @@ import {
   createGame,
   currentMonth,
   deposit as simDeposit,
+  forfeitTask,
   formatCents,
   migrate,
   readLesson as simReadLesson,
@@ -24,6 +25,7 @@ import {
   type TaxMode,
 } from '../sim'
 import type { BuildingId } from '../scene/registry'
+import { dayAcornSpots } from '../scene/acorns'
 import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
@@ -76,6 +78,12 @@ interface Store {
   wheelOpen: boolean
   /** Meses de isla en los que ya hemos abierto la ruleta automáticamente (para no insistir). */
   wheelAutoShownFor: number
+  /** Pista: índice de la bellota señalada ahora mismo (o null). */
+  acornHint: number | null
+  /** Resolver: se enseñan todas las bellotas que faltaban (sin premio) hasta que cambie el mes. */
+  acornReveal: boolean
+  /** Punto de la isla al que vuela la cámara (pista de bellota); null = vista general. */
+  focusPoint: [number, number] | null
 
   boot: () => Promise<void>
   tick: () => void
@@ -85,6 +93,8 @@ interface Store {
   withdraw: (cents: number) => void
   buy: (itemId: string) => void
   pickAcorn: (index: number) => void
+  hintAcorn: () => void
+  revealAcorns: () => void
   buildHuerto: () => void
   buyBond: (offerId: string, cents: number) => void
   chooseTaxMode: (mode: TaxMode) => void
@@ -151,6 +161,9 @@ export const useGame = create<Store>()(
         celebration: null,
         wheelOpen: false,
         wheelAutoShownFor: -1,
+        acornHint: null,
+        acornReveal: false,
+        focusPoint: null,
 
         boot: async () => {
           try {
@@ -188,6 +201,9 @@ export const useGame = create<Store>()(
           if (month !== get().acornsMonth) {
             patch.acornsFound = []
             patch.acornsMonth = month
+            patch.acornHint = null
+            patch.acornReveal = false
+            patch.focusPoint = null
           }
           // Si hay un año por cerrar, la ruleta aparece sola una vez por mes de isla.
           if (advanced.pendingYearEnds.length > 0 && !advanced.dead && get().wheelAutoShownFor !== month && !get().wheelOpen) {
@@ -250,6 +266,31 @@ export const useGame = create<Store>()(
           } else {
             get().showToast(`Bellota ${next.length} de ${TASK_ACORNS}`)
           }
+          if (get().acornHint === index) set({ acornHint: null, focusPoint: null })
+        },
+        hintAcorn: () => {
+          const g = get().game
+          const t = now()
+          if (!g || !canDoTask(g, t)) return
+          const found = get().acornsFound
+          const daySpots = dayAcornSpots(g.seed, currentMonth(g, t))
+          const missing = daySpots.map((_, i) => i).filter((i) => !found.includes(i))
+          if (missing.length === 0) return
+          // Siempre la misma mientras no la recojas: así la pista no cambia si la pides dos veces.
+          const current = get().acornHint
+          const index = current !== null && missing.includes(current) ? current : missing[Math.floor(Math.random() * missing.length)]
+          const [x, z] = daySpots[index]
+          set({ acornHint: index, focusPoint: [x, z], view: 'isla' })
+          get().showToast('Mira el haz de luz: ahí hay una bellota.')
+        },
+        revealAcorns: () => {
+          const g = get().game
+          if (!g) return
+          const r = forfeitTask(g, now())
+          if (!r.ok) return get().showToast(r.reason)
+          set({ game: r.state, acornReveal: true, acornHint: null, focusPoint: null, view: 'isla' })
+          scheduleRemoteSave(r.state)
+          get().showToast('Ahí estaban. Hoy no hay premio; mañana, cinco nuevas.')
         },
         buildHuerto: () => {
           const g = get().game
@@ -303,6 +344,8 @@ export const useGame = create<Store>()(
             patch.seenMissions = missionsFor(g).completed
           }
           if (view !== 'edificio') patch.infoBuilding = null
+          // Salir de la isla (o volver a ella desde un panel) deja la cámara libre otra vez.
+          if (view !== 'isla') patch.focusPoint = null
           set(patch)
         },
         showToast: (text) => {

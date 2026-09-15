@@ -12,6 +12,7 @@ import {
   completeTask,
   createGame,
   deposit,
+  forfeitTask,
   inflationForYear,
   inflatePrice,
   monthlyInterest,
@@ -298,6 +299,20 @@ describe('Nivel 2: bonos y Hacienda', () => {
     expect(tax.amountCents).toBe(-76) // 19 % de cuatro cupones de 1 euroLuky
     expect(s.declarations).toHaveLength(1)
     expect(s.yearPendingTaxableCents).toBe(0)
+  })
+})
+
+describe('pistas de bellotas', () => {
+  it('resolver termina la tarea del día sin premio y no cuenta como completada', () => {
+    const s0 = advanceTo(fresh(), at(0))
+    const r = forfeitTask(s0, at(0))
+    expect(r.ok).toBe(true)
+    const s1 = must(r)
+    expect(s1.huchaCents).toBe(0)
+    expect(s1.tasksCompleted).toBe(0)
+    expect(completeTask(s1, at(0)).ok).toBe(false)
+    expect(forfeitTask(s1, at(0)).ok).toBe(false)
+    expect(completeTask(s1, at(1)).ok).toBe(true) // mañana, bellotas nuevas
   })
 })
 

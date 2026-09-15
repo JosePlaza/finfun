@@ -1,5 +1,7 @@
-import { BUILDINGS, PIER } from './registry'
-import { scatter, type Terrain } from './terrain'
+import { TASK_ACORNS } from '../sim/config'
+import { rngFor } from '../sim/rng'
+import { BUILDINGS, PIER, SITES } from './registry'
+import { makeTerrain, scatter, type Terrain } from './terrain'
 
 /**
  * Lugares donde pueden aparecer bellotas. Se calculan sobre el terreno de la isla con tres garantías:
@@ -20,3 +22,27 @@ export function acornSpotsOn(terrain: Terrain): [number, number][] {
   return out
 }
 
+
+/** Qué cinco lugares tocan hoy (índices sobre la lista de sitios; determinista por semilla y mes). */
+export function acornSpotsFor(seed: number, month: number, count: number): number[] {
+  const rng = rngFor(seed, month, 41)
+  const idx = Array.from({ length: count }, (_, i) => i)
+  for (let i = idx.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[idx[i], idx[j]] = [idx[j], idx[i]]
+  }
+  return idx.slice(0, TASK_ACORNS)
+}
+
+const spotsCache = new Map<number, [number, number][]>()
+
+/** Coordenadas (x, z) de las bellotas de hoy, para quien no tiene el terreno a mano (el store, los paneles). */
+export function dayAcornSpots(seed: number, month: number): [number, number][] {
+  let all = spotsCache.get(seed)
+  if (!all) {
+    all = acornSpotsOn(makeTerrain(seed % 1000, SITES))
+    spotsCache.set(seed, all)
+  }
+  const spots = all
+  return acornSpotsFor(seed, month, spots.length).map((i) => spots[i])
+}
