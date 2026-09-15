@@ -36,7 +36,7 @@ plusvalías). El jugador elige el modo en Hacienda.
 | **Faro (Doña Tortuga)** [hecho] | Diario de cierre de año con el "¿y si…?" contrafactual. Ayuda. | Coste de oportunidad. |
 | **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. |
 
-Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · 50 en el banco · **la bici abre el Nivel 2**.
+Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · comida para 3 meses · **la bici abre el Nivel 2**. Todas se pueden hacer desde el primer día: el banco no abre hasta cerrar el año, así que su misión va en el Nivel 2.
 
 ---
 
@@ -48,7 +48,7 @@ Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar a
 | **Hacienda (Don Búho)** [hecho] | Elegir cómo pagar el 19 %: **en cada cobro** (retención instantánea) o **una vez al año** (todo bruto, declaración al cerrar el año; si no hay dinero queda deuda que se cobra en cuanto lo hay). Historial de declaraciones. | Los impuestos existen y financian lo común; diferir el pago deja más dinero componiendo. |
 | **Escuela** [hecho] | Seis lecciones cortas (inflación, interés compuesto, bono, impuestos, riesgo, comida). Leer una da un carné. | Vocabulario y conceptos, con calma. |
 
-Misiones N2: primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
+Misiones N2: 50 en el banco · primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
 
 Diseño pendiente N2: **visitar la isla de la Liebre** (vecina desde el inicio), que gasta todo cada mes: su patrimonio se ve al lado del tuyo en el diario.
 

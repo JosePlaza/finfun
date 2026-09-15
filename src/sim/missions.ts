@@ -53,7 +53,7 @@ function world1Board(state: GameState): MissionBoard {
     m('bellotas', 'Recoge bellotas 3 días', 'Cada día hay 5 bellotas escondidas por la isla. Recógelas y ganarás dinero.', 'isla', '🌰', state.tasksCompleted ?? 0, 3),
     m('deseo', 'Compra algo que te apetezca', 'Un helado vale. Gastar también es decidir.', 'tienda', '🛍️', state.purchases.filter((p) => !p.itemId.startsWith('cesta')).length, 1),
     m('ahorro', 'Guarda 100 en el cofre', 'Junta 100 euroLukys sin gastarlos. Espera y verás.', 'cofre', '🪙', state.huchaCents + state.bankCents, 100_00),
-    m('banco', 'Lleva 50 al banco', 'Cuando abra el banco, mete allí al menos 50 euroLukys.', 'banco', '🏦', state.bankCents, 50_00),
+    m('despensa', 'Comida para 3 meses', 'Ten la despensa llena para tres meses a la vez. Quien planifica, no pasa hambre.', 'tienda', '🍎', state.foodMonths ?? 0, 3),
     m('bici', 'Compra la bici', 'Cuesta 180. Con ella se abre el camino al Ayuntamiento y a los bonos.', 'tienda', '🚲', hasBici ? 1 : 0, 1),
   ]
   return board(1, 'La Isla', missions, 'Nivel 2 · El Ayuntamiento: bonos y Don Búho')
@@ -62,6 +62,7 @@ function world1Board(state: GameState): MissionBoard {
 function world2Board(state: GameState): MissionBoard {
   const coupons = state.ledger.filter((e) => e.kind === 'cupon').length
   const missions: Mission[] = [
+    m('banco', 'Lleva 50 al banco', 'El banco abre al cerrar el primer año. Mete allí al menos 50 euroLukys y verás el interés cada mes.', 'banco', '🏦', state.bankCents, 50_00),
     m('bono', 'Compra tu primer bono', 'En el Ayuntamiento: prestas dinero y te pagan un cupón cada trimestre.', 'ayuntamiento', '📜', state.bondsBought ?? 0, 1),
     m('cupon', 'Cobra un cupón', 'A los tres meses de comprar un bono llega el primer cupón al cofre.', 'ayuntamiento', '🪙', coupons, 1),
     m('hacienda', 'Visita a Don Búho', 'Decide en Hacienda si pagas en cada cobro o una vez al año.', 'hacienda', '🦉', state.taxModeChosen ? 1 : 0, 1),
