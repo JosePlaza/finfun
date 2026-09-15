@@ -381,6 +381,26 @@ textarea {
   box-shadow: 0 3px 0 var(--color-cream-d);
 }
 .g-row--muted { background: var(--color-cream); opacity: 0.8; }
+/* Tarjeta con cabecera (icono + textos) y pie con los botones */
+.g-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--color-cream-d);
+}
+.g-card__head { display: flex; align-items: center; gap: 12px; }
+.g-card__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid var(--color-cream);
+}
+.g-card__foot > .g-btn { flex: 1 1 0; }
+.g-card__foot > .g-btn:only-child { flex: 0 0 auto; min-width: 45%; }
 
 /* Icono "asset" del kit: círculo con luz radial, contorno blanco y sombra */
 .g-icon {

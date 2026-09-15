@@ -279,36 +279,40 @@ function EventosPanel() {
       ) : (
         <ul className="grid gap-2">
           {events.map((e) => (
-            <li key={e.id} className="g-row">
-              <span className={`g-icon g-icon--${e.tone}`} aria-hidden="true">
-                {e.icon}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{e.title}</div>
-                <div className="text-[12.5px] font-semibold text-ink-l leading-snug">{e.detail}</div>
-              </div>
-              {e.id === 'paga' ? (
-                <button type="button" onClick={collect} className="g-btn g-btn--orange g-btn--sm">
-                  Recoger
-                </button>
-              ) : e.id === 'ruleta' ? (
-                <button type="button" onClick={() => openWheel(true)} className="g-btn g-btn--purple g-btn--sm">
-                  Girar
-                </button>
-              ) : e.id === 'bellotas' ? (
-                <div className="flex flex-col gap-1.5 shrink-0">
-                  <button type="button" onClick={hintAcorn} className="g-btn g-btn--blue g-btn--sm" title="Te enseña dónde está una de las que faltan">
-                    Pista
-                  </button>
-                  <button type="button" onClick={revealAcorns} className="g-btn g-btn--cream g-btn--sm" title="Te enseña todas, pero hoy no hay premio">
-                    Resolver
-                  </button>
+            <li key={e.id} className="g-card">
+              <div className="g-card__head">
+                <span className={`g-icon g-icon--${e.tone}`} aria-hidden="true">
+                  {e.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{e.title}</div>
+                  <div className="text-[12.5px] font-semibold text-ink-l leading-snug">{e.detail}</div>
                 </div>
-              ) : (
-                <button type="button" onClick={() => setView(e.view)} className="g-btn g-btn--blue g-btn--sm">
-                  Ir
-                </button>
-              )}
+              </div>
+              <div className="g-card__foot">
+                {e.id === 'paga' ? (
+                  <button type="button" onClick={collect} className="g-btn g-btn--orange g-btn--sm">
+                    Recoger
+                  </button>
+                ) : e.id === 'ruleta' ? (
+                  <button type="button" onClick={() => openWheel(true)} className="g-btn g-btn--purple g-btn--sm">
+                    Girar
+                  </button>
+                ) : e.id === 'bellotas' ? (
+                  <>
+                    <button type="button" onClick={revealAcorns} className="g-btn g-btn--cream g-btn--sm" title="Te enseña todas, pero hoy no hay premio">
+                      Resolver
+                    </button>
+                    <button type="button" onClick={hintAcorn} className="g-btn g-btn--blue g-btn--sm" title="Te enseña dónde está una de las que faltan">
+                      Pista
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => setView(e.view)} className="g-btn g-btn--blue g-btn--sm">
+                    Ir
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -663,28 +667,32 @@ function MisionesPanel() {
       </Tortuga>
       <ul className="grid gap-2 mt-3">
         {board.missions.map((mi) => (
-          <li key={mi.id} className={`g-row ${mi.done ? 'g-row--muted' : ''}`}>
-            <span className={`g-icon ${mi.done ? 'g-icon--green' : ''}`} aria-hidden="true">
-              {mi.done ? '✓' : mi.icon}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className={`font-display font-extrabold text-[15px] leading-tight ${mi.done ? 'text-green-d line-through' : 'text-ink'}`}>{mi.title}</div>
-              {!mi.done && <div className="text-ink-l text-[12.5px] font-semibold leading-snug mt-0.5">{mi.hint}</div>}
-              {!mi.done && mi.goal > 1 && (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <div className="g-bar g-bar--sm flex-1">
-                    <i style={{ width: `${(mi.progress / mi.goal) * 100}%` }} />
+          <li key={mi.id} className={mi.done ? 'g-row g-row--muted' : 'g-card'}>
+            <div className={mi.done ? 'contents' : 'g-card__head'}>
+              <span className={`g-icon ${mi.done ? 'g-icon--green' : ''}`} aria-hidden="true">
+                {mi.done ? '✓' : mi.icon}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className={`font-display font-extrabold text-[15px] leading-tight ${mi.done ? 'text-green-d line-through' : 'text-ink'}`}>{mi.title}</div>
+                {!mi.done && <div className="text-ink-l text-[12.5px] font-semibold leading-snug mt-0.5">{mi.hint}</div>}
+                {!mi.done && mi.goal > 1 && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="g-bar g-bar--sm flex-1">
+                      <i style={{ width: `${(mi.progress / mi.goal) * 100}%` }} />
+                    </div>
+                    <span className="text-[11px] font-extrabold text-ink-3 tabular-nums">
+                      {mi.goal >= 100 ? `${formatCents(mi.progress)}/${formatCents(mi.goal)}` : `${mi.progress}/${mi.goal}`}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-extrabold text-ink-3 tabular-nums">
-                    {mi.goal >= 100 ? `${formatCents(mi.progress)}/${formatCents(mi.goal)}` : `${mi.progress}/${mi.goal}`}
-                  </span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             {!mi.done && (
-              <button type="button" onClick={() => setView(mi.place)} className="g-btn g-btn--blue g-btn--sm">
-                Ir
-              </button>
+              <div className="g-card__foot">
+                <button type="button" onClick={() => setView(mi.place)} className="g-btn g-btn--blue g-btn--sm">
+                  Ir
+                </button>
+              </div>
             )}
           </li>
         ))}
