@@ -58,13 +58,26 @@ export interface ShopItemDef {
 }
 
 export const SHOP_ITEMS: ShopItemDef[] = [
+  // Comida
   { id: 'cesta-pequena', name: 'Cesta pequeña', basePriceCents: 5_00, kind: 'comida', description: 'Comida para un mes.', ivaPct: 4, icon: '🧺', foodMonths: 1 },
-  { id: 'cesta-grande', name: 'Cesta grande', basePriceCents: 9_50, kind: 'comida', description: 'Comida para dos meses. Sale más barata.', ivaPct: 4, icon: '🍎', foodMonths: 2 },
+  { id: 'cesta-grande', name: 'Cesta grande', basePriceCents: 9_50, kind: 'comida', description: 'Dos meses. Sale más barata.', ivaPct: 4, icon: '🍎', foodMonths: 2 },
+  // Caprichos (se gastan)
+  { id: 'chuches', name: 'Chuches', basePriceCents: 1_00, kind: 'consumible', description: 'Un puñado para la tarde.', ivaPct: 10, icon: '🍬' },
   { id: 'helado', name: 'Helado', basePriceCents: 2_00, kind: 'consumible', description: 'Se derrite, pero qué rico.', ivaPct: 10, icon: '🍦' },
-  { id: 'cometa', name: 'Cometa', basePriceCents: 25_00, kind: 'objeto', description: 'Vuela sobre la meseta cuando hay viento.', ivaPct: 21, icon: '🪁' },
-  { id: 'balon', name: 'Balón', basePriceCents: 40_00, kind: 'objeto', description: 'Para la explanada junto a la casa.', ivaPct: 21, icon: '⚽' },
-  { id: 'bici', name: 'Bici', basePriceCents: 180_00, kind: 'objeto', description: 'Con ella se abre el camino al Ayuntamiento.', ivaPct: 21, icon: '🚲' },
-  { id: 'telescopio', name: 'Telescopio', basePriceCents: 450_00, kind: 'objeto', description: 'Para mirar el continente desde el acantilado.', ivaPct: 21, icon: '🔭' },
+  { id: 'comic', name: 'Cómic', basePriceCents: 4_00, kind: 'consumible', description: 'Una aventura en cada número.', ivaPct: 4, icon: '📖' },
+  { id: 'cine', name: 'Cine', basePriceCents: 6_00, kind: 'consumible', description: 'Sesión de tarde en la Posada.', ivaPct: 10, icon: '🎬' },
+  // Cosas que se quedan en la isla
+  { id: 'cometa', name: 'Cometa', basePriceCents: 25_00, kind: 'objeto', description: 'Vuela sobre la casa con viento.', ivaPct: 21, icon: '🪁' },
+  { id: 'balon', name: 'Balón', basePriceCents: 40_00, kind: 'objeto', description: 'Para la explanada de la casa.', ivaPct: 21, icon: '⚽' },
+  { id: 'patinete', name: 'Patinete', basePriceCents: 95_00, kind: 'objeto', description: 'Para bajar la cuesta del faro.', ivaPct: 21, icon: '🛴' },
+  { id: 'tienda-campana', name: 'Tienda de campaña', basePriceCents: 120_00, kind: 'objeto', description: 'Noches mirando las estrellas.', ivaPct: 21, icon: '⛺' },
+  { id: 'columpio', name: 'Columpio', basePriceCents: 150_00, kind: 'objeto', description: 'De madera, para el jardín.', ivaPct: 21, icon: '🪢' },
+  { id: 'bici', name: 'Bici', basePriceCents: 180_00, kind: 'objeto', description: 'Abre el camino al Ayuntamiento.', ivaPct: 21, icon: '🚲' },
+  { id: 'guitarra', name: 'Guitarra', basePriceCents: 260_00, kind: 'objeto', description: 'Tres acordes y una canción.', ivaPct: 21, icon: '🎸' },
+  { id: 'camara', name: 'Cámara', basePriceCents: 320_00, kind: 'objeto', description: 'Guarda los atardeceres.', ivaPct: 21, icon: '📷' },
+  { id: 'telescopio', name: 'Telescopio', basePriceCents: 450_00, kind: 'objeto', description: 'Mira el continente desde el faro.', ivaPct: 21, icon: '🔭' },
+  { id: 'consola', name: 'Consola', basePriceCents: 600_00, kind: 'objeto', description: 'Cuesta lo que veinte pagas.', ivaPct: 21, icon: '🎮' },
+  { id: 'canoa', name: 'Canoa', basePriceCents: 900_00, kind: 'objeto', description: 'Rema hasta el islote de la Liebre.', ivaPct: 21, icon: '🛶' },
 ]
 
 /** El objeto cuya compra desbloquea el Nivel 2. */

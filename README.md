@@ -127,7 +127,7 @@ La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operat
 - Comida: cada mes se come una ración de la despensa (se empieza con 3). Cesta pequeña 5 (1 mes), cesta grande 9,50 (2 meses). Seis meses sin comer terminan la aventura y hay que empezar una isla nueva.
 - Huerto: construcción que paga el jugador (1000); da una cesta grande cada 3 meses para siempre.
 - Tarea diaria: cinco bellotas escondidas por la isla; al recogerlas, de 1 a 3 euroLukys y una celebración.
-- Tienda: comida y deseos (helado, cometa, balón, bici 180, telescopio). Comprar la bici abre el Nivel 2.
+- Tienda: comida (cestas), caprichos que se gastan (chuches, helado, cómic, cine) y cosas que se quedan en la isla (cometa, balón, patinete, tienda de campaña, columpio, bici 180, guitarra, cámara, telescopio, consola, canoa 900). Los objetos con modelo 3D aparecen alrededor de la casa, el telescopio junto al faro y la canoa en la playa. Comprar la bici abre el Nivel 2.
 - Inflación: al cerrar cada año aparece la **ruleta** (casillas 1,5–4 %) y la gira el jugador; hasta entonces los precios no suben. El resultado lo fija la semilla (`inflationForYear`), así la partida sigue siendo reproducible. Los artículos de 10 o más euroLukys quedan en enteros (180 → 185).
 - Banco: abre al cerrar el primer año; paga un 2,5 % anual repartido por meses.
 - Nivel 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.

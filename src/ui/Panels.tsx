@@ -368,7 +368,8 @@ function MyThings() {
   const game = useGame((s) => s.game)!
   const setView = useGame((s) => s.setView)
   const owned = SHOP_ITEMS.filter((d) => d.kind === 'objeto' && game.purchases.some((p) => p.itemId === d.id))
-  const eaten = game.purchases.filter((p) => p.itemId === 'helado').length
+  const treats = SHOP_ITEMS.filter((d) => d.kind === 'consumible').map((d) => ({ def: d, n: game.purchases.filter((p) => p.itemId === d.id).length })).filter((t) => t.n > 0)
+  const eaten = treats.reduce((a, t) => a + t.n, 0)
   return (
     <div className="mt-5">
       <div className="flex items-baseline justify-between mb-2">
@@ -387,12 +388,12 @@ function MyThings() {
               <div className="font-display font-extrabold text-[12px] text-ink text-center leading-tight">{d.name}</div>
             </div>
           ))}
-          {eaten > 0 && (
-            <div className="item-card !p-2 !gap-1">
-              <div className="item-card__icon !h-14 !text-3xl">🍦</div>
-              <div className="font-display font-extrabold text-[12px] text-ink text-center leading-tight">×{eaten}</div>
+          {treats.map((t) => (
+            <div key={t.def.id} className="item-card !p-2 !gap-1">
+              <div className="item-card__icon !h-14 !text-3xl">{t.def.icon}</div>
+              <div className="font-display font-extrabold text-[12px] text-ink text-center leading-tight">×{t.n}</div>
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>
@@ -466,18 +467,16 @@ function ItemGrid({ kinds }: { kinds: string[] }) {
             {owned && <span className="ribbon">Tuyo ✓</span>}
             <div className="item-card__icon">{def.icon}</div>
             <div>
-              <div className="font-display font-extrabold text-ink text-[17px] leading-tight">{def.name}</div>
-              <div className="text-ink-3 text-[12px] font-semibold leading-snug mt-0.5">{def.description}</div>
+              <div className="font-display font-extrabold text-ink text-[15px] leading-tight truncate">{def.name}</div>
+              <div className="item-card__desc">{def.description}</div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap mt-auto">
               <span className="price-tag">
                 <CoinIcon size={14} />
                 {formatCents(st.priceCents)}
               </span>
               {changed && <span className="text-ink-3 text-xs font-bold line-through tabular-nums">{formatCents(st.previousPriceCents)}</span>}
-            </div>
-            <div className="text-[10px] font-bold text-ink-3 -mt-1">
-              {perMonth !== null ? `${formatCents(Math.round(perMonth), { alwaysDecimals: true })} por mes · ` : ''}IVA {def.ivaPct} % incluido
+              {perMonth !== null && <span className="text-[10px] font-bold text-ink-3">{formatCents(Math.round(perMonth), { alwaysDecimals: true })} al mes</span>}
             </div>
             <button type="button" disabled={!can && !owned} onClick={() => !owned && buy(def.id)} className={`g-btn g-btn--sm ${owned ? 'g-btn--cream' : def.kind === 'comida' ? 'g-btn--green' : 'g-btn--orange'}`}>
               {owned ? 'En tu isla' : can ? 'Comprar' : 'Te falta'}

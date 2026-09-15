@@ -556,6 +556,19 @@ textarea {
 }
 .item-card--owned { box-shadow: 0 0 0 3px var(--color-green), 0 4px 0 3px var(--color-green-d); }
 .item-card--can { box-shadow: 0 0 0 3px var(--color-orange), 0 4px 0 3px var(--color-orange-d); }
+.item-card__desc {
+  color: var(--color-ink-3);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 2px;
+  /* Siempre dos líneas: así todas las tarjetas miden lo mismo */
+  min-height: calc(2 * 1.3em);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .item-card__icon {
   height: 72px;
   border-radius: 14px;

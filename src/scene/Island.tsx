@@ -13,7 +13,7 @@ import { acornSpotsFor, acornSpotsOn } from './acorns'
 import { CoastRocks, Ground, Path, Water } from './Landscape'
 import { Acorn, Beacon, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
 import { Plinth } from './kit/Parts'
-import { Ball, Bike, Kite, Telescope } from './kit/Objects'
+import { Ball, Bike, Canoe, Kite, Scooter, Swing, Telescope, Tent } from './kit/Objects'
 import { House } from './buildings/House'
 import { Bank } from './buildings/Bank'
 import { Lighthouse } from './buildings/Lighthouse'
@@ -35,6 +35,8 @@ function isEveningNow(): boolean {
   const h = forced ? Number(forced) : new Date().getHours()
   return h < 8 || h >= 19
 }
+
+const CASA = BUILDING_BY_ID.casa
 
 /** Qué hace un vecino al llegar a cada edificio. */
 const STOP_ACTION: Partial<Record<BuildingId, Action>> = {
@@ -333,10 +335,15 @@ function Scene() {
       <Ambient terrain={terrain} routes={routes} doers={doers} />
 
       {/* ===== OBJETOS COMPRADOS ===== */}
-      {has('cometa') && <Kite position={at(6.5, 6.5)} />}
-      {has('balon') && <Ball position={at(7.5, 5.5)} />}
-      {has('bici') && <Bike position={at(6.8, 4.2)} rotation={0.9} />}
-      {has('telescopio') && <Telescope position={at(-10.5, -10.5)} />}
+      {/* Alrededor de la casa, sobre su explanada; el telescopio en el acantilado del faro y la canoa en la playa. */}
+      {has('cometa') && <Kite position={at(CASA.x - 2.6, CASA.z + 2.6)} />}
+      {has('balon') && <Ball position={at(CASA.x - 1.2, CASA.z + 3.4)} />}
+      {has('patinete') && <Scooter position={at(CASA.x + 3.2, CASA.z + 1.4)} rotation={1.2} />}
+      {has('bici') && <Bike position={at(CASA.x + 3.4, CASA.z - 0.4)} rotation={0.9} />}
+      {has('tienda-campana') && <Tent position={at(CASA.x - 3.6, CASA.z - 1.0)} rotation={0.6} />}
+      {has('columpio') && <Swing position={at(CASA.x + 0.8, CASA.z - 3.6)} rotation={0.3} />}
+      {has('telescopio') && <Telescope position={at(BUILDING_BY_ID.faro.x + 3.2, BUILDING_BY_ID.faro.z + 3.4)} />}
+      {has('canoa') && <Canoe position={[PIER.x - 3.2, 0.05, PIER.z + 1.2]} rotation={0.5} />}
 
       {/* ===== BELLOTAS DEL DÍA ===== */}
       {(taskAvailable || acornReveal) &&

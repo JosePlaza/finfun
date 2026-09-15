@@ -77,3 +77,80 @@ export function Telescope({ position }: { position: V3 }) {
     </group>
   )
 }
+
+export function Scooter({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {[-0.3, 0.3].map((x) => (
+        <mesh key={x} position={[x, 0.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.06, 10]} />
+          <Mat color="#2b2b2b" />
+        </mesh>
+      ))}
+      <Box size={[0.55, 0.04, 0.14]} position={[0, 0.16, 0]} color={C.roofRed} />
+      <Box size={[0.04, 0.8, 0.04]} position={[0.3, 0.55, 0]} rotation={[0, 0, -0.15]} color={C.metal} />
+      <Box size={[0.05, 0.05, 0.36]} position={[0.36, 0.94, 0]} color="#2b2b2b" />
+    </group>
+  )
+}
+
+export function Tent({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.55, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+        <boxGeometry args={[0.8, 0.8, 1.4]} />
+        <Mat color={C.roofOrange} flat />
+      </mesh>
+      {/* suelo y puerta */}
+      <Box size={[1.2, 0.04, 1.5]} position={[0, 0.02, 0]} color="#b85a2a" />
+      <mesh position={[0, 0.3, 0.71]}>
+        <coneGeometry args={[0.26, 0.55, 3]} />
+        <Mat color="#3a3633" />
+      </mesh>
+    </group>
+  )
+}
+
+export function Swing({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  const seat = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (seat.current) seat.current.rotation.x = Math.sin(clock.getElapsedTime() * 1.6) * 0.45
+  })
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {[-0.7, 0.7].map((x) => (
+        <group key={x}>
+          <Box size={[0.08, 2.0, 0.08]} position={[x, 1.0, 0.35]} rotation={[-0.34, 0, 0]} color={C.wood} />
+          <Box size={[0.08, 2.0, 0.08]} position={[x, 1.0, -0.35]} rotation={[0.34, 0, 0]} color={C.wood} />
+        </group>
+      ))}
+      <Box size={[1.6, 0.08, 0.08]} position={[0, 1.95, 0]} color={C.woodDark} />
+      <group ref={seat} position={[0, 1.95, 0]}>
+        {[-0.22, 0.22].map((x) => (
+          <Box key={x} size={[0.02, 1.3, 0.02]} position={[x, -0.65, 0]} color={C.metal} />
+        ))}
+        <Box size={[0.6, 0.05, 0.22]} position={[0, -1.3, 0]} color={C.roofRed} />
+      </group>
+    </group>
+  )
+}
+
+export function Canoe({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  const ref = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.getElapsedTime()
+    ref.current.position.y = position[1] + Math.sin(t * 1.4) * 0.04
+    ref.current.rotation.z = Math.sin(t * 1.1) * 0.05
+  })
+  return (
+    <group ref={ref} position={position} rotation={[0, rotation, 0]}>
+      <mesh scale={[1, 0.45, 0.32]} castShadow>
+        <sphereGeometry args={[1.1, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+        <Mat color={C.roofRed} flat />
+      </mesh>
+      <Box size={[1.6, 0.04, 0.5]} position={[0, 0.02, 0]} color={C.woodLight} />
+      <Box size={[0.04, 0.04, 1.3]} position={[0.3, 0.12, 0]} rotation={[0, 0, 0.5]} color={C.wood} />
+    </group>
+  )
+}
