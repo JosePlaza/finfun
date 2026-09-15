@@ -2,23 +2,54 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
   advanceTo,
+  buildHuerto as simBuildHuerto,
   buy as simBuy,
+  buyBond as simBuyBond,
   canDoTask,
+  chooseTaxMode as simChooseTaxMode,
   collectMailbox,
   completeTask,
   createGame,
   currentMonth,
   deposit as simDeposit,
+  formatCents,
+  readLesson as simReadLesson,
+  spinInflation as simSpinInflation,
   TASK_ACORNS,
   missionsFor,
   withdraw as simWithdraw,
   type ActionResult,
   type GameState,
+  type TaxMode,
 } from '../sim'
+import type { BuildingId } from '../scene/registry'
 import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
-export type View = 'isla' | 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'misiones' | 'eventos' | 'patrimonio'
+export type View =
+  | 'isla'
+  | 'casa'
+  | 'cofre'
+  | 'banco'
+  | 'tienda'
+  | 'faro'
+  | 'huerto'
+  | 'ayuntamiento'
+  | 'hacienda'
+  | 'escuela'
+  | 'edificio'
+  | 'misiones'
+  | 'eventos'
+  | 'patrimonio'
+
+/** Una celebración a pantalla completa (bellotas, mundo nuevo…). */
+export interface Celebration {
+  id: number
+  icon: string
+  title: string
+  text: string
+  tone: 'green' | 'purple' | 'orange'
+}
 
 interface Store {
   game: GameState | null
@@ -37,6 +68,13 @@ interface Store {
   seenBankOpen: boolean
   seenWorld: number
   seenMissions: number
+  /** Edificio cuya ficha se muestra en la vista 'edificio'. */
+  infoBuilding: BuildingId | null
+  celebration: Celebration | null
+  /** La ruleta de fin de año: abierta en pantalla o aparcada hasta que el jugador la abra desde Eventos. */
+  wheelOpen: boolean
+  /** Meses de isla en los que ya hemos abierto la ruleta automáticamente (para no insistir). */
+  wheelAutoShownFor: number
 
   boot: () => Promise<void>
   tick: () => void
@@ -46,7 +84,17 @@ interface Store {
   withdraw: (cents: number) => void
   buy: (itemId: string) => void
   pickAcorn: (index: number) => void
+  buildHuerto: () => void
+  buyBond: (offerId: string, cents: number) => void
+  chooseTaxMode: (mode: TaxMode) => void
+  readLesson: (id: string) => void
+  spinInflation: () => number | null
+  openWheel: (open: boolean) => void
+  restart: () => void
   setView: (v: View) => void
+  showBuilding: (id: BuildingId) => void
+  celebrate: (c: Omit<Celebration, 'id'>) => void
+  dismissCelebration: () => void
   showToast: (text: string) => void
   devAdvanceDays: (days: number) => void
   devReset: () => void
@@ -71,9 +119,18 @@ export const useGame = create<Store>()(
           get().showToast(r.reason)
           return
         }
+        const before = get().game
         set({ game: r.state })
         scheduleRemoteSave(r.state)
         if (okText) get().showToast(okText)
+        if (before && r.state.world > before.world) {
+          get().celebrate({
+            icon: '🎉',
+            title: `¡Se abre el Mundo ${r.state.world}!`,
+            text: r.state.world === 2 ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos. Desde ahora tus rendimientos pasan por Don Búho.' : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
+            tone: 'purple',
+          })
+        }
       }
 
       return {
@@ -89,6 +146,10 @@ export const useGame = create<Store>()(
         seenBankOpen: false,
         seenWorld: 1,
         seenMissions: 0,
+        infoBuilding: null,
+        celebration: null,
+        wheelOpen: false,
+        wheelAutoShownFor: -1,
 
         boot: async () => {
           await syncClock()
@@ -117,6 +178,12 @@ export const useGame = create<Store>()(
           if (month !== get().acornsMonth) {
             patch.acornsFound = []
             patch.acornsMonth = month
+          }
+          // Si hay un año por cerrar, la ruleta aparece sola una vez por mes de isla.
+          if (advanced.pendingYearEnds.length > 0 && !advanced.dead && get().wheelAutoShownFor !== month && !get().wheelOpen) {
+            patch.wheelOpen = true
+            patch.wheelAutoShownFor = month
+            patch.view = 'isla'
           }
           set(patch)
         },
@@ -162,10 +229,58 @@ export const useGame = create<Store>()(
             const r = completeTask(g, t)
             if (r.ok) {
               const reward = r.state.huchaCents - g.huchaCents
-              apply(r, `¡Bellotas recogidas! Ganas ${reward / 100} euroLukys.`)
+              apply(r)
+              get().celebrate({
+                icon: '🌰',
+                title: '¡Las cinco bellotas!',
+                text: `Has encontrado todas las bellotas de hoy. Ganas ${formatCents(reward)} ${reward === 100 ? 'euroLuky, que ya está' : 'euroLukys, que ya están'} en tu cofre. Mañana habrá cinco más.`,
+                tone: 'green',
+              })
             }
+          } else {
+            get().showToast(`Bellota ${next.length} de ${TASK_ACORNS}`)
           }
         },
+        buildHuerto: () => {
+          const g = get().game
+          if (!g) return
+          const r = simBuildHuerto(g, now())
+          apply(r)
+          if (r.ok) get().celebrate({ icon: '🌾', title: '¡Huerto construido!', text: 'Cada tres meses dará una cesta grande de comida, para siempre. Tu primera inversión que se come.', tone: 'green' })
+        },
+        buyBond: (offerId, cents) => {
+          const g = get().game
+          if (!g) return
+          apply(simBuyBond(g, now(), offerId, cents), 'Prestado. El primer cupón llega en tres meses.')
+        },
+        chooseTaxMode: (mode) => {
+          const g = get().game
+          if (!g) return
+          apply(simChooseTaxMode(g, now(), mode), mode === 'anual' ? 'Pagarás una vez al año.' : 'Pagarás en cada cobro.')
+        },
+        readLesson: (id) => {
+          const g = get().game
+          if (!g) return
+          apply(simReadLesson(g, now(), id))
+        },
+        spinInflation: () => {
+          const g = get().game
+          if (!g) return null
+          const r = simSpinInflation(g)
+          if (!r.ok) return null
+          set({ game: r.state })
+          scheduleRemoteSave(r.state)
+          return r.inflationBps ?? null
+        },
+        openWheel: (open) => set({ wheelOpen: open }),
+        restart: () => {
+          const name = get().game?.islandName ?? 'Mi isla'
+          set({ game: null, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0 })
+          get().createIsland(name)
+        },
+        showBuilding: (id) => set({ infoBuilding: id, view: 'edificio' }),
+        celebrate: (c) => set({ celebration: { ...c, id: ++toastSeq } }),
+        dismissCelebration: () => set({ celebration: null }),
 
         setView: (view) => {
           const g = get().game
@@ -177,6 +292,7 @@ export const useGame = create<Store>()(
             patch.seenWorld = g.world
             patch.seenMissions = missionsFor(g).completed
           }
+          if (view !== 'edificio') patch.infoBuilding = null
           set(patch)
         },
         showToast: (text) => {
@@ -192,7 +308,7 @@ export const useGame = create<Store>()(
           get().tick()
         },
         devReset: () => {
-          set({ game: null, devOffsetMs: 0, view: 'isla', acornsFound: [], acornsMonth: -1 })
+          set({ game: null, devOffsetMs: 0, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, wheelAutoShownFor: -1 })
         },
       }
     },
@@ -205,3 +321,6 @@ export const useGame = create<Store>()(
 
 /** ¿Está activado el modo de pruebas? (`npm run dev` o `?dev` en la URL) */
 export const isDevMode = import.meta.env.DEV || new URLSearchParams(location.search).has('dev')
+
+// En modo de pruebas, el estado queda accesible desde la consola: `finfun.getState()`.
+if (isDevMode) (window as unknown as { finfun: typeof useGame }).finfun = useGame

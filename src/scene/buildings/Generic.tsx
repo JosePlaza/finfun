@@ -21,6 +21,8 @@ interface Props {
   palette: SeasonPalette
   night: boolean
   unlocked: boolean
+  /** Para construcciones que paga el jugador (huerto): ¿ya está construida? */
+  built?: boolean
   onTap: () => void
 }
 
@@ -66,6 +68,103 @@ export function ConstructionSite({ def, position, onTap }: { def: BuildingDef; p
           </Html>
         </group>
       </TapZone>
+    </group>
+  )
+}
+
+/* ───────────────────────── Solar en venta (construcción que paga el jugador) ───────────────────────── */
+
+export function ForSaleLot({ def, position, palette, onTap }: { def: BuildingDef; position: V3; palette: SeasonPalette; onTap: () => void }) {
+  const w = def.footprint * 1.3
+  const price = def.costCents ? (def.costCents / 100).toLocaleString('es-ES') : ''
+  return (
+    <group position={position} rotation={[0, def.rotation, 0]}>
+      <TapZone size={[w + 1, 2.4, w + 1]} onTap={onTap}>
+        {/* valla baja alrededor del solar, hierba alta y un cartel de venta */}
+        <Fence length={w} position={[0, 0, -w / 2]} h={0.5} />
+        <Fence length={w} position={[0, 0, w / 2]} h={0.5} />
+        <Fence length={w} position={[-w / 2, 0, 0]} rotation={Math.PI / 2} h={0.5} />
+        <Fence length={w} position={[w / 2, 0, 0]} rotation={Math.PI / 2} h={0.5} />
+        {[[-1.2, -0.8], [0.6, -1.3], [1.3, 0.9], [-0.9, 1.1], [0.1, 0.2], [-1.6, 0.3]].map(([x, z], i) => (
+          <GrassTuft key={i} position={[x, 0, z]} palette={palette} scale={1.3} />
+        ))}
+        <Rock position={[1.5, 0, -0.9]} size={0.35} seed={3} />
+        <group position={[0, 0, w / 2 + 0.7]}>
+          <Box size={[0.1, 1.5, 0.1]} position={[0, 0.75, 0]} color={C.woodDark} />
+          <Box size={[1.9, 0.8, 0.08]} position={[0, 1.45, 0]} color={C.plasterWarm} />
+          <Html position={[0, 1.45, 0.06]} center transform distanceFactor={4} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+            <div className="site-sign site-sign--sale">
+              <span className="site-sign__world">Se construye</span>
+              <span className="site-sign__name">{def.name} · {price}</span>
+            </div>
+          </Html>
+        </group>
+      </TapZone>
+    </group>
+  )
+}
+
+/* ───────────────────────── Animales del huerto ───────────────────────── */
+
+function Cow({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  const head = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (head.current) head.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.9 + position[0]) * 0.18 + 0.25
+  })
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <Box size={[0.9, 0.5, 0.5]} position={[0, 0.62, 0]} color={C.white} />
+      <Box size={[0.32, 0.3, 0.2]} position={[0.15, 0.7, 0.16]} color="#3f3a36" />
+      <Box size={[0.24, 0.22, 0.2]} position={[-0.25, 0.55, -0.16]} color="#3f3a36" />
+      {[[-0.32, 0.18], [0.32, 0.18], [-0.32, -0.18], [0.32, -0.18]].map(([x, z], i) => (
+        <Box key={i} size={[0.12, 0.38, 0.12]} position={[x, 0.19, z]} color={C.white} />
+      ))}
+      <group ref={head} position={[0.5, 0.75, 0]}>
+        <Box size={[0.34, 0.3, 0.3]} position={[0.1, -0.1, 0]} color={C.white} />
+        <Box size={[0.14, 0.14, 0.32]} position={[0.22, -0.18, 0]} color="#f0b9b0" />
+        <Box size={[0.05, 0.12, 0.05]} position={[0.02, 0.1, 0.14]} color={C.stoneDark} />
+        <Box size={[0.05, 0.12, 0.05]} position={[0.02, 0.1, -0.14]} color={C.stoneDark} />
+      </group>
+    </group>
+  )
+}
+
+function Hen({ position, rotation = 0, color = C.white }: { position: V3; rotation?: number; color?: string }) {
+  const g = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (g.current) g.current.position.y = position[1] + Math.abs(Math.sin(clock.getElapsedTime() * 3 + position[2] * 5)) * 0.03
+  })
+  return (
+    <group ref={g} position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.16, 0]} castShadow>
+        <sphereGeometry args={[0.15, 8, 6]} />
+        <Mat color={color} flat />
+      </mesh>
+      <mesh position={[0.12, 0.3, 0]}>
+        <sphereGeometry args={[0.08, 7, 5]} />
+        <Mat color={color} flat />
+      </mesh>
+      <Box size={[0.03, 0.06, 0.05]} position={[0.12, 0.38, 0]} color={C.roofRed} />
+      <Box size={[0.08, 0.03, 0.03]} position={[0.22, 0.29, 0]} color={C.flowerYellow} />
+    </group>
+  )
+}
+
+function Pig({ position, rotation = 0 }: { position: V3; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.34, 0]} scale={[1.3, 1, 1]} castShadow>
+        <sphereGeometry args={[0.26, 8, 6]} />
+        <Mat color="#f3b0b8" flat />
+      </mesh>
+      <mesh position={[0.34, 0.36, 0]}>
+        <sphereGeometry args={[0.16, 7, 5]} />
+        <Mat color="#f3b0b8" flat />
+      </mesh>
+      <Box size={[0.08, 0.1, 0.12]} position={[0.5, 0.33, 0]} color="#e08a97" />
+      {[[-0.15, 0.12], [0.15, 0.12], [-0.15, -0.12], [0.15, -0.12]].map(([x, z], i) => (
+        <Box key={i} size={[0.09, 0.2, 0.09]} position={[x, 0.1, z]} color="#f3b0b8" />
+      ))}
     </group>
   )
 }
@@ -244,8 +343,9 @@ function Silo({ position, h = 2.8 }: { position: V3; h?: number }) {
 /* ───────────────────────── Recetas ───────────────────────── */
 
 export function GenericBuilding(props: Props) {
-  const { def, position, palette, night, unlocked, onTap } = props
+  const { def, position, palette, night, unlocked, built = true, onTap } = props
   if (!unlocked) return <ConstructionSite def={def} position={position} onTap={onTap} />
+  if (def.costCents && !built) return <ForSaleLot def={def} position={position} palette={palette} onTap={onTap} />
   const r = def.rotation
   const label = <Label text={def.name} y={4.2} />
   const wrap = (children: React.ReactNode, size: V3 = [6, 4.5, 6]) => (
@@ -256,6 +356,44 @@ export function GenericBuilding(props: Props) {
   )
 
   switch (def.id) {
+    case 'huerto':
+      return wrap(
+        <>
+          {/* caseta de aperos */}
+          <group position={[-1.6, 0, -1.4]} rotation={[0, 0.3, 0]}>
+            <Wall w={1.5} d={1.3} h={1.4} color={C.wood} base={0.2} corners={false} />
+            <GableRoof w={1.5} d={1.3} h={0.7} color={C.roofRed} position={[0, 1.4, 0]} />
+            <Door w={0.6} h={1.0} arch={false} color={C.woodDark} position={[0, 0, 0.68]} />
+          </group>
+          {/* bancales con cultivos en hileras */}
+          {[-0.6, 0.3, 1.2].map((z, row) => (
+            <group key={row} position={[0.9, 0, z]}>
+              <Box size={[2.6, 0.18, 0.55]} position={[0, 0.09, 0]} color="#7a5537" flat />
+              {[-1.0, -0.5, 0, 0.5, 1.0].map((x) => (
+                <group key={x} position={[x, 0.18, 0]}>
+                  <mesh position={[0, 0.16, 0]} castShadow>
+                    <dodecahedronGeometry args={[row === 1 ? 0.13 : 0.16, 0]} />
+                    <Mat color={row === 0 ? '#5fa845' : row === 1 ? C.roofOrange : '#3e8f3a'} flat />
+                  </mesh>
+                </group>
+              ))}
+            </group>
+          ))}
+          {/* corral con animales */}
+          <Fence length={3.2} position={[-1.0, 0, 1.9]} h={0.55} />
+          <Fence length={2.4} position={[-2.6, 0, 0.7]} rotation={Math.PI / 2} h={0.55} />
+          <Cow position={[-1.4, 0, 0.9]} rotation={-0.5} />
+          <Pig position={[-2.0, 0, -0.2]} rotation={2.2} />
+          <Hen position={[-0.4, 0, 1.3]} rotation={1.0} />
+          <Hen position={[-0.8, 0, 0.2]} rotation={-2.0} color={C.roofOrange} />
+          {/* abrevadero y saco de grano */}
+          <Box size={[0.7, 0.28, 0.3]} position={[-2.2, 0.14, 1.4]} color={C.woodDark} />
+          <Box size={[0.6, 0.06, 0.22]} position={[-2.2, 0.28, 1.4]} color="#7fc8ea" />
+          <Sack position={[-0.6, 0, -1.6]} />
+          <Flowers position={[2.4, 0, -1.4]} seed={31} />
+        </>,
+        [7.5, 4, 6.5],
+      )
     case 'ayuntamiento':
       return wrap(
         <>

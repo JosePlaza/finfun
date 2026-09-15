@@ -28,7 +28,7 @@ export const ISLAND_RZ = 23
 
 /** Colinas y hondonadas que dan los niveles de la isla. */
 export const HILLS: Hill[] = [
-  { x: -12.5, z: -12.5, s: 6.8, a: 5.0 }, // pico del faro (noroeste)
+  { x: -14, z: -14.5, s: 6.8, a: 5.0 }, // pico del faro (noroeste)
   { x: 0, z: -11, s: 4.8, a: 1.4 }, // loma del observatorio (norte)
   { x: 12, z: -8, s: 6.0, a: 2.6 }, // cresta noreste (mercado / cantera)
   { x: -19, z: -8, s: 4.4, a: 1.2 }, // loma del molino (oeste)

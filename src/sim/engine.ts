@@ -1,8 +1,15 @@
 import {
   BANK_RATE_BPS,
   BANK_UNLOCK_MONTH,
-  INFLATION_MAX_BPS,
-  INFLATION_MIN_BPS,
+  BOND_COUPON_EVERY,
+  BOND_OFFERS,
+  FOOD_START_MONTHS,
+  HUERTO_COST_CENTS,
+  HUERTO_EVERY_MONTHS,
+  HUERTO_FOOD_MONTHS,
+  HUNGER_DEATH_MONTHS,
+  INFLATION_WHEEL_BPS,
+  LESSONS,
   MONTHS_PER_YEAR,
   PAGA_CENTS,
   RETENTION_BPS,
@@ -12,9 +19,10 @@ import {
   WORLD2_UNLOCK_ITEM,
 } from './config'
 import { calendarOf, describeMonth, monthAt } from './calendar'
-import { applyBps, roundCents } from './money'
+import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
-import type { DiaryEntry, GameState, LedgerEvent } from './types'
+import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
+import { missionsFor } from './missions'
 
 const LEDGER_MAX = 80
 
@@ -42,13 +50,47 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     yearBankInterestCents: 0,
     totalTasksCents: 0,
     tasksCompleted: 0,
+    foodMonths: FOOD_START_MONTHS,
+    hunger: 0,
+    dead: false,
+    deathMonth: null,
+    huertoBuiltMonth: null,
+    pendingYearEnds: [],
+    bonds: [],
+    bondsBought: 0,
+    taxMode: 'cada-cobro',
+    taxModeChosen: false,
+    yearPendingTaxableCents: 0,
+    yearTaxCents: 0,
+    taxDebtCents: 0,
+    declarations: [],
+    lessonsRead: [],
   }
 }
 
+/** Copia profunda con valores por defecto para los campos añadidos después de la primera versión. */
 function clone(state: GameState): GameState {
   const c = structuredClone(state)
-  // Campos añadidos después de la v1: valores por defecto para partidas antiguas.
   c.tasksCompleted ??= 0
+  c.foodMonths ??= FOOD_START_MONTHS
+  c.hunger ??= 0
+  c.dead ??= false
+  c.deathMonth ??= null
+  c.huertoBuiltMonth ??= null
+  c.pendingYearEnds ??= []
+  c.bonds ??= []
+  c.bondsBought ??= 0
+  c.taxMode ??= 'cada-cobro'
+  c.taxModeChosen ??= false
+  c.yearPendingTaxableCents ??= 0
+  c.yearTaxCents ??= 0
+  c.taxDebtCents ??= 0
+  c.declarations ??= []
+  c.lessonsRead ??= []
+  // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
+  for (const def of SHOP_ITEMS) {
+    if (!c.shop.some((i) => i.id === def.id)) c.shop.push({ id: def.id, priceCents: def.basePriceCents, previousPriceCents: def.basePriceCents })
+  }
   return c
 }
 
@@ -57,10 +99,13 @@ function log(state: GameState, ev: LedgerEvent) {
   if (state.ledger.length > LEDGER_MAX) state.ledger.splice(0, state.ledger.length - LEDGER_MAX)
 }
 
-/** Inflación sorteada para un año de isla (determinista por semilla). */
+/**
+ * Inflación sorteada para un año de isla (determinista por semilla): una de las casillas de la ruleta.
+ * El jugador "gira" la ruleta en pantalla, pero el resultado ya está decidido, así la partida es reproducible.
+ */
 export function inflationForYear(seed: number, yearIndex: number): number {
   const rng = rngFor(seed, yearIndex, 11)
-  return randInt(rng, INFLATION_MIN_BPS, INFLATION_MAX_BPS)
+  return INFLATION_WHEEL_BPS[randInt(rng, 0, INFLATION_WHEEL_BPS.length - 1)]
 }
 
 /** Recompensa de la tarea diaria de un mes (determinista). */
@@ -79,28 +124,99 @@ export function inflatePrice(priceCents: number, inflationBps: number): number {
   return Math.max(priceCents, roundCents(exact / step) * step)
 }
 
-/** Interés mensual del banco sobre un saldo, ya con la retención si Hacienda está activa. */
-export function monthlyInterest(bankCents: number, taxesUnlocked: boolean): { gross: number; retained: number; net: number } {
+/**
+ * Interés mensual del banco sobre un saldo. Si Hacienda está activa y el jugador paga "en cada cobro",
+ * se retiene el 19 % al instante; en modo anual se cobra bruto y se declara al cerrar el año.
+ */
+export function monthlyInterest(bankCents: number, taxesUnlocked: boolean, taxMode: TaxMode = 'cada-cobro'): { gross: number; retained: number; net: number } {
   const gross = roundCents((bankCents * BANK_RATE_BPS) / 10_000 / MONTHS_PER_YEAR)
-  const retained = taxesUnlocked ? applyBps(gross, RETENTION_BPS) : 0
+  const retained = taxesUnlocked && taxMode === 'cada-cobro' ? applyBps(gross, RETENTION_BPS) : 0
   return { gross, retained, net: gross - retained }
 }
 
 /** Cuánto habría en el banco tras 12 meses si un saldo hubiera estado allí todo el año. */
-export function bankAfterOneYear(cents: number, taxesUnlocked: boolean): number {
+export function bankAfterOneYear(cents: number, taxesUnlocked: boolean, taxMode: TaxMode = 'cada-cobro'): number {
   let b = cents
-  for (let i = 0; i < MONTHS_PER_YEAR; i++) b += monthlyInterest(b, taxesUnlocked).net
+  for (let i = 0; i < MONTHS_PER_YEAR; i++) b += monthlyInterest(b, taxesUnlocked, taxMode).net
   return b
 }
 
+/** Cupón trimestral de un bono. */
+export function bondCoupon(principalCents: number, couponBps: number): number {
+  return roundCents((principalCents * couponBps) / 10_000 / (MONTHS_PER_YEAR / BOND_COUPON_EVERY))
+}
+
+/** Rendimiento bruto cobrado: aplica la retención según el modo y lleva la cuenta para la declaración. */
+function earnTaxable(state: GameState, gross: number): { retained: number; net: number } {
+  if (!state.taxesUnlocked || gross <= 0) return { retained: 0, net: gross }
+  if (state.taxMode === 'cada-cobro') {
+    const retained = applyBps(gross, RETENTION_BPS)
+    state.yearTaxCents += retained
+    return { retained, net: gross - retained }
+  }
+  state.yearPendingTaxableCents += gross
+  return { retained: 0, net: gross }
+}
+
+/** Cobra a Hacienda lo que se debe: primero del cofre, luego del banco; el resto queda como deuda. */
+function payTax(state: GameState, cents: number): number {
+  let left = cents
+  const fromHucha = Math.min(left, state.huchaCents)
+  state.huchaCents -= fromHucha
+  left -= fromHucha
+  const fromBank = Math.min(left, state.bankCents)
+  state.bankCents -= fromBank
+  left -= fromBank
+  return cents - left
+}
+
+/** Patrimonio en bonos (lo prestado, pendiente de devolver). */
+export function bondsTotal(state: GameState): number {
+  return state.bonds.reduce((a, b) => a + b.principalCents, 0)
+}
+
 function processMonth(state: GameState, month: number) {
+  // Si la aventura terminó, la isla se detiene.
+  if (state.dead) {
+    state.processedMonth = month
+    return
+  }
+  const cal = calendarOf(month)
+
   // 1. Llega la paga al buzón.
   state.mailboxCents += PAGA_CENTS
   log(state, { kind: 'paga', month, amountCents: PAGA_CENTS, label: `Paga de ${describeMonth(month)}` })
 
-  // 2. El banco abona su interés.
+  // 2. Comida: cada mes se come una ración de la despensa (el primer mes no cuenta).
+  if (month > 0) {
+    if (state.foodMonths > 0) {
+      state.foodMonths -= 1
+      state.hunger = 0
+    } else {
+      state.hunger += 1
+      if (state.hunger >= HUNGER_DEATH_MONTHS) {
+        state.dead = true
+        state.deathMonth = month
+        log(state, { kind: 'comida', month, amountCents: 0, label: 'Sin comida durante seis meses: la aventura termina' })
+        state.processedMonth = month
+        return
+      }
+    }
+  }
+
+  // 3. El huerto da una cesta grande cada tres meses.
+  if (state.huertoBuiltMonth !== null) {
+    const since = month - state.huertoBuiltMonth
+    if (since > 0 && since % HUERTO_EVERY_MONTHS === 0) {
+      state.foodMonths += HUERTO_FOOD_MONTHS
+      log(state, { kind: 'huerto', month, amountCents: 0, label: `El huerto da una cesta grande (+${HUERTO_FOOD_MONTHS} meses de comida)` })
+    }
+  }
+
+  // 4. El banco abona su interés.
   if (state.bankUnlocked && state.bankCents > 0) {
-    const { net, retained } = monthlyInterest(state.bankCents, state.taxesUnlocked)
+    const gross = monthlyInterest(state.bankCents, false).gross
+    const { net, retained } = earnTaxable(state, gross)
     if (net > 0) {
       state.bankCents += net
       state.yearBankInterestCents += net
@@ -108,47 +224,71 @@ function processMonth(state: GameState, month: number) {
         kind: 'interes',
         month,
         amountCents: net,
-        label: retained > 0 ? `Interés del banco (Hacienda retuvo ${retained} cts)` : 'Interés del banco',
+        label: retained > 0 ? `Interés del banco (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : 'Interés del banco',
       })
     }
   }
 
-  // 3. Cierre de año: inflación, diario y desbloqueos.
-  const cal = calendarOf(month)
+  // 5. Bonos: cupón trimestral y devolución al vencimiento. Van al cofre.
+  for (const bond of state.bonds) {
+    const held = month - bond.boughtMonth
+    if (held <= 0) continue
+    const offer = BOND_OFFERS.find((o) => o.id === bond.offerId)
+    const name = offer?.name ?? 'Bono'
+    if (held % BOND_COUPON_EVERY === 0 && month <= bond.maturityMonth) {
+      const gross = bondCoupon(bond.principalCents, bond.couponBps)
+      const { net, retained } = earnTaxable(state, gross)
+      state.huchaCents += net
+      bond.couponsPaid += 1
+      log(state, {
+        kind: 'cupon',
+        month,
+        amountCents: net,
+        label: retained > 0 ? `Cupón del ${name} (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : `Cupón del ${name}`,
+      })
+    }
+    if (month === bond.maturityMonth) {
+      state.huchaCents += bond.principalCents
+      log(state, { kind: 'vencimiento', month, amountCents: bond.principalCents, label: `El Ayuntamiento devuelve el ${name}` })
+    }
+  }
+  state.bonds = state.bonds.filter((b) => month < b.maturityMonth)
+
+  // 6. Deuda con Hacienda pendiente de otros años: se cobra en cuanto hay dinero.
+  if (state.taxDebtCents > 0) {
+    const paid = payTax(state, state.taxDebtCents)
+    if (paid > 0) {
+      state.taxDebtCents -= paid
+      log(state, { kind: 'impuestos', month, amountCents: -paid, label: 'Pagas a Hacienda lo que debías' })
+    }
+  }
+
+  // 7. Cierre de año: declaración anual, y la ruleta de inflación queda esperando al jugador.
   if (cal.isYearEnd) {
-    const yearIndex = cal.year - 1
-    const inflationBps = inflationForYear(state.seed, yearIndex)
-    state.inflationHistoryBps.push(inflationBps)
-
-    const bici = state.shop.find((s) => s.id === WORLD2_UNLOCK_ITEM) ?? state.shop[0]
-    const example = {
-      itemId: bici.id,
-      name: SHOP_ITEMS.find((d) => d.id === bici.id)?.name ?? bici.id,
-      beforeCents: bici.priceCents,
-      afterCents: inflatePrice(bici.priceCents, inflationBps),
+    if (state.taxesUnlocked && state.taxMode === 'anual' && state.yearPendingTaxableCents > 0) {
+      const tax = applyBps(state.yearPendingTaxableCents, RETENTION_BPS)
+      const paid = payTax(state, tax)
+      state.taxDebtCents += tax - paid
+      state.yearTaxCents += tax
+      log(state, { kind: 'impuestos', month, amountCents: -tax, label: `Declaración del año ${cal.year}: 19 % de ${formatCents(state.yearPendingTaxableCents)}` })
     }
-    for (const item of state.shop) {
-      item.previousPriceCents = item.priceCents
-      item.priceCents = inflatePrice(item.priceCents, inflationBps)
+    if (state.taxesUnlocked) {
+      state.declarations.push({ year: cal.year, mode: state.taxMode, grossCents: state.yearPendingTaxableCents + (state.taxMode === 'cada-cobro' ? roundCents((state.yearTaxCents * 10_000) / RETENTION_BPS) : 0), taxCents: state.yearTaxCents })
     }
-    log(state, { kind: 'inflacion', month, amountCents: inflationBps, label: `Inflación del año ${cal.year}` })
-
-    const entry: DiaryEntry = {
+    state.pendingYearEnds.push({
       year: cal.year,
-      inflationBps,
-      example,
+      month,
       huchaCents: state.huchaCents + state.mailboxCents,
-      bankIfAllCents: bankAfterOneYear(state.huchaCents + state.mailboxCents, state.taxesUnlocked),
       bankCents: state.bankCents,
       bankInterestYearCents: state.yearBankInterestCents,
       spentYearCents: state.yearSpentCents,
       earnedTasksYearCents: state.yearTasksCents,
-      firstTime: state.diary.length === 0,
-    }
-    state.diary.push(entry)
+    })
     state.yearSpentCents = 0
     state.yearTasksCents = 0
     state.yearBankInterestCents = 0
+    state.yearPendingTaxableCents = 0
+    state.yearTaxCents = 0
   }
 
   if (!state.bankUnlocked && month + 1 >= BANK_UNLOCK_MONTH) {
@@ -159,13 +299,63 @@ function processMonth(state: GameState, month: number) {
   state.processedMonth = month
 }
 
+/**
+ * El jugador gira la ruleta del año pendiente más antiguo: se aplica la inflación a los precios y
+ * Doña Tortuga escribe la página del diario. Devuelve el porcentaje que ha salido.
+ */
+export function spinInflation(input: GameState): ActionResult & { inflationBps?: number } {
+  const state = clone(input)
+  const pending = state.pendingYearEnds.shift()
+  if (!pending) return { ok: false, reason: 'No hay ningún año por cerrar.' }
+  const yearIndex = pending.year - 1
+  const inflationBps = inflationForYear(state.seed, yearIndex)
+  state.inflationHistoryBps.push(inflationBps)
+
+  const bici = state.shop.find((s) => s.id === WORLD2_UNLOCK_ITEM) ?? state.shop[0]
+  const example = {
+    itemId: bici.id,
+    name: SHOP_ITEMS.find((d) => d.id === bici.id)?.name ?? bici.id,
+    beforeCents: bici.priceCents,
+    afterCents: inflatePrice(bici.priceCents, inflationBps),
+  }
+  for (const item of state.shop) {
+    item.previousPriceCents = item.priceCents
+    item.priceCents = inflatePrice(item.priceCents, inflationBps)
+  }
+  log(state, { kind: 'inflacion', month: pending.month, amountCents: inflationBps, label: `Inflación del año ${pending.year}` })
+
+  const entry: DiaryEntry = {
+    year: pending.year,
+    inflationBps,
+    example,
+    huchaCents: pending.huchaCents,
+    bankIfAllCents: bankAfterOneYear(pending.huchaCents, state.taxesUnlocked, state.taxMode),
+    bankCents: pending.bankCents,
+    bankInterestYearCents: pending.bankInterestYearCents,
+    spentYearCents: pending.spentYearCents,
+    earnedTasksYearCents: pending.earnedTasksYearCents,
+    firstTime: state.diary.length === 0,
+  }
+  state.diary.push(entry)
+  return { ok: true, state, inflationBps }
+}
+
 /** Avanza la simulación hasta el instante dado. Idempotente: llamarla varias veces con la misma hora no cambia nada. */
 export function advanceTo(input: GameState, nowMs: number): GameState {
   const target = monthAt(nowMs, input.epochMs)
   if (target <= input.processedMonth) return input
   const state = clone(input)
   for (let m = state.processedMonth + 1; m <= target; m++) processMonth(state, m)
+  progressWorld(state)
   return state
+}
+
+/** Si están hechas todas las misiones del mundo actual (a partir del 2), se abre el siguiente. */
+export function progressWorld(state: GameState) {
+  if (state.world >= 2 && state.world < 4) {
+    const b = missionsFor(state)
+    if (b.completed >= b.total) state.world += 1
+  }
 }
 
 export function currentMonth(state: GameState, nowMs: number): number {
@@ -176,6 +366,11 @@ export function currentMonth(state: GameState, nowMs: number): number {
 
 export type ActionResult = { ok: true; state: GameState } | { ok: false; reason: string }
 
+function done(state: GameState): ActionResult {
+  progressWorld(state)
+  return { ok: true, state }
+}
+
 export function collectMailbox(input: GameState, nowMs: number): ActionResult {
   const state = clone(advanceTo(input, nowMs))
   if (state.mailboxCents <= 0) return { ok: false, reason: 'El buzón está vacío.' }
@@ -183,7 +378,7 @@ export function collectMailbox(input: GameState, nowMs: number): ActionResult {
   state.huchaCents += amount
   state.mailboxCents = 0
   log(state, { kind: 'recogida', month: currentMonth(state, nowMs), amountCents: amount, label: 'Recogiste la paga del buzón' })
-  return { ok: true, state }
+  return done(state)
 }
 
 export function deposit(input: GameState, nowMs: number, cents: number): ActionResult {
@@ -195,7 +390,7 @@ export function deposit(input: GameState, nowMs: number, cents: number): ActionR
   state.huchaCents -= cents
   state.bankCents += cents
   log(state, { kind: 'deposito', month: currentMonth(state, nowMs), amountCents: cents, label: 'Llevaste dinero al banco' })
-  return { ok: true, state }
+  return done(state)
 }
 
 export function withdraw(input: GameState, nowMs: number, cents: number): ActionResult {
@@ -206,7 +401,7 @@ export function withdraw(input: GameState, nowMs: number, cents: number): Action
   state.bankCents -= cents
   state.huchaCents += cents
   log(state, { kind: 'retirada', month: currentMonth(state, nowMs), amountCents: cents, label: 'Sacaste dinero del banco' })
-  return { ok: true, state }
+  return done(state)
 }
 
 export function buy(input: GameState, nowMs: number, itemId: string): ActionResult {
@@ -224,9 +419,65 @@ export function buy(input: GameState, nowMs: number, itemId: string): ActionResu
   state.huchaCents -= item.priceCents
   state.yearSpentCents += item.priceCents
   state.purchases.push({ itemId, month })
-  log(state, { kind: 'compra', month, amountCents: -item.priceCents, label: `Compraste: ${def.name}` })
-  if (itemId === WORLD2_UNLOCK_ITEM && state.world < 2) state.world = 2
-  return { ok: true, state }
+  if (def.kind === 'comida') {
+    state.foodMonths += def.foodMonths ?? 1
+    state.hunger = 0
+    log(state, { kind: 'comida', month, amountCents: -item.priceCents, label: `${def.name}: +${def.foodMonths} ${def.foodMonths === 1 ? 'mes' : 'meses'} de comida` })
+  } else {
+    log(state, { kind: 'compra', month, amountCents: -item.priceCents, label: `Compraste: ${def.name}` })
+  }
+  if (itemId === WORLD2_UNLOCK_ITEM && state.world < 2) openWorld2(state)
+  return done(state)
+}
+
+/** El Mundo 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. */
+function openWorld2(state: GameState) {
+  state.world = 2
+  state.taxesUnlocked = true
+}
+
+export function buildHuerto(input: GameState, nowMs: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.huertoBuiltMonth !== null) return { ok: false, reason: 'El huerto ya está construido.' }
+  if (state.huchaCents < HUERTO_COST_CENTS) return { ok: false, reason: `Te faltan ${formatCents(HUERTO_COST_CENTS - state.huchaCents)} euroLukys.` }
+  const month = currentMonth(state, nowMs)
+  state.huchaCents -= HUERTO_COST_CENTS
+  state.yearSpentCents += HUERTO_COST_CENTS
+  state.huertoBuiltMonth = month
+  log(state, { kind: 'huerto', month, amountCents: -HUERTO_COST_CENTS, label: 'Construyes el huerto con animales' })
+  return done(state)
+}
+
+export function buyBond(input: GameState, nowMs: number, offerId: string, cents: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.world < 2) return { ok: false, reason: 'El Ayuntamiento abre en el Mundo 2.' }
+  const offer = BOND_OFFERS.find((o) => o.id === offerId)
+  if (!offer) return { ok: false, reason: 'Ese bono no existe.' }
+  cents = Math.floor(cents)
+  if (cents < offer.minCents) return { ok: false, reason: `Como mínimo ${formatCents(offer.minCents)} euroLukys.` }
+  if (cents % 10_00 !== 0) return { ok: false, reason: 'Los bonos se compran de 10 en 10.' }
+  if (cents > state.huchaCents) return { ok: false, reason: `Te faltan ${formatCents(cents - state.huchaCents)} euroLukys.` }
+  const month = currentMonth(state, nowMs)
+  state.huchaCents -= cents
+  state.bondsBought += 1
+  state.bonds.push({ id: `${offer.id}-${month}-${state.bondsBought}`, offerId: offer.id, principalCents: cents, couponBps: offer.couponBps, boughtMonth: month, maturityMonth: month + offer.months, couponsPaid: 0 })
+  log(state, { kind: 'bono', month, amountCents: -cents, label: `Prestas al Ayuntamiento: ${offer.name}` })
+  return done(state)
+}
+
+export function chooseTaxMode(input: GameState, nowMs: number, mode: TaxMode): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.world < 2) return { ok: false, reason: 'Hacienda abre en el Mundo 2.' }
+  state.taxMode = mode
+  state.taxModeChosen = true
+  return done(state)
+}
+
+export function readLesson(input: GameState, nowMs: number, lessonId: string): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (!LESSONS.some((l) => l.id === lessonId)) return { ok: false, reason: 'Esa lección no existe.' }
+  if (!state.lessonsRead.includes(lessonId)) state.lessonsRead.push(lessonId)
+  return done(state)
 }
 
 export function canDoTask(state: GameState, nowMs: number): boolean {
@@ -244,10 +495,10 @@ export function completeTask(input: GameState, nowMs: number): ActionResult {
   state.totalTasksCents += reward
   state.tasksCompleted += 1
   log(state, { kind: 'tarea', month, amountCents: reward, label: 'Recogiste bellotas' })
-  return { ok: true, state }
+  return done(state)
 }
 
-/** Patrimonio total en céntimos (lo que se puede tocar). */
+/** Patrimonio total en céntimos: cofre, buzón, banco y bonos. */
 export function netWorth(state: GameState): number {
-  return state.huchaCents + state.mailboxCents + state.bankCents
+  return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state)
 }

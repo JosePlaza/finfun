@@ -6,6 +6,7 @@ import { NameIsland } from './ui/NameIsland'
 import { Panels } from './ui/Panels'
 import { Toast } from './ui/Toast'
 import { DevBar } from './ui/DevBar'
+import { CelebrationOverlay, GameOverOverlay, InflationWheelOverlay } from './ui/Overlays'
 
 export default function App() {
   const game = useGame((s) => s.game)
@@ -43,6 +44,9 @@ export default function App() {
       <TopBar />
       <Panels />
       <Toast />
+      <InflationWheelOverlay />
+      <CelebrationOverlay />
+      <GameOverOverlay />
       {isDevMode && <DevBar />}
     </div>
   )

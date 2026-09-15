@@ -37,6 +37,12 @@ export type LedgerKind =
   | 'deposito'
   | 'retirada'
   | 'banco-abierto'
+  | 'comida'
+  | 'huerto'
+  | 'bono'
+  | 'cupon'
+  | 'vencimiento'
+  | 'impuestos'
 
 export interface LedgerEvent {
   kind: LedgerKind
@@ -60,6 +66,40 @@ export interface DiaryEntry {
   spentYearCents: number
   earnedTasksYearCents: number
   firstTime: boolean
+}
+
+/** Un año cerrado cuya ruleta de inflación aún no ha girado el jugador. Guarda la foto que necesita el diario. */
+export interface PendingYearEnd {
+  year: number
+  month: number
+  huchaCents: number
+  bankCents: number
+  bankInterestYearCents: number
+  spentYearCents: number
+  earnedTasksYearCents: number
+}
+
+/** Bono comprado al Ayuntamiento: préstamo a plazo fijo con cupón trimestral. */
+export interface Bond {
+  id: string
+  offerId: string
+  principalCents: number
+  /** Cupón anual en puntos básicos. */
+  couponBps: number
+  boughtMonth: number
+  maturityMonth: number
+  couponsPaid: number
+}
+
+/** Cómo paga el jugador a Hacienda: retención en cada cobro o una declaración al cerrar el año. */
+export type TaxMode = 'cada-cobro' | 'anual'
+
+export interface Declaration {
+  year: number
+  mode: TaxMode
+  /** Rendimientos brutos del año (intereses + cupones). */
+  grossCents: number
+  taxCents: number
 }
 
 export interface GameState {
@@ -93,4 +133,33 @@ export interface GameState {
   totalTasksCents: number
   /** Días (meses de isla) en los que se completó la tarea de las bellotas. */
   tasksCompleted: number
+
+  // ───── Comida y vida ─────
+  /** Meses de comida que quedan en la despensa. Cada mes se consume uno. */
+  foodMonths: number
+  /** Meses seguidos sin comer. A los 6 la aventura termina. */
+  hunger: number
+  dead: boolean
+  deathMonth: number | null
+  /** Mes en que se construyó el huerto (null = sin construir). Da una cesta grande cada 3 meses. */
+  huertoBuiltMonth: number | null
+
+  // ───── Cierre de año: la ruleta la gira el jugador ─────
+  pendingYearEnds: PendingYearEnd[]
+
+  // ───── Mundo 2: bonos y Hacienda ─────
+  bonds: Bond[]
+  bondsBought: number
+  taxMode: TaxMode
+  /** ¿Ha pasado el jugador por Hacienda a elegir? */
+  taxModeChosen: boolean
+  /** Rendimientos brutos del año pendientes de declarar (modo anual). */
+  yearPendingTaxableCents: number
+  /** Impuestos pagados en el año en curso (retenciones o declaración). */
+  yearTaxCents: number
+  /** Impuestos que no se pudieron pagar al cerrar el año; se cobran en cuanto hay dinero. */
+  taxDebtCents: number
+  declarations: Declaration[]
+  /** Lecciones leídas en la escuela. */
+  lessonsRead: string[]
 }

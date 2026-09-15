@@ -80,8 +80,11 @@ function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number
  * La cámara vuela suavemente hacia el lugar activo. En la vista de isla el jugador puede girar
  * y acercarse; al entrar en un lugar la cámara se coloca de frente y los controles se apagan.
  */
+const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio'])
+
 function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3> }) {
   const view = useGame((s) => s.view)
+  const infoBuilding = useGame((s) => s.infoBuilding)
   const { camera, size } = useThree()
   const goalPos = useRef(new THREE.Vector3())
   const goalTarget = useRef(new THREE.Vector3())
@@ -94,16 +97,17 @@ function CameraRig({ controls, positions }: { controls: React.RefObject<OrbitCon
     const aspect = size.width / size.height
     const portrait = aspect < 1
     const fov = (camera as THREE.PerspectiveCamera).fov
-    const key = `${view}:${portrait ? 'p' : 'l'}`
+    // Qué edificio mira la cámara: el lugar de la vista, o el edificio de la ficha.
+    const target: BuildingId | null = view === 'edificio' ? infoBuilding : OVERVIEW_VIEWS.has(view) ? null : (view as BuildingId)
+    const key = `${view}:${target ?? ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
-      const overview = view === 'isla' || view === 'misiones' || view === 'eventos' || view === 'patrimonio'
-      const pose = overview ? islandPose(fov, aspect, portrait) : cameraPoseFor(BUILDING_BY_ID[view], positions[view], fov, aspect, portrait ? 0.5 : 0)
+      const pose = target ? cameraPoseFor(BUILDING_BY_ID[target], positions[target], fov, aspect, portrait ? 0.5 : 0) : islandPose(fov, aspect, portrait)
       goalPos.current.set(...pose.position)
       goalTarget.current.set(...pose.target)
     }
-    const free = view === 'isla' || view === 'misiones' || view === 'eventos' || view === 'patrimonio'
+    const free = OVERVIEW_VIEWS.has(view)
     ctl.enabled = free && !flying.current
     if (flying.current || !free) {
       const a = 1 - Math.exp(-4 * dt)
@@ -154,7 +158,7 @@ function Scene() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
   const acornsFound = useGame((s) => s.acornsFound)
-  const { collect, setView, pickAcorn, showToast } = useGame.getState()
+  const { collect, setView, pickAcorn, showBuilding } = useGame.getState()
   const controls = useRef<OrbitControlsImpl>(null)
 
   const month = currentMonth(game, nowMs)
@@ -181,11 +185,11 @@ function Scene() {
     return [loop(['casa', 'tienda', 'banco', 'ayuntamiento', 'escuela']), loop(['cofre', 'puerto', 'astillero', 'panaderia', 'mercado', 'casa'])]
   }, [])
 
+  // Tocar un edificio abierto lleva a su panel; uno en obras (o sin panel todavía) muestra su ficha: qué se hará allí.
   const tapBuilding = (id: BuildingId) => {
     const def = BUILDING_BY_ID[id]
-    if (def.view) return setView(def.view)
-    if (game.world < def.world) showToast(`${def.name} · se abre en el Mundo ${def.world}. ${def.teaches}`)
-    else showToast(`${def.name} · ${def.teaches} (próximamente)`)
+    if (def.view && game.world >= def.world) return setView(def.view)
+    showBuilding(id)
   }
 
   return (
@@ -235,7 +239,18 @@ function Scene() {
           case 'faro':
             return <Lighthouse key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} onTap={() => setView('faro')} />
           default:
-            return <GenericBuilding key={def.id} def={def} position={pos} palette={palette} night={night} unlocked={unlocked} onTap={() => tapBuilding(def.id)} />
+            return (
+              <GenericBuilding
+                key={def.id}
+                def={def}
+                position={pos}
+                palette={palette}
+                night={night}
+                unlocked={unlocked}
+                built={def.id === 'huerto' ? game.huertoBuiltMonth !== null : true}
+                onTap={() => tapBuilding(def.id)}
+              />
+            )
         }
       })}
 

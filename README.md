@@ -110,14 +110,19 @@ Todo es determinista a partir de la semilla de la isla y muy barato de dibujar.
 
 Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo se vuelve cálido, se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad. El agua tiene olas low-poly animadas y hay barcas que se balancean en el muelle.
 
-## Reglas de la economía (Mundo 1)
+## Reglas de la economía
+
+La operativa completa de los 21 edificios, mundo a mundo, está en [`docs/operativa.md`](docs/operativa.md). Resumen de lo que ya funciona:
 
 - Paga: 30 euroLukys al mes de isla. Llega al buzón de la casa y se acumula sin tope si no entras. Lo recogido va al cofre de la cueva.
-- Tarea diaria: cinco bellotas escondidas por la isla; al recogerlas, de 1 a 3 euroLukys.
-- Tienda (la barca mercante del muelle): helado, cometa, balón, bici (180) y telescopio. Comprar la bici abre el Mundo 2.
-- Inflación: cada cierre de año (día 12) se sortea entre 1,5 % y 4 % y sube los precios; los artículos de 10 o más euroLukys quedan en enteros (180 → 183).
-- Banco: abre al cerrar el primer año; paga un 2,5 % anual repartido por meses. La retención del 19 % de Hacienda queda preparada (`taxesUnlocked`) para el Mundo 2.
-- Todo el dinero se guarda en céntimos enteros; la simulación es idempotente: estar días sin entrar produce exactamente lo mismo que entrar cada día sin tocar nada.
+- Comida: cada mes se come una ración de la despensa (se empieza con 3). Cesta pequeña 5 (1 mes), cesta grande 9,50 (2 meses). Seis meses sin comer terminan la aventura y hay que empezar una isla nueva.
+- Huerto: construcción que paga el jugador (1000); da una cesta grande cada 3 meses para siempre.
+- Tarea diaria: cinco bellotas escondidas por la isla; al recogerlas, de 1 a 3 euroLukys y una celebración.
+- Tienda: comida y deseos (helado, cometa, balón, bici 180, telescopio). Comprar la bici abre el Mundo 2.
+- Inflación: al cerrar cada año aparece la **ruleta** (casillas 1,5–4 %) y la gira el jugador; hasta entonces los precios no suben. El resultado lo fija la semilla (`inflationForYear`), así la partida sigue siendo reproducible. Los artículos de 10 o más euroLukys quedan en enteros (180 → 185).
+- Banco: abre al cerrar el primer año; paga un 2,5 % anual repartido por meses.
+- Mundo 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
+- Todo el dinero se guarda en céntimos enteros; la simulación es idempotente: estar días sin entrar produce exactamente lo mismo que entrar cada día sin tocar nada. Los campos nuevos del estado tienen valores por defecto en `clone()` para que las partidas guardadas antiguas sigan funcionando.
 
 ## Siguientes fases
 
