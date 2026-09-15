@@ -42,6 +42,10 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
   if (lastCoupon && lastCoupon.month === game.processedMonth) {
     out.push({ id: 'cupon', icon: '🏛️', title: lastCoupon.kind === 'cupon' ? 'Ha llegado un cupón' : 'El Ayuntamiento te ha devuelto un bono', detail: `+${formatCents(lastCoupon.amountCents)} en el cofre. ${lastCoupon.label}.`, view: 'ayuntamiento', tone: 'blue' })
   }
+  for (const e of game.ledger.filter((e) => (e.kind === 'dividendo' || e.kind === 'tormenta') && e.month === game.processedMonth)) {
+    if (e.kind === 'tormenta') out.push({ id: `tormenta-${e.month}`, icon: '⛈️', title: 'Tormenta en el Puerto', detail: `${e.label} Si tienes acciones, aguanta: la misión es no vender.`, view: 'mercado', tone: 'red' })
+    else out.push({ id: `div-${e.label}`, icon: '🎁', title: 'Ha llegado un dividendo', detail: `+${formatCents(e.amountCents)} en el cofre. ${e.label}.`, view: 'mercado', tone: 'purple' })
+  }
   if (game.diary.length > seen.seenDiary) {
     out.push({ id: 'diario', icon: '📖', title: 'Doña Tortuga ha escrito en su diario', detail: `Cierre del año ${game.diary[game.diary.length - 1].year}. Léelo en el faro.`, view: 'faro', tone: 'blue' })
   }

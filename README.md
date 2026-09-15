@@ -131,6 +131,7 @@ La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operat
 - Inflación: al cerrar cada año aparece la **ruleta** (casillas 1,5–4 %) y la gira el jugador; hasta entonces los precios no suben. El resultado lo fija la semilla (`inflationForYear`), así la partida sigue siendo reproducible. Los artículos de 10 o más euroLukys quedan en enteros (180 → 185).
 - Banco: abre al cerrar el primer año (o antes, al llegar al Nivel 2); paga un 2,5 % anual repartido por meses.
 - Nivel 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
+- Nivel 3: Mercado de acciones (`src/sim/market.ts`): 100 acciones por negocio, precio mensual que sigue al beneficio trimestral (cuentas en marzo/junio/septiembre/diciembre), dividendos al cofre vía Hacienda, comisión 0,50 por operación, ganancia por precio medio al vender (19 % si hay ganancia; las pérdidas compensan). Panadería estable, Heladería estacional, Puerto con tormentas, Astillero sin dividendo. Propiedad visible en el cartel del edificio.
 - Todo el dinero se guarda en céntimos enteros; la simulación es idempotente: estar días sin entrar produce exactamente lo mismo que entrar cada día sin tocar nada. Los campos nuevos del estado tienen valores por defecto en `clone()` para que las partidas guardadas antiguas sigan funcionando.
 
 ## Siguientes fases

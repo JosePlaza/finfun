@@ -6,7 +6,7 @@ import type { Site, Terrain } from './terrain'
 
 type V3 = [number, number, number]
 
-export type PlaceId = 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela'
+export type PlaceId = 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado'
 
 export type BuildingId =
   | PlaceId
@@ -69,7 +69,7 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'hacienda', name: 'Hacienda', world: 2, teaches: 'Don Búho se lleva una parte de lo que ganas y hace la declaración.', x: -15.5, z: -0.5, rotation: Math.PI / 2, footprint: 3.0, view: 'hacienda', icon: '🦉', about: 'Don Búho cobra el 19 % de lo que ganas con tu dinero (intereses y cupones). Tú eliges: retención en cada cobro, o una declaración al cerrar el año, que deja el dinero trabajando más tiempo.' },
   { id: 'escuela', name: 'Escuela', world: 2, teaches: 'Los carnés de inversor y las lecciones de Doña Tortuga.', x: 1.0, z: -0.5, rotation: SE, footprint: 3.2, view: 'escuela', icon: '🏫', about: 'Lecciones cortas de Doña Tortuga sobre cada idea del juego. Leerlas da carnés de inversor y forma parte de las misiones.' },
   // ───────── MUNDO 3 · El Mercado ─────────
-  { id: 'mercado', name: 'Mercado de acciones', world: 3, teaches: 'Compra trozos de los negocios de la isla.', x: 10.0, z: -5.5, rotation: SE, footprint: 3.8, icon: '📈', about: 'Compra y vende acciones de los negocios de la isla. El precio cambia cada mes según cómo les va; algunos reparten dividendo cada trimestre y otros no. Comisión pequeña por operación.' },
+  { id: 'mercado', name: 'Mercado de acciones', world: 3, teaches: 'Compra trozos de los negocios de la isla.', x: 10.0, z: -5.5, rotation: SE, footprint: 3.8, view: 'mercado', icon: '📈', camera: { frameW: 11, frameH: 8, elev: 0.5, side: 0.2, lookUp: 2.2 }, about: 'Compra y vende acciones de los negocios de la isla. El precio cambia cada mes según cómo les va; algunos reparten dividendo cada trimestre y otros no. Comisión pequeña por operación.' },
   { id: 'panaderia', name: 'Panadería', world: 3, teaches: 'Negocio estable que reparte dividendo cada trimestre.', x: 20.0, z: -8.0, rotation: SE + 0.6, footprint: 2.8, icon: '🥖', about: 'Negocio estable: vende pan todos los meses, gana parecido en todas las estaciones y reparte dividendo trimestral. Aquí ves sus cuentas y compras sus acciones.' },
   { id: 'heladeria', name: 'Heladería', world: 3, teaches: 'Gana en verano y cierra en invierno: un negocio de temporada.', x: -5.5, z: 16.5, rotation: SE - 0.3, footprint: 2.6, icon: '🍦', about: 'Negocio de temporada: arrasa en verano, cierra en invierno. El dividendo llega solo tras el verano. Enseña que los beneficios no son iguales todo el año.' },
   { id: 'puerto', name: 'Puerto pesquero', world: 3, teaches: 'Los barcos ganan mucho… si no hay tormenta.', x: 12.0, z: 15.5, rotation: SE, footprint: 2.8, icon: '🎣', about: 'Negocio de mucho dividendo… cuando no hay tormenta. Un trimestre malo puede dejarlo a cero. Riesgo y recompensa a la vista.' },

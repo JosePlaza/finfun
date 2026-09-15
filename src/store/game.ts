@@ -5,6 +5,8 @@ import {
   buildHuerto as simBuildHuerto,
   buy as simBuy,
   buyBond as simBuyBond,
+  buyShares as simBuyShares,
+  sellShares as simSellShares,
   canDoTask,
   chooseTaxMode as simChooseTaxMode,
   collectMailbox,
@@ -40,6 +42,8 @@ export type View =
   | 'ayuntamiento'
   | 'hacienda'
   | 'escuela'
+  | 'mercado'
+  | 'negocio'
   | 'edificio'
   | 'misiones'
   | 'eventos'
@@ -97,6 +101,9 @@ interface Store {
   revealAcorns: () => void
   buildHuerto: () => void
   buyBond: (offerId: string, cents: number) => void
+  buyShares: (businessId: string, shares: number) => void
+  sellShares: (businessId: string, shares: number) => void
+  showBusiness: (id: BuildingId) => void
   chooseTaxMode: (mode: TaxMode) => void
   readLesson: (id: string) => void
   spinInflation: () => number | null
@@ -304,6 +311,17 @@ export const useGame = create<Store>()(
           if (!g) return
           apply(simBuyBond(g, now(), offerId, cents), 'Prestado. El primer cupón llega en tres meses.')
         },
+        buyShares: (businessId, shares) => {
+          const g = get().game
+          if (!g) return
+          apply(simBuyShares(g, now(), businessId, shares))
+        },
+        sellShares: (businessId, shares) => {
+          const g = get().game
+          if (!g) return
+          apply(simSellShares(g, now(), businessId, shares))
+        },
+        showBusiness: (id) => set({ infoBuilding: id, view: 'negocio' }),
         chooseTaxMode: (mode) => {
           const g = get().game
           if (!g) return
@@ -343,7 +361,7 @@ export const useGame = create<Store>()(
             patch.seenWorld = g.world
             patch.seenMissions = missionsFor(g).completed
           }
-          if (view !== 'edificio') patch.infoBuilding = null
+          if (view !== 'edificio' && view !== 'negocio') patch.infoBuilding = null
           // Salir de la isla (o volver a ella desde un panel) deja la cámara libre otra vez.
           if (view !== 'isla') patch.focusPoint = null
           set(patch)

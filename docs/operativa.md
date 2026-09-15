@@ -54,15 +54,21 @@ Diseño pendiente N2: **visitar la isla de la Liebre** (vecina desde el inicio),
 
 ---
 
-## Nivel 3 · El Mercado (renta variable) [diseño]
+## Nivel 3 · El Mercado (renta variable) [hecho]
 
-**Mercado de acciones.** Un panel único para comprar y vender acciones de los negocios abiertos. Cada negocio tiene
-un precio por acción que cambia **una vez al mes** (determinista por semilla; tendencia + estacionalidad + ruido propio
-de cada negocio). Comisión fija 0,50 eL por operación. Los dividendos llegan al cofre cada trimestre según el negocio.
-Plusvalías al vender: 19 % vía Hacienda con el modo elegido; las pérdidas se compensan con ganancias del año (FIFO).
+**Mercado de acciones** (`src/sim/market.ts`). Cada negocio tiene **100 acciones**; tener 10 es ser dueño del 10 % y se ve
+en el cartel del edificio ("Tuyo: 10 %"). El precio cambia **una vez al mes** y sigue al beneficio: cada trimestre (marzo,
+junio, septiembre, diciembre) el negocio publica sus **cuentas** (ventas, beneficio y dividendo por acción) y el precio se
+acerca al valor que sale de esos beneficios, con un ruido mensual propio de cada negocio. Movimiento máximo de un mes
+normal ±8 %; la tormenta del Puerto −15 %. Las compras del jugador no mueven el precio. Todo determinista por semilla.
+Comisión fija **0,50 eL** por operación. Los dividendos llegan al cofre el mes de cuentas y pasan por Hacienda. Al vender,
+la ganancia se calcula sobre el **precio medio de compra**: si es positiva tributa el 19 % (según el modo elegido); si es
+pérdida, resta de las ganancias del año. La Liebre no opera: aparece solo en las noticias del diario.
 
-Cada negocio es un edificio visitable con la misma ficha: **sus cuentas** (ventas del trimestre, beneficio, dividendo por
-acción), su gráfico de precio de los últimos 12 meses y el botón "Comprar acciones" que lleva al Mercado.
+Panel del Mercado con pestañas **Negocios** (precio, variación del mes, rentabilidad por dividendo, línea de 12 meses,
+días hasta las cuentas) y **Mi cartera** (valor a precio de hoy, ganancia sin vender, precio medio por negocio). Cada
+negocio abre su **ficha** (también tocando el edificio): cuentas del último trimestre, tus acciones y comprar/vender con
+cantidades rápidas. Eventos avisa de dividendos y tormentas; el diario resume dividendos y valor de la cartera.
 
 | Negocio | Precio inicial | Dividendo | Comportamiento | Enseña |
 | --- | --- | --- | --- | --- |

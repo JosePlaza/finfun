@@ -5,6 +5,11 @@ import {
   BOND_OFFERS,
   bondCoupon,
   bondsTotal,
+  COMMISSION_CENTS,
+  marketAt,
+  SHARES_PER_BUSINESS,
+  stocksValue,
+  type BusinessState,
   calendarOf,
   currentMonth,
   diaryParagraphs,
@@ -25,7 +30,7 @@ import {
 } from '../sim'
 import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
-import { BUILDING_BY_ID, BUILDINGS, WORLD_NAMES } from '../scene/registry'
+import { BUILDING_BY_ID, BUILDINGS, WORLD_NAMES, type BuildingId } from '../scene/registry'
 import { pendingEvents } from './events'
 
 type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'sky'
@@ -91,6 +96,36 @@ const KIND_ICON: Record<LedgerEvent['kind'], string> = {
   cupon: '🪙',
   vencimiento: '🏛️',
   impuestos: '🦉',
+  dividendo: '🎁',
+  tormenta: '⛈️',
+  'acciones-compra': '📈',
+  'acciones-venta': '📉',
+}
+
+/** Línea de precio de los últimos meses, sin ejes: solo la forma. */
+function Sparkline({ values, up }: { values: number[]; up: boolean }) {
+  const w = 120
+  const h = 36
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = max - min || 1
+  const pts = values.map((v, i) => `${(i / Math.max(1, values.length - 1)) * w},${h - 3 - ((v - min) / span) * (h - 6)}`).join(' ')
+  const color = up ? 'var(--color-green)' : 'var(--color-red)'
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" className="shrink-0">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function PctChange({ now, before }: { now: number; before: number }) {
+  const pct = before > 0 ? ((now - before) / before) * 100 : 0
+  const up = pct >= 0
+  return (
+    <span className={`font-display font-extrabold tabular-nums text-[13px] ${up ? 'text-green-d' : 'text-red-d'}`}>
+      {up ? '▲' : '▼'} {Math.abs(pct).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %
+    </span>
+  )
 }
 
 /** Pestañas del kit (Meter/Sacar, Diario/Ayuda…). */
@@ -192,14 +227,21 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 function PatrimonioPanel() {
   const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
   const setView = useGame((s) => s.setView)
+  const month = currentMonth(game, nowMs)
   const bonds = bondsTotal(game)
-  const total = game.huchaCents + game.bankCents + bonds
-  const rows: { icon: string; name: string; cents: number | null; world: number; view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento'; tone: string }[] = [
+  const stocks = stocksValue(game, month)
+  const invested = Object.values(game.holdings ?? {}).reduce((a, h) => a + h.shares * h.avgCostCents, 0)
+  const total = game.huchaCents + game.bankCents + bonds + stocks
+  const rows: { icon: string; name: string; cents: number | null; world: number; view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento' | 'mercado'; tone: string; note?: string }[] = [
     { icon: '🪙', name: 'Cofre de la cueva', cents: game.huchaCents, world: 1, view: 'cofre', tone: 'g-icon--orange' },
     { icon: '🏦', name: 'Banco de la Isla', cents: game.bankUnlocked ? game.bankCents : null, world: 1, view: 'banco', tone: 'g-icon--green' },
     { icon: '📜', name: 'Bonos del Ayuntamiento', cents: game.world >= 2 ? bonds : null, world: 2, view: 'ayuntamiento', tone: 'g-icon--blue' },
-    { icon: '📈', name: 'Acciones', cents: null, world: 3, tone: 'g-icon--purple' },
+    {
+      icon: '📈', name: 'Acciones', cents: game.world >= 3 ? stocks : null, world: 3, view: 'mercado', tone: 'g-icon--purple',
+      note: stocks > 0 ? `${stocks - invested >= 0 ? 'ganas' : 'pierdes'} ${formatCents(Math.abs(stocks - invested))} sin vender` : undefined,
+    },
     { icon: '🧺', name: 'Fondo Isla', cents: null, world: 4, tone: 'g-icon--purple' },
   ]
   return (
@@ -226,9 +268,12 @@ function PatrimonioPanel() {
                 {locked ? (
                   <div className="text-[12px] font-bold text-ink-3">{r.world === 1 ? 'Abre al terminar el año 1 (o al llegar al Nivel 2)' : `Se abre en el Nivel ${r.world}`}</div>
                 ) : (
-                  <div className="g-bar g-bar--sm g-bar--orange mt-1">
-                    <i style={{ width: `${pct}%` }} />
-                  </div>
+                  <>
+                    <div className="g-bar g-bar--sm g-bar--orange mt-1">
+                      <i style={{ width: `${pct}%` }} />
+                    </div>
+                    {r.note && <div className={`text-[11px] font-bold mt-0.5 ${r.note.startsWith('ganas') ? 'text-green-d' : 'text-red-d'}`}>{r.note}</div>}
+                  </>
                 )}
               </div>
               {!locked && (
@@ -1061,6 +1106,252 @@ function EdificioPanel() {
   )
 }
 
+/* ───────────────────────── Mercado de acciones ───────────────────────── */
+
+function BusinessRow({ b, shares, onOpen }: { b: BusinessState; shares: number; onOpen: () => void }) {
+  const up = b.priceCents >= b.previousPriceCents
+  return (
+    <li>
+      <button type="button" onClick={onOpen} className="g-card w-full text-left !gap-2">
+        <div className="g-card__head">
+          <span className="g-icon g-icon--purple" aria-hidden="true">
+            {b.def.icon}
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{b.def.name}</div>
+            <div className="text-[12px] font-semibold text-ink-l leading-snug">
+              {b.yieldBps > 0 ? `Dividendo ${formatPct(b.yieldBps)} al año` : 'No reparte dividendo'}
+              {shares > 0 ? ` · tienes ${shares} (${shares} %)` : ''}
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="font-display font-extrabold text-ink text-lg leading-none flex items-center gap-1 justify-end">
+              <CoinIcon size={14} />
+              {formatCents(b.priceCents, { alwaysDecimals: true })}
+            </div>
+            <PctChange now={b.priceCents} before={b.previousPriceCents} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Sparkline values={b.history} up={up} />
+          <span className="text-[11px] font-bold text-ink-3 text-right">
+            {b.monthsToResults === 0 ? 'Hoy publica cuentas' : `Cuentas en ${b.monthsToResults} ${b.monthsToResults === 1 ? 'día' : 'días'}`}
+            {b.lastQuarter.storm && <span className="block text-red-d">⛈️ Tormenta este trimestre</span>}
+          </span>
+        </div>
+      </button>
+    </li>
+  )
+}
+
+function MercadoPanel() {
+  const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
+  const showBusiness = useGame((s) => s.showBusiness)
+  const [tab, setTab] = useState<'negocios' | 'cartera'>('negocios')
+  const month = currentMonth(game, nowMs)
+  const market = marketAt(game.seed, month, game.world)
+  const stocks = stocksValue(game, month)
+  const invested = Object.values(game.holdings ?? {}).reduce((a, h) => a + h.shares * h.avgCostCents, 0)
+  const mine = market.filter((b) => (game.holdings[b.def.id]?.shares ?? 0) > 0)
+  return (
+    <Sheet title="Mercado" tone="purple">
+      <div className="flex items-center justify-between mb-3">
+        <span className="g-label">Tienes en el cofre</span>
+        <Amount cents={game.huchaCents} size="lg" />
+      </div>
+      <Tabs value={tab} onChange={setTab} options={[['negocios', 'Negocios'], ['cartera', 'Mi cartera']]} />
+      {tab === 'negocios' ? (
+        <>
+          <div className="mt-3">
+            <Tortuga>
+              Cada negocio tiene {SHARES_PER_BUSINESS} acciones. Comprar una es ser dueño del 1 %: una parte de lo que gane es tuya. El precio sigue a lo que gana el negocio… con
+              algo de nervios. Cada operación cuesta {formatCents(COMMISSION_CENTS, { alwaysDecimals: true })}.
+            </Tortuga>
+          </div>
+          <ul className="grid gap-2 mt-3">
+            {market.map((b) => (
+              <BusinessRow key={b.def.id} b={b} shares={game.holdings[b.def.id]?.shares ?? 0} onOpen={() => showBusiness(b.def.id as BuildingId)} />
+            ))}
+          </ul>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <Big label="Valen hoy" cents={stocks} />
+            <div className="g-inset p-3.5">
+              <div className="g-label">Sin vender</div>
+              <div className={`font-display font-extrabold text-2xl mt-1 tabular-nums ${stocks - invested >= 0 ? 'text-green-d' : 'text-red-d'}`}>
+                {stocks - invested >= 0 ? '+' : '−'}
+                {formatCents(Math.abs(stocks - invested))}
+              </div>
+            </div>
+          </div>
+          {mine.length === 0 ? (
+            <div className="g-inset p-3.5 mt-3 text-ink-l text-sm font-semibold">Todavía no tienes acciones. Empieza con una o dos de la Panadería: es la más tranquila.</div>
+          ) : (
+            <ul className="grid gap-2 mt-3">
+              {mine.map((b) => {
+                const h = game.holdings[b.def.id]
+                const gain = (b.priceCents - h.avgCostCents) * h.shares
+                return (
+                  <li key={b.def.id}>
+                    <button type="button" onClick={() => showBusiness(b.def.id as BuildingId)} className="g-row w-full text-left">
+                      <span className="g-icon g-icon--purple" aria-hidden="true">
+                        {b.def.icon}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-display font-extrabold text-ink text-[15px] leading-tight">
+                          {b.def.name} · {h.shares} %
+                        </div>
+                        <div className="text-[12px] font-semibold text-ink-l">
+                          Te costaron {formatCents(h.avgCostCents, { alwaysDecimals: true })} de media · hoy {formatCents(b.priceCents, { alwaysDecimals: true })}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Amount cents={h.shares * b.priceCents} size="md" />
+                        <div className={`text-[11px] font-extrabold tabular-nums ${gain >= 0 ? 'text-green-d' : 'text-red-d'}`}>
+                          {gain >= 0 ? '+' : '−'}
+                          {formatCents(Math.abs(gain))}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <SectionTitle>Últimos movimientos</SectionTitle>
+          <Ledger events={game.ledger.filter((e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta')} />
+        </>
+      )}
+    </Sheet>
+  )
+}
+
+const SHARE_QUICK = [1, 5, 10, 25]
+
+function NegocioPanel() {
+  const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
+  const id = useGame((s) => s.infoBuilding)
+  const buyShares = useGame((s) => s.buyShares)
+  const sellShares = useGame((s) => s.sellShares)
+  const setView = useGame((s) => s.setView)
+  const [mode, setMode] = useState<'comprar' | 'vender'>('comprar')
+  const [custom, setCustom] = useState('')
+  if (!id) return null
+  const month = currentMonth(game, nowMs)
+  const b = marketAt(game.seed, month, game.world).find((x) => x.def.id === id)
+  const def = BUILDING_BY_ID[id]
+  if (!b) return null
+  const holding = game.holdings[id] ?? { shares: 0, avgCostCents: 0 }
+  const up = b.priceCents >= b.previousPriceCents
+  const maxBuy = Math.min(SHARES_PER_BUSINESS - holding.shares, Math.floor((game.huchaCents - COMMISSION_CENTS) / b.priceCents))
+  const parsed = parseInt(custom, 10)
+  const limit = mode === 'comprar' ? maxBuy : holding.shares
+  const customOk = Number.isFinite(parsed) && parsed > 0 && parsed <= limit
+  const act = (n: number) => {
+    if (mode === 'comprar') buyShares(id, n)
+    else sellShares(id, n)
+    setCustom('')
+  }
+  const q = b.lastQuarter
+  return (
+    <Sheet title={def.name} tone="purple">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="g-label">Precio por acción</div>
+          <div className="font-display font-extrabold text-ink text-3xl leading-none flex items-center gap-1.5 mt-1">
+            <CoinIcon size={22} />
+            {formatCents(b.priceCents, { alwaysDecimals: true })}
+          </div>
+          <div className="mt-1">
+            <PctChange now={b.priceCents} before={b.previousPriceCents} /> <span className="text-[11px] font-bold text-ink-3">este mes</span>
+          </div>
+        </div>
+        <Sparkline values={b.history} up={up} />
+      </div>
+      <p className="text-ink-l font-semibold text-[13.5px] leading-snug mt-2 mb-0">{b.def.character}</p>
+
+      <SectionTitle>Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}</SectionTitle>
+      {q.storm && b.def.storm && <p className="m-0 mb-2 text-[13px] font-bold text-red-d">⛈️ {b.def.storm.label}</p>}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="g-inset p-2.5 text-center">
+          <div className="g-label !text-[10px]">Ventas / acción</div>
+          <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.salesCents, { alwaysDecimals: true })}</div>
+        </div>
+        <div className="g-inset p-2.5 text-center">
+          <div className="g-label !text-[10px]">Beneficio / acción</div>
+          <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.epsCents, { alwaysDecimals: true })}</div>
+        </div>
+        <div className="g-inset p-2.5 text-center">
+          <div className="g-label !text-[10px]">Dividendo / acción</div>
+          <div className={`font-display font-extrabold text-[17px] tabular-nums ${q.dividendCents > 0 ? 'text-green-d' : 'text-ink-3'}`}>
+            {q.dividendCents > 0 ? formatCents(q.dividendCents, { alwaysDecimals: true }) : '—'}
+          </div>
+        </div>
+      </div>
+      <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+        {b.yieldBps > 0 ? `A este precio, el dividendo esperado es un ${formatPct(b.yieldBps)} al año. ` : 'Este negocio no reparte dividendo: reinvierte para crecer. '}
+        {b.monthsToResults === 0 ? 'Hoy se han publicado las cuentas.' : `Próximas cuentas en ${b.monthsToResults} ${b.monthsToResults === 1 ? 'día' : 'días'}.`}
+      </p>
+
+      <SectionTitle>Tus acciones</SectionTitle>
+      <div className="g-inset p-3.5 flex items-center justify-between gap-3">
+        <div>
+          <div className="font-display font-extrabold text-ink text-[16px]">
+            {holding.shares} de {SHARES_PER_BUSINESS} · {holding.shares} % {holding.shares > 0 ? 'tuyo' : ''}
+          </div>
+          {holding.shares > 0 && (
+            <div className="text-[12px] font-semibold text-ink-l">
+              Precio medio {formatCents(holding.avgCostCents, { alwaysDecimals: true })} ·{' '}
+              <span className={b.priceCents >= holding.avgCostCents ? 'text-green-d' : 'text-red-d'}>
+                {b.priceCents >= holding.avgCostCents ? 'ganas' : 'pierdes'} {formatCents(Math.abs(b.priceCents - holding.avgCostCents) * holding.shares)}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="g-bar g-bar--sm w-24">
+          <i style={{ width: `${holding.shares}%` }} />
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <Tabs value={mode} onChange={setMode} options={[['comprar', 'Comprar'], ['vender', 'Vender']]} />
+      </div>
+      <div className="grid grid-cols-4 gap-2 mt-3">
+        {SHARE_QUICK.map((n) => (
+          <button key={n} type="button" disabled={n > limit} onClick={() => act(n)} className="g-btn g-btn--cream g-btn--sm !px-0 tabular-nums">
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 mt-2 items-center">
+        <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
+          <input inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Nº de acciones" className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+        </div>
+        <button type="button" disabled={!customOk} onClick={() => act(parsed)} className={`g-btn g-btn--sm ${mode === 'comprar' ? 'g-btn--purple' : 'g-btn--orange'}`}>
+          {mode === 'comprar' ? 'Comprar' : 'Vender'}
+        </button>
+        <button type="button" disabled={limit <= 0} onClick={() => act(limit)} className="g-btn g-btn--cream g-btn--sm">
+          {mode === 'comprar' ? 'Máx' : 'Todas'}
+        </button>
+      </div>
+      <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+        {mode === 'comprar'
+          ? `${limit > 0 ? `Puedes comprar hasta ${limit}.` : 'No te llega para ninguna.'} Cada operación cuesta ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })} de comisión.`
+          : `Vendes al precio de hoy. Si ganas respecto a tu precio medio, Hacienda se lleva el 19 % de la ganancia; si pierdes, la pérdida resta de tus ganancias del año.`}
+      </p>
+      <div className="mt-3">
+        <GButton onClick={() => setView('mercado')} tone="g-btn--cream">
+          Ver todos los negocios
+        </GButton>
+      </div>
+    </Sheet>
+  )
+}
+
 export function Panels() {
   const view = useGame((s) => s.view)
   switch (view) {
@@ -1084,6 +1375,10 @@ export function Panels() {
       return <EscuelaPanel />
     case 'edificio':
       return <EdificioPanel />
+    case 'mercado':
+      return <MercadoPanel />
+    case 'negocio':
+      return <NegocioPanel />
     case 'misiones':
       return <MisionesPanel />
     case 'eventos':

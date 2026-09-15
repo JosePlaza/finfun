@@ -4,7 +4,7 @@
  */
 import { LESSONS, WORLD2_UNLOCK_ITEM } from './config'
 import type { GameState } from './types'
-import { bondsTotal } from './engine'
+import { bondsTotal, stocksValue } from './engine'
 
 export interface Mission {
   id: string
@@ -12,7 +12,7 @@ export interface Mission {
   /** Qué hay que hacer, en una frase para un niño. */
   hint: string
   /** Dónde se hace (lugar del nivel), para poder ir directamente. */
-  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela'
+  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado'
   progress: number
   goal: number
   done: boolean
@@ -38,7 +38,8 @@ function m(id: string, title: string, hint: string, place: Mission['place'], ico
 }
 
 export function missionsFor(state: GameState): MissionBoard {
-  if (state.world >= 3) return world3Board(state)
+  if (state.world >= 4) return world4Board(state)
+  if (state.world === 3) return world3Board(state)
   if (state.world === 2) return world2Board(state)
   return world1Board(state)
 }
@@ -74,11 +75,24 @@ function world2Board(state: GameState): MissionBoard {
 }
 
 function world3Board(state: GameState): MissionBoard {
+  const dividends = state.ledger.filter((e) => e.kind === 'dividendo').length
   const missions: Mission[] = [
+    m('acciones', 'Compra acciones de dos negocios', 'En el Mercado. Un trozo de la Panadería y otro de la Heladería, por ejemplo.', 'mercado', '📈', (state.businessesBought ?? []).length, 2),
+    m('dividendo', 'Cobra un dividendo', 'Al cerrar el trimestre, los negocios que ganan reparten. El dividendo no está prometido.', 'mercado', '🎁', dividends, 1),
+    m('tormenta', 'Aguanta una tormenta sin vender', 'Ten acciones del Puerto cuando llegue una tormenta y no las vendas hasta las siguientes cuentas.', 'mercado', '⛈️', state.stormsSurvived ?? 0, 1),
     m('huerto', 'Construye el huerto', 'Cuesta 1000 y da una cesta grande cada tres meses: una inversión que se come.', 'huerto', '🌾', state.huertoBuiltMonth !== null ? 1 : 0, 1),
     m('lecciones-todas', 'Lee todas las lecciones', 'La escuela tiene una lección por cada idea importante.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
   ]
-  return board(3, 'El Mercado', missions, 'Nivel 4 · La Tormenta (próximamente)')
+  return board(3, 'El Mercado', missions, 'Nivel 4 · La Tormenta: siete negocios más y el Fondo Isla')
+}
+
+function world4Board(state: GameState): MissionBoard {
+  const missions: Mission[] = [
+    m('cinco', 'Acciones de 5 negocios distintos', 'No pongas todos los huevos en la misma cesta.', 'mercado', '🧺', Object.keys(state.holdings ?? {}).length, 5),
+    m('cartera', 'Cartera de 1000 en acciones', 'Valor a precio de hoy de todas tus acciones.', 'mercado', '📈', stocksValue(state, state.processedMonth), 1000_00),
+    m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos y acciones juntos.', 'cofre', '💰', state.huchaCents + state.bankCents + bondsTotal(state) + stocksValue(state, state.processedMonth), 3000_00),
+  ]
+  return board(4, 'La Tormenta', missions, 'Isla completa (próximamente)')
 }
 
 function board(world: number, worldName: string, missions: Mission[], reward: string): MissionBoard {

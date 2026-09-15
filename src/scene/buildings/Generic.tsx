@@ -23,6 +23,8 @@ interface Props {
   unlocked: boolean
   /** Para construcciones que paga el jugador (huerto): ¿ya está construida? */
   built?: boolean
+  /** Acciones del jugador en este negocio (de 100): se muestra "Tuyo: N %" en el cartel. */
+  ownedPct?: number
   onTap: () => void
 }
 
@@ -343,11 +345,11 @@ function Silo({ position, h = 2.8 }: { position: V3; h?: number }) {
 /* ───────────────────────── Recetas ───────────────────────── */
 
 export function GenericBuilding(props: Props) {
-  const { def, position, palette, night, unlocked, built = true, onTap } = props
+  const { def, position, palette, night, unlocked, built = true, ownedPct, onTap } = props
   if (!unlocked) return <ConstructionSite def={def} position={position} onTap={onTap} />
   if (def.costCents && !built) return <ForSaleLot def={def} position={position} palette={palette} onTap={onTap} />
   const r = def.rotation
-  const label = <Label text={def.name} y={4.2} />
+  const label = <Label text={def.name} sub={ownedPct ? `Tuyo: ${ownedPct} %` : undefined} tone={ownedPct ? 'coin' : 'default'} y={4.2} />
   const wrap = (children: React.ReactNode, size: V3 = [6, 4.5, 6]) => (
     <group position={position} rotation={[0, r, 0]}>
       <TapZone size={size} onTap={onTap}>{children}</TapZone>

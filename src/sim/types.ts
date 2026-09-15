@@ -43,6 +43,10 @@ export type LedgerKind =
   | 'cupon'
   | 'vencimiento'
   | 'impuestos'
+  | 'dividendo'
+  | 'tormenta'
+  | 'acciones-compra'
+  | 'acciones-venta'
 
 export interface LedgerEvent {
   kind: LedgerKind
@@ -65,6 +69,9 @@ export interface DiaryEntry {
   bankInterestYearCents: number
   spentYearCents: number
   earnedTasksYearCents: number
+  /** Valor de las acciones al cerrar el año y dividendos cobrados (Nivel 3). */
+  stocksValueCents?: number
+  dividendsYearCents?: number
   firstTime: boolean
 }
 
@@ -77,6 +84,8 @@ export interface PendingYearEnd {
   bankInterestYearCents: number
   spentYearCents: number
   earnedTasksYearCents: number
+  stocksValueCents?: number
+  dividendsYearCents?: number
 }
 
 /** Bono comprado al Ayuntamiento: préstamo a plazo fijo con cupón trimestral. */
@@ -100,6 +109,12 @@ export interface Declaration {
   /** Rendimientos brutos del año (intereses + cupones). */
   grossCents: number
   taxCents: number
+}
+
+/** Acciones de un negocio en manos del jugador, con su precio medio de compra. */
+export interface Holding {
+  shares: number
+  avgCostCents: number
 }
 
 export interface GameState {
@@ -162,4 +177,17 @@ export interface GameState {
   declarations: Declaration[]
   /** Lecciones leídas en la escuela. */
   lessonsRead: string[]
+
+  // ───── Nivel 3: acciones ─────
+  holdings: Record<string, Holding>
+  /** Negocios de los que se han comprado acciones alguna vez (misiones). */
+  businessesBought: string[]
+  /** Dividendos cobrados en el año (para el diario). */
+  yearDividendsCents: number
+  /** Pérdidas realizadas del año que compensan ganancias ante Hacienda. */
+  yearLossCents: number
+  /** Tormentas aguantadas con acciones del negocio sin vender hasta las siguientes cuentas. */
+  stormsSurvived: number
+  /** Tormenta en curso: negocio y acciones que se tenían al publicarse (null si ninguna). */
+  stormWatch: { businessId: string; shares: number; sinceMonth: number } | null
 }

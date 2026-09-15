@@ -23,6 +23,7 @@ import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
 import { missionsFor } from './missions'
+import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS } from './market'
 
 const LEDGER_MAX = 80
 
@@ -65,6 +66,12 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     taxDebtCents: 0,
     declarations: [],
     lessonsRead: [],
+    holdings: {},
+    businessesBought: [],
+    yearDividendsCents: 0,
+    yearLossCents: 0,
+    stormsSurvived: 0,
+    stormWatch: null,
   }
 }
 
@@ -79,6 +86,7 @@ export function migrate(state: GameState): GameState {
     state.bonds === undefined ||
     state.lessonsRead === undefined ||
     state.declarations === undefined ||
+    state.holdings === undefined ||
     (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
@@ -103,6 +111,12 @@ function clone(state: GameState): GameState {
   c.taxDebtCents ??= 0
   c.declarations ??= []
   c.lessonsRead ??= []
+  c.holdings ??= {}
+  c.businessesBought ??= []
+  c.yearDividendsCents ??= 0
+  c.yearLossCents ??= 0
+  c.stormsSurvived ??= 0
+  c.stormWatch ??= null
   // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
   if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true
   // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
@@ -168,12 +182,22 @@ export function bondCoupon(principalCents: number, couponBps: number): number {
 function earnTaxable(state: GameState, gross: number): { retained: number; net: number } {
   if (!state.taxesUnlocked || gross <= 0) return { retained: 0, net: gross }
   if (state.taxMode === 'cada-cobro') {
-    const retained = applyBps(gross, RETENTION_BPS)
+    // Las pérdidas del año en acciones compensan: solo se retiene sobre lo que sobra.
+    const offset = Math.min(gross, state.yearLossCents)
+    state.yearLossCents -= offset
+    const retained = applyBps(gross - offset, RETENTION_BPS)
     state.yearTaxCents += retained
     return { retained, net: gross - retained }
   }
   state.yearPendingTaxableCents += gross
   return { retained: 0, net: gross }
+}
+
+/** Valor a precio de hoy de las acciones del jugador. */
+export function stocksValue(state: GameState, month: number): number {
+  let total = 0
+  for (const [id, h] of Object.entries(state.holdings ?? {})) total += h.shares * priceAt(state.seed, id, month)
+  return total
 }
 
 /** Cobra a Hacienda lo que se debe: primero del cofre, luego del banco; el resto queda como deuda. */
@@ -282,6 +306,38 @@ function processMonth(state: GameState, month: number) {
   }
   state.bonds = state.bonds.filter((b) => month < b.maturityMonth)
 
+  // 5b. Cuentas trimestrales de los negocios: dividendos al cofre y noticias (tormentas).
+  if (state.world >= 3 && isResultsMonth(month)) {
+    const q = Math.floor(month / 3)
+    for (const def of BUSINESSES) {
+      if (def.world > state.world) continue
+      const quarter = quarterFor(state.seed, def, q)
+      const holding = state.holdings[def.id]
+      if (quarter.storm && def.storm) {
+        log(state, { kind: 'tormenta', month, amountCents: 0, label: def.storm.label })
+        if (holding && holding.shares > 0 && !state.stormWatch) state.stormWatch = { businessId: def.id, shares: holding.shares, sinceMonth: month }
+      }
+      if (holding && holding.shares > 0 && quarter.dividendCents > 0) {
+        const gross = quarter.dividendCents * holding.shares
+        const { net, retained } = earnTaxable(state, gross)
+        state.huchaCents += net
+        state.yearDividendsCents += net
+        log(state, {
+          kind: 'dividendo',
+          month,
+          amountCents: net,
+          label: retained > 0 ? `Dividendo de ${def.name} (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : `Dividendo de ${def.name}`,
+        })
+      }
+    }
+    // Aguantar una tormenta: seguir con las mismas acciones (o más) hasta las siguientes cuentas.
+    if (state.stormWatch && state.stormWatch.sinceMonth < month) {
+      const h = state.holdings[state.stormWatch.businessId]
+      if (h && h.shares >= state.stormWatch.shares) state.stormsSurvived += 1
+      state.stormWatch = null
+    }
+  }
+
   // 6. Deuda con Hacienda pendiente de otros años: se cobra en cuanto hay dinero.
   if (state.taxDebtCents > 0) {
     const paid = payTax(state, state.taxDebtCents)
@@ -294,11 +350,13 @@ function processMonth(state: GameState, month: number) {
   // 7. Cierre de año: declaración anual, y la ruleta de inflación queda esperando al jugador.
   if (cal.isYearEnd) {
     if (state.taxesUnlocked && state.taxMode === 'anual' && state.yearPendingTaxableCents > 0) {
-      const tax = applyBps(state.yearPendingTaxableCents, RETENTION_BPS)
+      // Las pérdidas en acciones del año restan de la base.
+      const base = Math.max(0, state.yearPendingTaxableCents - state.yearLossCents)
+      const tax = applyBps(base, RETENTION_BPS)
       const paid = payTax(state, tax)
       state.taxDebtCents += tax - paid
       state.yearTaxCents += tax
-      log(state, { kind: 'impuestos', month, amountCents: -tax, label: `Declaración del año ${cal.year}: 19 % de ${formatCents(state.yearPendingTaxableCents)}` })
+      log(state, { kind: 'impuestos', month, amountCents: -tax, label: `Declaración del año ${cal.year}: 19 % de ${formatCents(base)}` })
     }
     if (state.taxesUnlocked) {
       state.declarations.push({ year: cal.year, mode: state.taxMode, grossCents: state.yearPendingTaxableCents + (state.taxMode === 'cada-cobro' ? roundCents((state.yearTaxCents * 10_000) / RETENTION_BPS) : 0), taxCents: state.yearTaxCents })
@@ -311,12 +369,16 @@ function processMonth(state: GameState, month: number) {
       bankInterestYearCents: state.yearBankInterestCents,
       spentYearCents: state.yearSpentCents,
       earnedTasksYearCents: state.yearTasksCents,
+      stocksValueCents: stocksValue(state, month),
+      dividendsYearCents: state.yearDividendsCents,
     })
     state.yearSpentCents = 0
     state.yearTasksCents = 0
     state.yearBankInterestCents = 0
     state.yearPendingTaxableCents = 0
     state.yearTaxCents = 0
+    state.yearDividendsCents = 0
+    state.yearLossCents = 0
   }
 
   if (!state.bankUnlocked && month + 1 >= BANK_UNLOCK_MONTH) {
@@ -362,6 +424,8 @@ export function spinInflation(input: GameState): ActionResult & { inflationBps?:
     bankInterestYearCents: pending.bankInterestYearCents,
     spentYearCents: pending.spentYearCents,
     earnedTasksYearCents: pending.earnedTasksYearCents,
+    stocksValueCents: pending.stocksValueCents ?? 0,
+    dividendsYearCents: pending.dividendsYearCents ?? 0,
     firstTime: state.diary.length === 0,
   }
   state.diary.push(entry)
@@ -508,6 +572,52 @@ export function chooseTaxMode(input: GameState, nowMs: number, mode: TaxMode): A
   return done(state)
 }
 
+export function buyShares(input: GameState, nowMs: number, businessId: string, shares: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  const def = BUSINESS_BY_ID[businessId]
+  if (!def || def.world > state.world) return { ok: false, reason: 'Ese negocio todavía no cotiza.' }
+  shares = Math.floor(shares)
+  if (shares <= 0) return { ok: false, reason: 'Elige cuántas acciones.' }
+  const month = currentMonth(state, nowMs)
+  const price = priceAt(state.seed, businessId, month)
+  const holding = state.holdings[businessId] ?? { shares: 0, avgCostCents: 0 }
+  if (holding.shares + shares > SHARES_PER_BUSINESS) return { ok: false, reason: `${def.name} solo tiene ${SHARES_PER_BUSINESS} acciones.` }
+  const cost = price * shares + COMMISSION_CENTS
+  if (cost > state.huchaCents) return { ok: false, reason: `Te faltan ${formatCents(cost - state.huchaCents)} euroLukys (con la comisión de ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })}).` }
+  state.huchaCents -= cost
+  // Precio medio de compra: lo pagado (sin comisión) entre todas las acciones.
+  const totalCost = holding.avgCostCents * holding.shares + price * shares
+  holding.shares += shares
+  holding.avgCostCents = roundCents(totalCost / holding.shares)
+  state.holdings[businessId] = holding
+  if (!state.businessesBought.includes(businessId)) state.businessesBought.push(businessId)
+  log(state, { kind: 'acciones-compra', month, amountCents: -cost, label: `Compras ${shares} ${shares === 1 ? 'acción' : 'acciones'} de ${def.name} a ${formatCents(price)}` })
+  return done(state)
+}
+
+export function sellShares(input: GameState, nowMs: number, businessId: string, shares: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  const def = BUSINESS_BY_ID[businessId]
+  const holding = state.holdings[businessId]
+  if (!def || !holding || holding.shares <= 0) return { ok: false, reason: 'No tienes acciones de ese negocio.' }
+  shares = Math.floor(shares)
+  if (shares <= 0 || shares > holding.shares) return { ok: false, reason: `Tienes ${holding.shares} acciones.` }
+  const month = currentMonth(state, nowMs)
+  const price = priceAt(state.seed, businessId, month)
+  const gross = price * shares
+  const gain = (price - holding.avgCostCents) * shares
+  let retained = 0
+  if (gain > 0) retained = earnTaxable(state, gain).retained
+  else if (gain < 0) state.yearLossCents += -gain
+  const net = gross - COMMISSION_CENTS - retained
+  state.huchaCents += net
+  holding.shares -= shares
+  if (holding.shares === 0) delete state.holdings[businessId]
+  const gainText = gain > 0 ? `ganas ${formatCents(gain)}` : gain < 0 ? `pierdes ${formatCents(-gain)}` : 'ni ganas ni pierdes'
+  log(state, { kind: 'acciones-venta', month, amountCents: net, label: `Vendes ${shares} ${shares === 1 ? 'acción' : 'acciones'} de ${def.name} a ${formatCents(price)}: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}` })
+  return done(state)
+}
+
 export function readLesson(input: GameState, nowMs: number, lessonId: string): ActionResult {
   const state = clone(advanceTo(input, nowMs))
   if (!LESSONS.some((l) => l.id === lessonId)) return { ok: false, reason: 'Esa lección no existe.' }
@@ -533,7 +643,7 @@ export function completeTask(input: GameState, nowMs: number): ActionResult {
   return done(state)
 }
 
-/** Patrimonio total en céntimos: cofre, buzón, banco y bonos. */
-export function netWorth(state: GameState): number {
-  return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state)
+/** Patrimonio total en céntimos: cofre, buzón, banco, bonos y acciones a precio de hoy. */
+export function netWorth(state: GameState, month = state.processedMonth): number {
+  return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state) + stocksValue(state, month)
 }

@@ -1,4 +1,4 @@
-import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, TASK_ACORNS } from '../sim'
+import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, TASK_ACORNS } from '../sim'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
@@ -23,7 +23,7 @@ export function TopBar() {
   const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions }
   const month = currentMonth(game, nowMs)
   const cal = calendarOf(month)
-  const total = game.huchaCents + game.bankCents + bondsTotal(game)
+  const total = game.huchaCents + game.bankCents + bondsTotal(game) + stocksValue(game, month)
   const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
   const events = pendingEvents(game, acornsLeft, seen)
   const onIsland = view === 'isla'
@@ -44,7 +44,8 @@ export function TopBar() {
           <Hearts hunger={game.hunger} foodMonths={game.foodMonths} onTap={() => setView('tienda')} />
           {/* Patrimonio */}
           <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
-            <Amount cents={total} size="lg" className="text-ink" />
+            {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
+            <Amount cents={Math.floor(total / 100) * 100} size="lg" className="text-ink" />
             <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">▸</span>
           </button>
         </div>

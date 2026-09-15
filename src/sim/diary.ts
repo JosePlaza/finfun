@@ -40,6 +40,13 @@ export function diaryParagraphs(e: DiaryEntry): string[] {
     out.push(`Has gastado ${formatCents(e.spentYearCents)} en la tienda. Gastar también está bien: para eso es el dinero.`)
   }
 
+  if ((e.dividendsYearCents ?? 0) > 0) {
+    out.push(`Los negocios de los que tienes acciones te han repartido ${formatCents(e.dividendsYearCents!)} en dividendos. Sin prometerlo: porque han ganado.`)
+  }
+  if ((e.stocksValueCents ?? 0) > 0) {
+    out.push(`Tus acciones valen hoy ${formatCents(e.stocksValueCents!)}. Mañana valdrán otra cosa, y no pasa nada: lo que importa es lo que ganan los negocios.`)
+  }
+
   if (e.earnedTasksYearCents > 0) {
     out.push(`Con las bellotas has ganado ${formatCents(e.earnedTasksYearCents)}. El trabajo también cuenta.`)
   }

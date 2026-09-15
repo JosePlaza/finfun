@@ -3,7 +3,7 @@ import { Canvas, events as defaultEvents, useFrame, useThree } from '@react-thre
 import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
-import { calendarOf, currentMonth } from '../sim'
+import { BUSINESS_BY_ID, calendarOf, currentMonth } from '../sim'
 import { mulberry32 } from '../sim/rng'
 import { useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
@@ -118,7 +118,7 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     const portrait = aspect < 1
     const fov = (camera as THREE.PerspectiveCamera).fov
     // Qué edificio mira la cámara: el lugar de la vista, o el edificio de la ficha.
-    const target: BuildingId | null = view === 'edificio' ? infoBuilding : OVERVIEW_VIEWS.has(view) ? null : (view as BuildingId)
+    const target: BuildingId | null = view === 'edificio' || view === 'negocio' ? infoBuilding : OVERVIEW_VIEWS.has(view) ? null : (view as BuildingId)
     const focus = view === 'isla' ? focusPoint : null
     const key = `${view}:${target ?? ''}:${focus ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
@@ -185,7 +185,7 @@ function Scene() {
   const acornsFound = useGame((s) => s.acornsFound)
   const acornHint = useGame((s) => s.acornHint)
   const acornReveal = useGame((s) => s.acornReveal)
-  const { collect, setView, pickAcorn, showBuilding } = useGame.getState()
+  const { collect, setView, pickAcorn, showBuilding, showBusiness } = useGame.getState()
   const controls = useRef<OrbitControlsImpl>(null)
 
   const month = currentMonth(game, nowMs)
@@ -261,6 +261,8 @@ function Scene() {
   const tapBuilding = (id: BuildingId) => {
     const def = BUILDING_BY_ID[id]
     if (def.view && game.world >= def.world) return setView(def.view)
+    // Un negocio que ya cotiza abre su ficha de acciones.
+    if (BUSINESS_BY_ID[id] && game.world >= def.world) return showBusiness(id)
     showBuilding(id)
   }
 
@@ -320,6 +322,7 @@ function Scene() {
                 night={night}
                 unlocked={unlocked}
                 built={def.id === 'huerto' ? game.huertoBuiltMonth !== null : true}
+                ownedPct={game.holdings?.[def.id]?.shares}
                 onTap={() => tapBuilding(def.id)}
               />
             )
