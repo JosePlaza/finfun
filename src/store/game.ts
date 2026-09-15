@@ -138,7 +138,7 @@ export const useGame = create<Store>()(
           get().celebrate({
             icon: '🎉',
             title: `¡Se abre el Nivel ${r.state.world}!`,
-            text: r.state.world === 2 ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos. Desde ahora tus rendimientos pasan por Don Búho.' : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
+            text: r.state.world === 2 ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos, y el banco también. Desde ahora tus rendimientos pasan por Don Búho.' : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
             tone: 'purple',
           })
         }

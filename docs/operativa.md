@@ -31,7 +31,7 @@ plusvalías). El jugador elige el modo en Hacienda.
 | --- | --- | --- |
 | **Casa** [hecho] | Recoger la paga (30 eL/mes, se acumula). Ver la despensa y "Mis cosas". | La paga es el ingreso; primero lo necesario. |
 | **Cueva del cofre** [hecho] | Ahorro sin interés. Movimientos. | Guardar es seguro pero no crece; la inflación lo erosiona. |
-| **Banco de la Isla** [hecho] | Abre al cerrar el año 1. Cuenta remunerada 2,5 % anual pagado por meses. Meter/sacar sin límite. | Interés simple → compuesto. Liquidez. |
+| **Banco de la Isla** [hecho] | Abre al cerrar el año 1, o antes si se llega al Nivel 2. Cuenta remunerada 2,5 % anual pagado por meses. Meter/sacar sin límite. | Interés simple → compuesto. Liquidez. |
 | **Tienda** [hecho] | Comida (cestas) y deseos (helado 2, cometa 25, balón 40, bici 180, telescopio 450). Precios con inflación y precio viejo tachado. IVA informativo. | Necesidad vs deseo; inflación en los precios. |
 | **Faro (Doña Tortuga)** [hecho] | Diario de cierre de año con el "¿y si…?" contrafactual. Ayuda. | Coste de oportunidad. |
 | **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. |

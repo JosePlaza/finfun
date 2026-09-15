@@ -79,6 +79,7 @@ export function migrate(state: GameState): GameState {
     state.bonds === undefined ||
     state.lessonsRead === undefined ||
     state.declarations === undefined ||
+    (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
 }
@@ -102,6 +103,8 @@ function clone(state: GameState): GameState {
   c.taxDebtCents ??= 0
   c.declarations ??= []
   c.lessonsRead ??= []
+  // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
+  if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true
   // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
   for (const def of SHOP_ITEMS) {
     if (!c.shop.some((i) => i.id === def.id)) c.shop.push({ id: def.id, priceCents: def.basePriceCents, previousPriceCents: def.basePriceCents })
@@ -455,10 +458,17 @@ export function buy(input: GameState, nowMs: number, itemId: string): ActionResu
   return done(state)
 }
 
-/** El Nivel 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. */
+/**
+ * El Nivel 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. Y si el banco aún
+ * estaba en obras (abre al cerrar el primer año), abre también: en el Nivel 2 no puede haber bonos sin banco.
+ */
 function openWorld2(state: GameState) {
   state.world = 2
   state.taxesUnlocked = true
+  if (!state.bankUnlocked) {
+    state.bankUnlocked = true
+    log(state, { kind: 'banco-abierto', month: state.processedMonth, amountCents: 0, label: 'Abre el Banco de la Isla (llegaste al Nivel 2)' })
+  }
 }
 
 export function buildHuerto(input: GameState, nowMs: number): ActionResult {

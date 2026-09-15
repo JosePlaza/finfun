@@ -189,12 +189,15 @@ describe('tienda y tareas', () => {
     expect(s.huchaCents).toBe(PAGA_CENTS - 25_00)
     expect(buy(s, at(0), 'cometa').ok).toBe(false) // ya la tiene
   })
-  it('comprar la bici abre el Nivel 2', () => {
+  it('comprar la bici abre el Nivel 2, y con él el banco aunque no haya terminado el año', () => {
     let s = advanceTo(fresh(), at(6))
     s = must(collectMailbox(s, at(6)))
+    expect(s.bankUnlocked).toBe(false)
     const r = buy(s, at(6), 'bici')
     expect(r.ok).toBe(true)
     expect(must(r).world).toBe(2)
+    expect(must(r).bankUnlocked).toBe(true)
+    expect(deposit(must(r), at(6), 10_00).ok).toBe(true)
   })
   it('la tarea diaria se hace una vez por mes de isla y paga 1–3 euroLukys', () => {
     const s0 = advanceTo(fresh(), at(0))
