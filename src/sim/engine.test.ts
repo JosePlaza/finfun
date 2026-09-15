@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MONTH_MS, PAGA_CENTS, SHOP_ITEMS } from './config'
-import { calendarOf, monthAt, msUntilNextMonth } from './calendar'
+import { calendarOf, MONTH_NAMES, monthAt, msUntilNextMonth } from './calendar'
 import {
   advanceTo,
   bankAfterOneYear,
@@ -58,10 +58,13 @@ describe('calendario', () => {
     expect(monthAt(EPOCH - 5000, EPOCH)).toBe(0)
   })
   it('estaciones y años', () => {
-    expect(calendarOf(0)).toMatchObject({ year: 1, monthOfYear: 1, season: 'primavera', isYearEnd: false })
-    expect(calendarOf(5)).toMatchObject({ year: 1, season: 'verano' })
-    expect(calendarOf(11)).toMatchObject({ year: 1, monthOfYear: 12, season: 'invierno', isYearEnd: true })
-    expect(calendarOf(12)).toMatchObject({ year: 2, monthOfYear: 1, season: 'primavera' })
+    expect(calendarOf(0)).toMatchObject({ year: 1, monthOfYear: 1, season: 'invierno', isYearEnd: false }) // enero
+    expect(calendarOf(2)).toMatchObject({ season: 'primavera' }) // marzo
+    expect(calendarOf(5)).toMatchObject({ year: 1, season: 'verano' }) // junio
+    expect(calendarOf(8)).toMatchObject({ season: 'otoño' }) // septiembre
+    expect(calendarOf(11)).toMatchObject({ year: 1, monthOfYear: 12, season: 'invierno', isYearEnd: true }) // diciembre
+    expect(calendarOf(12)).toMatchObject({ year: 2, monthOfYear: 1, season: 'invierno' }) // enero del año 2
+    expect(MONTH_NAMES[calendarOf(11).monthOfYear - 1]).toBe('diciembre')
   })
   it('cuenta atrás hasta el siguiente mes', () => {
     expect(msUntilNextMonth(EPOCH, EPOCH)).toBe(MONTH_MS)

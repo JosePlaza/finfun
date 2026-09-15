@@ -42,7 +42,7 @@ Con Supabase, el reloj del juego es la **hora del servidor** (adelantar la hora 
 src/
   sim/        Motor de simulación: puro, determinista, sin dependencias del render. Tests en engine.test.ts
     config.ts   Parámetros de la economía (paga, tipos, inflación, catálogo de la tienda)
-    calendar.ts 1 día = 1 mes; estaciones; nombres de mes (el año de isla empieza en marzo)
+    calendar.ts 1 día = 1 mes; estaciones; nombres de mes (el año de isla va de enero a diciembre; la estación sigue al mes real)
     engine.ts   advanceTo(estado, ahora) recompone todos los meses pendientes; acciones del jugador
     diary.ts    Texto del diario de Doña Tortuga (inflación explicada, "¿y si…?")
   store/      Estado de la app (zustand + persist). Reloj, guardado local/remoto, lugar activo (view)

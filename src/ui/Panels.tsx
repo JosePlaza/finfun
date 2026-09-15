@@ -608,7 +608,7 @@ function FaroPanel() {
       ) : (
         <div className="grid gap-2.5 text-[15px] font-semibold leading-relaxed text-ink">
           {[
-            ['Un día real es un mes de isla', 'Cada tres días cambia la estación y cada doce se cierra un año. La isla sigue aunque no entres.'],
+            ['Un día real es un mes de isla', 'El año de la isla va de enero a diciembre: cada tres días cambia la estación y al pasar de diciembre a enero se cierra el año y sale la ruleta de la inflación. La isla sigue aunque no entres.'],
             ['Cada día', 'Llega la paga a tu casa (tócala para recogerla), hay cinco bellotas escondidas por la isla y tú decides qué haces con tu dinero: gastarlo en la tienda, guardarlo en el cofre o llevarlo al banco.'],
             ['Muévete por la isla', 'Toca un edificio para ir hasta él. Arrastra con un dedo para girar la isla y usa dos dedos para acercarte.'],
             ['La despensa', 'Cada mes se come una ración. Compra cestas en la tienda (la grande sale más barata por mes) o construye el huerto. Seis meses sin comer y la aventura se acaba.'],
