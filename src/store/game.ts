@@ -13,6 +13,7 @@ import {
   currentMonth,
   deposit as simDeposit,
   formatCents,
+  migrate,
   readLesson as simReadLesson,
   spinInflation as simSpinInflation,
   TASK_ACORNS,
@@ -152,22 +153,31 @@ export const useGame = create<Store>()(
         wheelAutoShownFor: -1,
 
         boot: async () => {
-          await syncClock()
-          const remote = await loadRemote()
-          const local = get().game
-          // La partida más avanzada gana; normalmente son la misma.
-          if (remote && (!local || remote.processedMonth >= local.processedMonth)) set({ game: remote })
-          get().tick()
-          set({ ready: true })
+          try {
+            await syncClock()
+            const remote = await loadRemote()
+            const local = get().game
+            // La partida más avanzada gana; normalmente son la misma.
+            if (remote && (!local || remote.processedMonth >= local.processedMonth)) set({ game: remote })
+            // Partidas guardadas con versiones anteriores: se completan los campos nuevos.
+            const g = get().game
+            if (g) set({ game: migrate(g) })
+            get().tick()
+          } catch (err) {
+            console.error('Finfun: error al arrancar', err)
+          } finally {
+            set({ ready: true })
+          }
         },
 
         tick: () => {
           const t = now()
-          const g = get().game
-          if (!g) {
+          const g0 = get().game
+          if (!g0) {
             set({ nowMs: t })
             return
           }
+          const g = migrate(g0)
           const advanced = advanceTo(g, t)
           const month = currentMonth(advanced, t)
           const patch: Partial<Store> = { nowMs: t }

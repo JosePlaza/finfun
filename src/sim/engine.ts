@@ -68,6 +68,21 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
   }
 }
 
+/**
+ * Pone al día una partida guardada con una versión anterior del juego: añade los campos que no
+ * existían con sus valores por defecto. Devuelve el mismo objeto si no falta nada.
+ */
+export function migrate(state: GameState): GameState {
+  const needs =
+    state.foodMonths === undefined ||
+    state.pendingYearEnds === undefined ||
+    state.bonds === undefined ||
+    state.lessonsRead === undefined ||
+    state.declarations === undefined ||
+    SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
+  return needs ? clone(state) : state
+}
+
 /** Copia profunda con valores por defecto para los campos añadidos después de la primera versión. */
 function clone(state: GameState): GameState {
   const c = structuredClone(state)

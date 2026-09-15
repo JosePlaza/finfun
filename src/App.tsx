@@ -7,6 +7,7 @@ import { Panels } from './ui/Panels'
 import { Toast } from './ui/Toast'
 import { DevBar } from './ui/DevBar'
 import { CelebrationOverlay, GameOverOverlay, InflationWheelOverlay } from './ui/Overlays'
+import { ErrorBoundary } from './ui/ErrorBoundary'
 
 export default function App() {
   const game = useGame((s) => s.game)
@@ -39,15 +40,17 @@ export default function App() {
   if (!game) return <NameIsland />
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <Island />
-      <TopBar />
-      <Panels />
-      <Toast />
-      <InflationWheelOverlay />
-      <CelebrationOverlay />
-      <GameOverOverlay />
-      {isDevMode && <DevBar />}
-    </div>
+    <ErrorBoundary>
+      <div className="relative h-full w-full overflow-hidden">
+        <Island />
+        <TopBar />
+        <Panels />
+        <Toast />
+        <InflationWheelOverlay />
+        <CelebrationOverlay />
+        <GameOverOverlay />
+        {isDevMode && <DevBar />}
+      </div>
+    </ErrorBoundary>
   )
 }
