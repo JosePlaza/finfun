@@ -1,6 +1,6 @@
 # Finfun · Operativa de cada edificio
 
-Qué hace el jugador en cada lugar de la isla, qué enseña y con qué números. Los mundos se abren completando las misiones
+Qué hace el jugador en cada lugar de la isla, qué enseña y con qué números. Los niveles se abren completando las misiones
 del anterior (`src/sim/missions.ts`). Las cifras están en euroLukys (eL); un día real es un mes de isla.
 
 Estado de implementación: **[hecho]** funciona en el juego · **[diseño]** definido aquí, pendiente de código.
@@ -18,14 +18,14 @@ comer la aventura termina** y hay que empezar una isla nueva (se pierde todo). A
 (la partida es reproducible), pero la sensación es de sorteo. Al parar se ven el precio viejo y el nuevo de la bici y
 Doña Tortuga escribe el diario. Si no se gira, los precios no suben y queda un aviso en Eventos.
 
-**Hacienda [hecho, Mundo 2].** El 19 % de los rendimientos (intereses del banco, cupones, en el futuro dividendos y
+**Hacienda [hecho, Nivel 2].** El 19 % de los rendimientos (intereses del banco, cupones, en el futuro dividendos y
 plusvalías). El jugador elige el modo en Hacienda.
 
 **Patrimonio [hecho].** Cofre + banco + bonos (+ acciones y fondo cuando existan). Lo gastado en cosas no es patrimonio.
 
 ---
 
-## Mundo 1 · La Isla (sin riesgo)
+## Nivel 1 · La Isla (sin riesgo)
 
 | Edificio | Operativa | Enseña |
 | --- | --- | --- |
@@ -36,11 +36,11 @@ plusvalías). El jugador elige el modo en Hacienda.
 | **Faro (Doña Tortuga)** [hecho] | Diario de cierre de año con el "¿y si…?" contrafactual. Ayuda. | Coste de oportunidad. |
 | **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. |
 
-Misiones M1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · 50 en el banco · **la bici abre el Mundo 2**.
+Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · 50 en el banco · **la bici abre el Nivel 2**.
 
 ---
 
-## Mundo 2 · El Ayuntamiento (renta fija y fiscalidad)
+## Nivel 2 · El Ayuntamiento (renta fija y fiscalidad)
 
 | Edificio | Operativa | Enseña |
 | --- | --- | --- |
@@ -48,13 +48,13 @@ Misiones M1: primera paga · llenar la despensa · bellotas 3 días · comprar a
 | **Hacienda (Don Búho)** [hecho] | Elegir cómo pagar el 19 %: **en cada cobro** (retención instantánea) o **una vez al año** (todo bruto, declaración al cerrar el año; si no hay dinero queda deuda que se cobra en cuanto lo hay). Historial de declaraciones. | Los impuestos existen y financian lo común; diferir el pago deja más dinero componiendo. |
 | **Escuela** [hecho] | Seis lecciones cortas (inflación, interés compuesto, bono, impuestos, riesgo, comida). Leer una da un carné. | Vocabulario y conceptos, con calma. |
 
-Misiones M2: primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Mundo 3**.
+Misiones N2: primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
 
-Diseño pendiente M2: **visitar la isla de la Liebre** (vecina desde el inicio), que gasta todo cada mes: su patrimonio se ve al lado del tuyo en el diario.
+Diseño pendiente N2: **visitar la isla de la Liebre** (vecina desde el inicio), que gasta todo cada mes: su patrimonio se ve al lado del tuyo en el diario.
 
 ---
 
-## Mundo 3 · El Mercado (renta variable) [diseño]
+## Nivel 3 · El Mercado (renta variable) [diseño]
 
 **Mercado de acciones.** Un panel único para comprar y vender acciones de los negocios abiertos. Cada negocio tiene
 un precio por acción que cambia **una vez al mes** (determinista por semilla; tendencia + estacionalidad + ruido propio
@@ -71,13 +71,13 @@ acción), su gráfico de precio de los últimos 12 meses y el botón "Comprar ac
 | **Puerto pesquero** | 25 eL | 2 % trimestral (8 %/año)… | Cada trimestre 1 de 6 de **tormenta**: dividendo 0 y precio −15 % | Mucha renta, mucho susto. |
 | **Astillero** | 30 eL | Ninguno | Crecimiento 8 %/año con ±6 %/mes; reinvierte todo | Crecer sin repartir: la recompensa llega al vender. |
 
-Misiones M3: construir el huerto · comprar acciones de dos negocios · cobrar un dividendo · aguantar una tormenta sin vender · leer todas las lecciones → **Mundo 4**.
+Misiones N3: construir el huerto · comprar acciones de dos negocios · cobrar un dividendo · aguantar una tormenta sin vender · leer todas las lecciones → **Nivel 4**.
 
 ---
 
-## Mundo 4 · La Tormenta (diversificación y crisis) [diseño]
+## Nivel 4 · La Tormenta (diversificación y crisis) [diseño]
 
-Se abren siete negocios más y, a mitad de mundo, **La Tormenta**: un mes en que todos los precios caen un 30 % y el
+Se abren siete negocios más y, a mitad de nivel, **La Tormenta**: un mes en que todos los precios caen un 30 % y el
 diario enseña a no vender con miedo (los que aguantan recuperan en 6–9 meses; los dividendos siguen llegando).
 
 | Negocio | Dividendo | Comportamiento | Enseña |
@@ -90,10 +90,10 @@ diario enseña a no vender con miedo (los que aguantan recuperan en 6–9 meses;
 | **Observatorio** | Ninguno | La mayoría de los años ±0 %; 1 de 8 años **descubrimiento**: ×3 | Alto riesgo: crece muchísimo o nada. |
 | **Casa del Fondo Isla** | Reparte lo que reparten todos, neto | Cesta con todos los negocios a partes iguales; comisión 0,3 %/año; **traspaso** entre fondos sin pasar por Hacienda | Diversificar; el índice gana a casi todos a largo plazo. |
 
-Hacienda en M4: tramos del ahorro (19 % hasta 6000 eL, 21 % hasta 50 000), compensación de pérdidas, y la declaración
+Hacienda en N4: tramos del ahorro (19 % hasta 6000 eL, 21 % hasta 50 000), compensación de pérdidas, y la declaración
 anual muestra cada apartado con palabras de niño.
 
-Misiones M4: tener acciones de 5 negocios distintos · comprar Fondo Isla · pasar La Tormenta sin vender nada · 3000 de patrimonio · patrimonio mayor que el de la Liebre → **Isla completa** (modo libre con nuevos años y récords).
+Misiones N4: tener acciones de 5 negocios distintos · comprar Fondo Isla · pasar La Tormenta sin vender nada · 3000 de patrimonio · patrimonio mayor que el de la Liebre → **Isla completa** (modo libre con nuevos años y récords).
 
 ---
 

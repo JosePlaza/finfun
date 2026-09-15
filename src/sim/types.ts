@@ -147,7 +147,7 @@ export interface GameState {
   // ───── Cierre de año: la ruleta la gira el jugador ─────
   pendingYearEnds: PendingYearEnd[]
 
-  // ───── Mundo 2: bonos y Hacienda ─────
+  // ───── Nivel 2: bonos y Hacienda ─────
   bonds: Bond[]
   bondsBought: number
   taxMode: TaxMode

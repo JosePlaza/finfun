@@ -2,7 +2,7 @@
 
 Juego web low poly para que los niños aprendan a ahorrar e invertir. **Un día real es un mes de isla.**
 
-Estado: **P1 · La Isla** (Mundo 1). Mundo 3D modular sobre un terreno continuo de varios niveles, con los 20 edificios del juego en el mapa (los de mundos futuros, en obras); paga diaria, tarea de las bellotas, inflación, banco (cuenta remunerada), estaciones y el diario de Doña Tortuga. El concepto completo está en `docs/concepto.html`.
+Estado: **P1 · La Isla** (Nivel 1). Mundo 3D modular sobre un terreno continuo de varios niveles, con los 20 edificios del juego en el mapa (los de niveles futuros, en obras); paga diaria, tarea de las bellotas, inflación, banco (cuenta remunerada), estaciones y el diario de Doña Tortuga. El concepto completo está en `docs/concepto.html`.
 
 ## Arrancar
 
@@ -47,7 +47,7 @@ src/
     diary.ts    Texto del diario de Doña Tortuga (inflación explicada, "¿y si…?")
   store/      Estado de la app (zustand + persist). Reloj, guardado local/remoto, lugar activo (view)
   scene/      EL MUNDO 3D (react-three-fiber)
-    palette.ts     Paleta única del mundo (C), paletas por estación y escala (1 unidad ≈ 1 m)
+    palette.ts     Paleta única del nivel (C), paletas por estación y escala (1 unidad ≈ 1 m)
     kit/Parts.tsx  Kit de piezas: Wall, GableRoof, HipRoof, ConeRoof, Gable, Door, Window, Chimney, Fence,
                    Column, Steps, Lantern, Crate, Barrel, Sack, Sign, FlagPole, CoinEmblem, Label, TapZone…
     kit/Nature.tsx Palm, Bush, Flowers, GrassTuft, Rock, RockCluster, Acorn
@@ -64,13 +64,13 @@ docs/concepto.html    Documento de concepto del juego
 
 ## El mundo es modular: cómo añadir un edificio
 
-1. **Regístralo** en `BUILDINGS` (`src/scene/registry.ts`): id, nombre, mundo en que se desbloquea, qué enseña, posición (x, z),
+1. **Regístralo** en `BUILDINGS` (`src/scene/registry.ts`): id, nombre, nivel en que se desbloquea, qué enseña, posición (x, z),
    giro (π/4 mira a la cámara), radio de explanada y, si tendrá panel propio, su `view` y encuadre de cámara.
    El terreno reserva automáticamente una explanada plana bajo él y los caminos (`ROADS` en `Island.tsx`) lo unen al resto.
 2. **Dale receta** en `src/scene/buildings/Generic.tsx` (un `case` más) usando solo piezas del kit: muros, tejados, puertas,
    ventanas, farolas, grúas, cúpulas, aspas… Si necesitas una pieza nueva, añádela al kit para que la hereden los demás.
    Los edificios "héroe" con lógica propia (casa, banco, tienda, cueva, faro) tienen su archivo.
-3. Hasta que el jugador llega a su mundo, el edificio aparece como **solar en obras** con un cartel "Mundo N · nombre".
+3. Hasta que el jugador llega a su nivel, el edificio aparece como **solar en obras** con un cartel "Nivel N · nombre".
 4. Si debe tener panel, añade su caso en `ui/Panels.tsx` (y su pestaña en `TABS` de `ui/Hud.tsx` si va en el menú).
 
 ### Terreno
@@ -80,9 +80,9 @@ hondonadas (`HILLS`) que crean varios niveles, y una explanada aplanada bajo cad
 Cada edificio se asienta sobre un **zócalo** (`Plinth` en `kit/Parts.tsx`): un disco de arena a ras de la explanada y un faldón de roca hundido en el terreno, de modo que nunca queda nada en el aire aunque la ladera caiga junto a él. Las explanadas son planas hasta 1,25 veces la huella del edificio y entre huellas hay al menos ~3 unidades libres (isla de 56 × 46 unidades). La malla (`Ground` en `Landscape.tsx`) se colorea por altura y pendiente: arena, hierba, roca en las laderas. Caminos, vegetación,
 rocas de costa y bellotas se apoyan sobre esa función, así que mover una colina lo mueve todo.
 
-### Edificios y mundo en que se abren
+### Edificios y nivel en que se abren
 
-| Mundo | Edificios |
+| Nivel | Edificios |
 | --- | --- |
 | 1 · La Isla | Casa, Banco, Tienda, Cueva del cofre, Faro (Doña Tortuga) |
 | 2 · El Ayuntamiento | Ayuntamiento (bonos), Hacienda (Don Búho), Escuela (carnés) |
@@ -97,31 +97,38 @@ Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre
 
 HUD (`src/ui/Hud.tsx`): arriba a la izquierda, el nombre de la isla y el año/mes; debajo, en vertical, los botones **Misiones** y **Eventos**
 (este último con un bullet rojo animado y el número de cosas pendientes: paga en el buzón, bellotas, banco recién abierto, diario nuevo,
-misión completada, mundo nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, el **patrimonio**: al pulsarlo se desglosa dónde está
-cada parte (cofre, banco, bonos, acciones, fondo; los que aún no existen aparecen bloqueados con el mundo en que abren).
+misión completada, nivel nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, el **patrimonio**: al pulsarlo se desglosa dónde está
+cada parte (cofre, banco, bonos, acciones, fondo; los que aún no existen aparecen bloqueados con el nivel en que abren).
 
 El kit visual de la interfaz vive en `src/index.css` (clases `g-*`): botones con degradado, contorno blanco de 4 px y sombra "profunda" de 7 px
 que se hunde al pulsar; paneles crema con doble borde y cinta de título; cierre circular rojo medio fuera de la esquina; barras con carril
 hundido y relleno a rayas. Tipografías: Baloo 2 (títulos, mayúsculas) y Nunito (texto). Paleta: verde, azul, naranja, morado, rojo, crema, cielo y tinta.
 
 Vida en el mapa (`src/scene/Ambient.tsx`): nubes a la deriva por el norte de la isla (proyectan sombra en el mar), bandadas de pájaros en V,
-sombras de bancos de peces bajo el agua, y personajes (el niño de la gorra roja y la Liebre) que pasean por los caminos entre edificios.
-Todo es determinista a partir de la semilla de la isla y muy barato de dibujar.
+sombras de bancos de peces bajo el agua, y vecinos. Los vecinos son personajes low-poly de proporciones humanas (`LOOKS`: piel, pelo, ropa y
+sombrero distintos) con un repertorio de acciones (`Action`: andar, mirar, saludar, trabajar, cargar, sentarse). Hay dos paseantes por nivel
+abierto más la Liebre; cada uno recorre una ruta propia por los edificios abiertos y en cada parada hace lo que toca allí (`STOP_ACTION` en
+`Island.tsx`). Además hay gente quieta trabajando (`Doer`): el pescador del muelle, la tendera barriendo, el hortelano con la azada cuando hay
+huerto y el banquero saludando cuando abre el banco. Todo es determinista a partir de la semilla de la isla y muy barato de dibujar.
+
+Bellotas (`src/scene/acorns.ts`): sus sitios se calculan sobre el terreno (tierra firme, poca pendiente, fuera de las explanadas) y flotan por
+encima de la hierba; el filtro de eventos del `Canvas` da prioridad a la bellota sobre cualquier zona de toque de edificio, así que siempre se
+pueden recoger.
 
 Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo se vuelve cálido, se encienden ventanas y farolas y el faro gira, pero todo sigue viéndose con claridad. El agua tiene olas low-poly animadas y hay barcas que se balancean en el muelle.
 
 ## Reglas de la economía
 
-La operativa completa de los 21 edificios, mundo a mundo, está en [`docs/operativa.md`](docs/operativa.md). Resumen de lo que ya funciona:
+La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operativa.md`](docs/operativa.md). Resumen de lo que ya funciona:
 
 - Paga: 30 euroLukys al mes de isla. Llega al buzón de la casa y se acumula sin tope si no entras. Lo recogido va al cofre de la cueva.
 - Comida: cada mes se come una ración de la despensa (se empieza con 3). Cesta pequeña 5 (1 mes), cesta grande 9,50 (2 meses). Seis meses sin comer terminan la aventura y hay que empezar una isla nueva.
 - Huerto: construcción que paga el jugador (1000); da una cesta grande cada 3 meses para siempre.
 - Tarea diaria: cinco bellotas escondidas por la isla; al recogerlas, de 1 a 3 euroLukys y una celebración.
-- Tienda: comida y deseos (helado, cometa, balón, bici 180, telescopio). Comprar la bici abre el Mundo 2.
+- Tienda: comida y deseos (helado, cometa, balón, bici 180, telescopio). Comprar la bici abre el Nivel 2.
 - Inflación: al cerrar cada año aparece la **ruleta** (casillas 1,5–4 %) y la gira el jugador; hasta entonces los precios no suben. El resultado lo fija la semilla (`inflationForYear`), así la partida sigue siendo reproducible. Los artículos de 10 o más euroLukys quedan en enteros (180 → 185).
 - Banco: abre al cerrar el primer año; paga un 2,5 % anual repartido por meses.
-- Mundo 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
+- Nivel 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
 - Todo el dinero se guarda en céntimos enteros; la simulación es idempotente: estar días sin entrar produce exactamente lo mismo que entrar cada día sin tocar nada. Los campos nuevos del estado tienen valores por defecto en `clone()` para que las partidas guardadas antiguas sigan funcionando.
 
 ## Siguientes fases

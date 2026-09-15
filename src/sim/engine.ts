@@ -365,7 +365,7 @@ export function advanceTo(input: GameState, nowMs: number): GameState {
   return state
 }
 
-/** Si están hechas todas las misiones del mundo actual (a partir del 2), se abre el siguiente. */
+/** Si están hechas todas las misiones del nivel actual (a partir del 2), se abre el siguiente. */
 export function progressWorld(state: GameState) {
   if (state.world >= 2 && state.world < 4) {
     const b = missionsFor(state)
@@ -445,7 +445,7 @@ export function buy(input: GameState, nowMs: number, itemId: string): ActionResu
   return done(state)
 }
 
-/** El Mundo 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. */
+/** El Nivel 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. */
 function openWorld2(state: GameState) {
   state.world = 2
   state.taxesUnlocked = true
@@ -465,7 +465,7 @@ export function buildHuerto(input: GameState, nowMs: number): ActionResult {
 
 export function buyBond(input: GameState, nowMs: number, offerId: string, cents: number): ActionResult {
   const state = clone(advanceTo(input, nowMs))
-  if (state.world < 2) return { ok: false, reason: 'El Ayuntamiento abre en el Mundo 2.' }
+  if (state.world < 2) return { ok: false, reason: 'El Ayuntamiento abre en el Nivel 2.' }
   const offer = BOND_OFFERS.find((o) => o.id === offerId)
   if (!offer) return { ok: false, reason: 'Ese bono no existe.' }
   cents = Math.floor(cents)
@@ -482,7 +482,7 @@ export function buyBond(input: GameState, nowMs: number, offerId: string, cents:
 
 export function chooseTaxMode(input: GameState, nowMs: number, mode: TaxMode): ActionResult {
   const state = clone(advanceTo(input, nowMs))
-  if (state.world < 2) return { ok: false, reason: 'Hacienda abre en el Mundo 2.' }
+  if (state.world < 2) return { ok: false, reason: 'Hacienda abre en el Nivel 2.' }
   state.taxMode = mode
   state.taxModeChosen = true
   return done(state)

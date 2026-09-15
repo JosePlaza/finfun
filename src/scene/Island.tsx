@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useRef } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, events as defaultEvents, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
@@ -7,8 +7,9 @@ import { calendarOf, currentMonth, TASK_ACORNS } from '../sim'
 import { mulberry32, rngFor } from '../sim/rng'
 import { useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
-import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, islandPose, PIER, SITES, type BuildingId } from './registry'
+import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, islandPose, PIER, SITES, type BuildingDef, type BuildingId } from './registry'
 import { makeTerrain, scatter, type Terrain } from './terrain'
+import { acornSpotsOn } from './acorns'
 import { CoastRocks, Ground, Path, Water } from './Landscape'
 import { Acorn, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
 import { Plinth } from './kit/Parts'
@@ -20,20 +21,15 @@ import { Cave } from './buildings/Cave'
 import { Shop } from './buildings/Shop'
 import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
 import { GenericBuilding } from './buildings/Generic'
-import { Ambient } from './Ambient'
+import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
 import { forwardOf } from './registry'
 
 type V3 = [number, number, number]
 
-/** Lugares (x, z) donde pueden aparecer bellotas; la altura se toma del terreno. */
-const ACORN_XZ: [number, number][] = [
-  [-2, 6], [6, -1], [-12, 3], [-2, -8], [-9, -8], [-17, -14], [5, 19], [13, 19], [-2, 19], [-12, 18], [20, -17], [-3, 12],
-  [21, 1], [-23, 0], [11, -14], [-16, 7], [14, 9], [-6, 10], [-10, -18], [1, -20], [7, 8], [-13, -4],
-]
-
-function acornSpotsFor(seed: number, month: number): number[] {
+/** Qué cinco lugares tocan hoy (determinista por semilla y mes). */
+function acornSpotsFor(seed: number, month: number, count: number): number[] {
   const rng = rngFor(seed, month, 41)
-  const idx = ACORN_XZ.map((_, i) => i)
+  const idx = Array.from({ length: count }, (_, i) => i)
   for (let i = idx.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))
     ;[idx[i], idx[j]] = [idx[j], idx[i]]
@@ -49,6 +45,31 @@ function isEveningNow(): boolean {
   const forced = new URLSearchParams(location.search).get('hour')
   const h = forced ? Number(forced) : new Date().getHours()
   return h < 8 || h >= 19
+}
+
+/** Qué hace un vecino al llegar a cada edificio. */
+const STOP_ACTION: Partial<Record<BuildingId, Action>> = {
+  casa: 'wave',
+  tienda: 'carry',
+  banco: 'look',
+  cofre: 'look',
+  faro: 'wave',
+  huerto: 'work',
+  ayuntamiento: 'wave',
+  hacienda: 'look',
+  escuela: 'wave',
+  mercado: 'carry',
+  panaderia: 'carry',
+  heladeria: 'look',
+  puerto: 'carry',
+  astillero: 'work',
+  molino: 'look',
+  posada: 'wave',
+  granja: 'work',
+  cantera: 'work',
+  taller: 'carry',
+  observatorio: 'look',
+  fondo: 'look',
 }
 
 /** Caminos: qué edificios están unidos. El trazado sigue el terreno y se curva un poco. */
@@ -166,24 +187,69 @@ function Scene() {
   const palette = PALETTES[cal.season]
   const night = isEveningNow()
   const taskAvailable = game.taskDoneMonth < month
-  const spots = useMemo(() => acornSpotsFor(game.seed, month), [game.seed, month])
   const has = (id: string) => game.purchases.some((p) => p.itemId === id)
 
   const terrain = useMemo(() => makeTerrain(game.seed % 1000, SITES), [game.seed])
+  const acornSpots = useMemo(() => acornSpotsOn(terrain), [terrain])
+  const spots = useMemo(() => acornSpotsFor(game.seed, month, acornSpots.length), [game.seed, month, acornSpots.length])
   const positions = useMemo(() => buildingPositions(terrain), [terrain])
   const roads = useMemo(() => ROADS.map(([a, b]) => roadPoints(a, b, terrain.seed)), [terrain])
   const at = (x: number, z: number): V3 => [x, terrain.height(x, z), z]
 
-  // Rutas de paseo: pasan por delante de la puerta de cada edificio del bucle.
-  const walkerRoutes = useMemo(() => {
-    const front = (id: BuildingId): [number, number] => {
-      const b = BUILDING_BY_ID[id]
+  // Vecinos: cuantos más niveles abiertos, más gente paseando. Cada uno recorre una ruta propia por los
+  // edificios abiertos y en cada parada hace algo relacionado con el sitio. La Liebre siempre está.
+  const huertoBuilt = game.huertoBuiltMonth !== null
+  const { routes, doers } = useMemo(() => {
+    const open = BUILDINGS.filter((b) => b.world <= game.world && (b.id !== 'huerto' || huertoBuilt))
+    const front = (b: BuildingDef, extra = 0.6): [number, number] => {
       const [fx, fz] = forwardOf(b.rotation)
-      return [b.x + fx * (b.footprint + 0.6), b.z + fz * (b.footprint + 0.6)]
+      return [b.x + fx * (b.footprint + extra), b.z + fz * (b.footprint + extra)]
     }
-    const loop = (ids: BuildingId[]) => ids.map(front)
-    return [loop(['casa', 'tienda', 'banco', 'ayuntamiento', 'escuela']), loop(['cofre', 'puerto', 'astillero', 'panaderia', 'mercado', 'casa'])]
-  }, [])
+    const stopFor = (b: BuildingDef): Stop => {
+      const [x, z] = front(b, 0.9)
+      const [fx, fz] = forwardOf(b.rotation)
+      const action = STOP_ACTION[b.id] ?? 'look'
+      return { x, z, action, dwell: action === 'work' ? 6 : action === 'carry' ? 2.5 : 4, face: [-fx, -fz] }
+    }
+    const rng = mulberry32(terrain.seed + 77)
+    const shuffled = (arr: BuildingDef[]) => {
+      const a = arr.slice()
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1))
+        ;[a[i], a[j]] = [a[j], a[i]]
+      }
+      return a
+    }
+    const walkers = 2 * game.world
+    const routes: { stops: Stop[]; look: Look; speed: number; offset: number }[] = []
+    for (let i = 0; i < walkers; i++) {
+      const picks = shuffled(open).slice(0, Math.min(open.length, 4 + (i % 3)))
+      if (picks.length < 3) continue
+      routes.push({ stops: picks.map(stopFor), look: LOOKS[i % LOOKS.length], speed: 1.0 + (i % 3) * 0.15, offset: i * 7 })
+    }
+    // La Liebre: siempre con prisa, entre la tienda, la casa y el cofre.
+    const liebreStops = ['tienda', 'casa', 'cofre', 'banco'].map((id) => stopFor(BUILDING_BY_ID[id as BuildingId]))
+    liebreStops.forEach((st) => (st.dwell = 1.5))
+    routes.push({ stops: liebreStops, look: LIEBRE, speed: 1.7, offset: 11 })
+
+    // Gente quieta haciendo su trabajo.
+    const doers: { position: V3; rotation: number; look: Look; action: Action; prop: Prop }[] = []
+    doers.push({ position: [PIER.x + 0.4, 0.55, PIER.z + PIER.length + 0.4], rotation: Math.PI * 0.1, look: LOOKS[6], action: 'sit', prop: 'rod' })
+    const tienda = BUILDING_BY_ID.tienda
+    const [tx, tz] = front(tienda, 1.6)
+    doers.push({ position: [tx + 1.2, terrain.height(tx + 1.2, tz), tz], rotation: tienda.rotation + Math.PI + 0.6, look: LOOKS[5], action: 'work', prop: 'broom' })
+    if (huertoBuilt) {
+      const h = BUILDING_BY_ID.huerto
+      const [hx, hz] = front(h, 1.2)
+      doers.push({ position: [hx - 1, terrain.height(hx - 1, hz), hz], rotation: h.rotation + Math.PI, look: LOOKS[9], action: 'work', prop: 'hoe' })
+    }
+    if (game.bankUnlocked) {
+      const b = BUILDING_BY_ID.banco
+      const [bx, bz] = front(b, 1.4)
+      doers.push({ position: [bx - 1.4, terrain.height(bx - 1.4, bz), bz], rotation: b.rotation + 0.4, look: LOOKS[2], action: 'wave', prop: 'none' })
+    }
+    return { routes, doers }
+  }, [terrain, game.world, huertoBuilt, game.bankUnlocked])
 
   // Tocar un edificio abierto lleva a su panel; uno en obras (o sin panel todavía) muestra su ficha: qué se hará allí.
   const tapBuilding = (id: BuildingId) => {
@@ -260,7 +326,7 @@ function Scene() {
       <Rowboat position={[PIER.x - 1.2, 0.02, PIER.z + 2.6]} rotation={-0.35} />
 
       <Vegetation terrain={terrain} palette={palette} />
-      <Ambient terrain={terrain} walkerRoutes={walkerRoutes} />
+      <Ambient terrain={terrain} routes={routes} doers={doers} />
 
       {/* ===== OBJETOS COMPRADOS ===== */}
       {has('cometa') && <Kite position={at(6.5, 6.5)} />}
@@ -272,7 +338,7 @@ function Scene() {
       {taskAvailable &&
         spots.map((spotIndex, i) => {
           if (acornsFound.includes(i)) return null
-          const [x, z] = ACORN_XZ[spotIndex]
+          const [x, z] = acornSpots[spotIndex]
           return <Acorn key={`${month}-${i}`} position={at(x, z)} onPick={() => pickAcorn(i)} />
         })}
 
@@ -300,6 +366,12 @@ export function Island() {
       camera={{ position: [40, 40, 45], fov: 40, near: 0.5, far: 300 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       style={{ touchAction: 'none' }}
+      // Las bellotas siempre ganan el toque: si el dedo alcanza una, se ignora todo lo demás
+      // (las zonas de toque de los edificios son grandes y, si no, se las llevarían por delante).
+      events={(store) => ({
+        ...defaultEvents(store),
+        filter: (hits: THREE.Intersection[]) => (hits.some((h) => h.object.userData.acorn) ? hits.filter((h) => h.object.userData.acorn) : hits),
+      })}
     >
       <Suspense fallback={null}>
         <Scene />

@@ -159,135 +159,345 @@ export function FishShoal({ seed, radius, speed = 0.08 }: { seed: number; radius
 
 /* ───────────────────────── Personajes ───────────────────────── */
 
-type Look = 'nino' | 'liebre'
+export type Action = 'walk' | 'look' | 'wave' | 'work' | 'carry' | 'sit'
+export type Prop = 'none' | 'rod' | 'broom' | 'hoe'
 
-/** Personaje low-poly: cuerpo, cabeza grande, brazos y piernas que oscilan al andar. */
-function Character({ look, walking }: { look: Look; walking: React.RefObject<number> }) {
-  const legL = useRef<THREE.Mesh>(null)
-  const legR = useRef<THREE.Mesh>(null)
-  const armL = useRef<THREE.Mesh>(null)
-  const armR = useRef<THREE.Mesh>(null)
-  const body = useRef<THREE.Group>(null)
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime() * 8
-    const k = walking.current ?? 1
-    const s = Math.sin(t) * 0.55 * k
-    if (legL.current) legL.current.rotation.x = s
-    if (legR.current) legR.current.rotation.x = -s
-    if (armL.current) armL.current.rotation.x = -s * 0.8
-    if (armR.current) armR.current.rotation.x = s * 0.8
-    if (body.current) body.current.position.y = Math.abs(Math.sin(t)) * 0.04 * k
+export interface Look {
+  kind: 'humano' | 'liebre'
+  skin: string
+  shirt: string
+  pants: string
+  hair: string
+  hairStyle: 'corto' | 'coleta' | 'melena' | 'calvo'
+  hat: 'none' | 'gorra' | 'sombrero' | 'panuelo'
+  /** Altura relativa (los niños son más bajos). */
+  scale: number
+}
+
+/** Vecinos de la isla. Colores de la paleta, tonos de piel variados, siluetas distintas a primera vista. */
+export const LOOKS: Look[] = [
+  { kind: 'humano', skin: '#f2c9a6', shirt: C.roofBlue, pants: '#4a5a8a', hair: '#5a3a1e', hairStyle: 'corto', hat: 'gorra', scale: 0.82 }, // niño de la gorra
+  { kind: 'humano', skin: '#e0a984', shirt: '#e8a4c4', pants: '#4a5a8a', hair: '#2b1b12', hairStyle: 'coleta', hat: 'none', scale: 0.8 }, // niña de la coleta
+  { kind: 'humano', skin: '#8d5a3b', shirt: C.roofOrange, pants: C.woodDark, hair: '#1f1512', hairStyle: 'corto', hat: 'none', scale: 1.0 }, // vecino
+  { kind: 'humano', skin: '#f6d6bd', shirt: '#7fb069', pants: '#6b4b2f', hair: '#c9c2b5', hairStyle: 'calvo', hat: 'sombrero', scale: 0.98 }, // abuelo del sombrero
+  { kind: 'humano', skin: '#c68b5c', shirt: C.roofRed, pants: '#3f3f3f', hair: '#3a2416', hairStyle: 'melena', hat: 'none', scale: 0.96 }, // vecina
+  { kind: 'humano', skin: '#f2c9a6', shirt: '#f5c542', pants: '#4a5a8a', hair: '#b5652b', hairStyle: 'corto', hat: 'panuelo', scale: 0.94 }, // panadera del pañuelo
+  { kind: 'humano', skin: '#a56c47', shirt: '#3aa5d8', pants: '#e9e2d0', hair: '#111', hairStyle: 'melena', hat: 'none', scale: 1.0 }, // marinero
+  { kind: 'humano', skin: '#f0bfa0', shirt: '#7a5fe0', pants: '#4a5a8a', hair: '#e2b04a', hairStyle: 'coleta', hat: 'none', scale: 0.9 }, // chica del morado
+  { kind: 'humano', skin: '#d9a77c', shirt: C.white, pants: '#2f4858', hair: '#4b2e1e', hairStyle: 'corto', hat: 'gorra', scale: 1.0 }, // repartidor
+  { kind: 'humano', skin: '#f2c9a6', shirt: '#3e8f3a', pants: '#6b4b2f', hair: '#5a3a1e', hairStyle: 'corto', hat: 'sombrero', scale: 0.98 }, // hortelano
+]
+export const LIEBRE: Look = { kind: 'liebre', skin: '#d9c3a5', shirt: C.roofRed, pants: C.woodDark, hair: '#d9c3a5', hairStyle: 'corto', hat: 'none', scale: 0.9 }
+
+/**
+ * Personaje low-poly con proporciones humanas (cabeza redonda, cuello, torso, brazos y piernas articulados)
+ * y un repertorio de acciones: andar, mirar alrededor, saludar, trabajar (agacharse y golpear),
+ * llevar una caja o sentarse. `walking` y `action` son refs para animar sin re-renderizar.
+ */
+export function Character({ look, walking, action, prop = 'none' }: { look: Look; walking: React.RefObject<number>; action: React.RefObject<Action>; prop?: Prop }) {
+  const legL = useRef<THREE.Group>(null)
+  const legR = useRef<THREE.Group>(null)
+  const armL = useRef<THREE.Group>(null)
+  const armR = useRef<THREE.Group>(null)
+  const torso = useRef<THREE.Group>(null)
+  const head = useRef<THREE.Group>(null)
+  const root = useRef<THREE.Group>(null)
+  const crate = useRef<THREE.Mesh>(null)
+  const ease = (o: THREE.Object3D, k: 'x' | 'y' | 'z', target: number, a: number) => {
+    o.rotation[k] += (target - o.rotation[k]) * a
+  }
+  useFrame(({ clock }, dt) => {
+    const t = clock.getElapsedTime()
+    const k = walking.current ?? 0
+    const act = action.current ?? 'walk'
+    const a = Math.min(1, dt * 8)
+    const swing = Math.sin(t * 8) * 0.6 * k
+    if (!legL.current || !legR.current || !armL.current || !armR.current || !torso.current || !head.current || !root.current) return
+    // Piernas: paso al andar; sentado, estiradas hacia delante.
+    ease(legL.current, 'x', act === 'sit' ? -1.45 : swing, a)
+    ease(legR.current, 'x', act === 'sit' ? -1.45 : -swing, a)
+    root.current.position.y = act === 'sit' ? -0.42 : Math.abs(Math.sin(t * 8)) * 0.05 * k
+    // Torso y cabeza según la acción.
+    let torsoX = 0
+    let headY = 0
+    let aLx = -swing * 0.8
+    let aRx = swing * 0.8
+    let aLz = 0.08
+    let aRz = -0.08
+    switch (act) {
+      case 'look':
+        headY = Math.sin(t * 1.3) * 0.7
+        aLx = 0
+        aRx = 0
+        break
+      case 'wave':
+        aRz = -2.6 + Math.sin(t * 7) * 0.35
+        aRx = 0
+        aLx = 0
+        headY = 0.2
+        break
+      case 'work':
+        torsoX = 0.35 + Math.max(0, Math.sin(t * 4.5)) * 0.3
+        aLx = -1.3 + Math.sin(t * 4.5) * 0.6
+        aRx = -1.3 + Math.sin(t * 4.5) * 0.6
+        break
+      case 'carry':
+        aLx = -1.35
+        aRx = -1.35
+        aLz = 0.3
+        aRz = -0.3
+        break
+      case 'sit':
+        aLx = -0.6
+        aRx = -0.6
+        headY = Math.sin(t * 0.7) * 0.25
+        break
+    }
+    ease(torso.current, 'x', torsoX, a)
+    ease(head.current, 'y', headY, a)
+    ease(armL.current, 'x', aLx, a)
+    ease(armR.current, 'x', aRx, a)
+    ease(armL.current, 'z', aLz, a)
+    ease(armR.current, 'z', aRz, a)
+    if (crate.current) crate.current.visible = act === 'carry'
   })
-  const skin = look === 'nino' ? '#f2c9a6' : '#d9c3a5'
-  const shirt = look === 'nino' ? C.roofBlue : C.roofRed
-  const pants = look === 'nino' ? '#4a5a8a' : C.woodDark
+  const { skin, shirt, pants, hair } = look
+  const liebre = look.kind === 'liebre'
   return (
-    <group ref={body}>
-      {/* piernas */}
-      <mesh ref={legL} position={[-0.11, 0.42, 0]}>
-        <mesh position={[0, -0.2, 0]}>
-          <boxGeometry args={[0.16, 0.4, 0.18]} />
-          <Mat color={pants} />
-        </mesh>
-      </mesh>
-      <mesh ref={legR} position={[0.11, 0.42, 0]}>
-        <mesh position={[0, -0.2, 0]}>
-          <boxGeometry args={[0.16, 0.4, 0.18]} />
-          <Mat color={pants} />
-        </mesh>
-      </mesh>
-      {/* cuerpo */}
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <boxGeometry args={[0.42, 0.55, 0.3]} />
-        <Mat color={shirt} />
-      </mesh>
-      {/* brazos */}
-      <mesh ref={armL} position={[-0.29, 0.92, 0]}>
-        <mesh position={[0, -0.22, 0]}>
-          <boxGeometry args={[0.12, 0.44, 0.14]} />
-          <Mat color={shirt} />
-        </mesh>
-      </mesh>
-      <mesh ref={armR} position={[0.29, 0.92, 0]}>
-        <mesh position={[0, -0.22, 0]}>
-          <boxGeometry args={[0.12, 0.44, 0.14]} />
-          <Mat color={shirt} />
-        </mesh>
-      </mesh>
-      {/* cabeza grande */}
-      <mesh position={[0, 1.28, 0]} castShadow>
-        <boxGeometry args={[0.5, 0.48, 0.46]} />
-        <Mat color={skin} />
-      </mesh>
-      {[-0.11, 0.11].map((x) => (
-        <mesh key={x} position={[x, 1.3, 0.24]}>
-          <boxGeometry args={[0.07, 0.09, 0.02]} />
-          <Mat color="#2b2b2b" />
-        </mesh>
+    <group ref={root} scale={look.scale}>
+      {/* piernas (pivote en la cadera) */}
+      {[-0.1, 0.1].map((x, i) => (
+        <group key={x} ref={i === 0 ? legL : legR} position={[x, 0.5, 0]}>
+          <mesh position={[0, -0.25, 0]} castShadow>
+            <boxGeometry args={[0.15, 0.5, 0.17]} />
+            <Mat color={pants} />
+          </mesh>
+          <mesh position={[0, -0.5, 0.04]}>
+            <boxGeometry args={[0.16, 0.08, 0.26]} />
+            <Mat color={liebre ? skin : '#3a2f28'} />
+          </mesh>
+        </group>
       ))}
-      {look === 'nino' ? (
-        <>
-          {/* gorra roja */}
-          <mesh position={[0, 1.54, 0]}>
-            <boxGeometry args={[0.54, 0.14, 0.5]} />
-            <Mat color={C.red} />
+      <group ref={torso} position={[0, 0.5, 0]}>
+        {/* torso con cuello */}
+        <mesh position={[0, 0.3, 0]} castShadow>
+          <boxGeometry args={[0.4, 0.56, 0.26]} />
+          <Mat color={shirt} />
+        </mesh>
+        <mesh position={[0, 0.62, 0]}>
+          <cylinderGeometry args={[0.07, 0.08, 0.1, 8]} />
+          <Mat color={skin} />
+        </mesh>
+        {/* brazos (pivote en el hombro) */}
+        {[-0.26, 0.26].map((x, i) => (
+          <group key={x} ref={i === 0 ? armL : armR} position={[x, 0.54, 0]}>
+            <mesh position={[0, -0.2, 0]} castShadow>
+              <boxGeometry args={[0.12, 0.4, 0.13]} />
+              <Mat color={shirt} />
+            </mesh>
+            <mesh position={[0, -0.46, 0]}>
+              <sphereGeometry args={[0.07, 6, 5]} />
+              <Mat color={skin} />
+            </mesh>
+            {/* herramienta en la mano derecha */}
+            {i === 1 && prop === 'rod' && (
+              <mesh position={[0, -0.46, 0.7]} rotation={[Math.PI / 2 - 0.5, 0, 0]}>
+                <cylinderGeometry args={[0.012, 0.02, 1.8, 5]} />
+                <Mat color={C.woodDark} />
+              </mesh>
+            )}
+            {i === 1 && prop === 'broom' && (
+              <group position={[0, -0.46, 0.15]} rotation={[0.5, 0, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.02, 0.02, 1.3, 5]} />
+                  <Mat color={C.wood} />
+                </mesh>
+                <mesh position={[0, -0.7, 0]}>
+                  <boxGeometry args={[0.28, 0.22, 0.08]} />
+                  <Mat color="#e2c26a" flat />
+                </mesh>
+              </group>
+            )}
+            {i === 1 && prop === 'hoe' && (
+              <group position={[0, -0.46, 0.15]} rotation={[0.5, 0, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.02, 0.02, 1.3, 5]} />
+                  <Mat color={C.wood} />
+                </mesh>
+                <mesh position={[0, -0.68, 0.06]} rotation={[0.6, 0, 0]}>
+                  <boxGeometry args={[0.22, 0.12, 0.03]} />
+                  <Mat color={C.stoneDark} />
+                </mesh>
+              </group>
+            )}
+          </group>
+        ))}
+        {/* caja que lleva en brazos */}
+        <mesh ref={crate} position={[0, 0.28, 0.34]} visible={false} castShadow>
+          <boxGeometry args={[0.42, 0.3, 0.3]} />
+          <Mat color={C.wood} flat />
+        </mesh>
+        {/* cabeza redonda */}
+        <group ref={head} position={[0, 0.9, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.23, 12, 10]} />
+            <Mat color={skin} />
           </mesh>
-          <mesh position={[0, 1.5, 0.36]}>
-            <boxGeometry args={[0.5, 0.05, 0.28]} />
-            <Mat color={C.red} />
-          </mesh>
-        </>
-      ) : (
-        <>
-          {/* orejas de liebre */}
-          {[-0.14, 0.14].map((x) => (
-            <mesh key={x} position={[x, 1.85, -0.05]} rotation={[0, 0, x > 0 ? -0.15 : 0.15]}>
-              <boxGeometry args={[0.12, 0.65, 0.08]} />
-              <Mat color="#d9c3a5" />
+          {/* ojos */}
+          {[-0.08, 0.08].map((x) => (
+            <mesh key={x} position={[x, 0.03, 0.2]}>
+              <sphereGeometry args={[0.03, 6, 5]} />
+              <Mat color="#2b2b2b" />
             </mesh>
           ))}
-          <mesh position={[0, 1.15, 0.24]}>
-            <boxGeometry args={[0.1, 0.07, 0.02]} />
-            <Mat color="#e28a9d" />
+          {/* sonrisa */}
+          <mesh position={[0, -0.07, 0.21]}>
+            <boxGeometry args={[0.1, 0.02, 0.02]} />
+            <Mat color="#8a4a3a" />
           </mesh>
-        </>
-      )}
+          {liebre ? (
+            <>
+              {[-0.1, 0.1].map((x) => (
+                <mesh key={x} position={[x, 0.42, -0.02]} rotation={[0, 0, x > 0 ? -0.15 : 0.15]}>
+                  <boxGeometry args={[0.1, 0.55, 0.07]} />
+                  <Mat color={skin} />
+                </mesh>
+              ))}
+              <mesh position={[0, -0.02, 0.23]}>
+                <sphereGeometry args={[0.04, 6, 5]} />
+                <Mat color="#e28a9d" />
+              </mesh>
+            </>
+          ) : (
+            <>
+              {/* pelo */}
+              {look.hairStyle !== 'calvo' && (
+                <mesh position={[0, 0.06, -0.02]} rotation={[-0.25, 0, 0]}>
+                  <sphereGeometry args={[0.245, 12, 8, 0, Math.PI * 2, 0, look.hairStyle === 'melena' ? Math.PI * 0.7 : Math.PI * 0.5]} />
+                  <Mat color={hair} />
+                </mesh>
+              )}
+              {look.hairStyle === 'coleta' && (
+                <mesh position={[0, 0.05, -0.27]}>
+                  <sphereGeometry args={[0.09, 8, 6]} />
+                  <Mat color={hair} />
+                </mesh>
+              )}
+              {/* sombreros */}
+              {look.hat === 'gorra' && (
+                <group position={[0, 0.17, 0]}>
+                  <mesh>
+                    <sphereGeometry args={[0.22, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.45]} />
+                    <Mat color={C.red} />
+                  </mesh>
+                  <mesh position={[0, 0.02, 0.24]}>
+                    <boxGeometry args={[0.3, 0.03, 0.22]} />
+                    <Mat color={C.red} />
+                  </mesh>
+                </group>
+              )}
+              {look.hat === 'sombrero' && (
+                <group position={[0, 0.19, 0]}>
+                  <mesh>
+                    <cylinderGeometry args={[0.38, 0.38, 0.03, 12]} />
+                    <Mat color="#e2c26a" flat />
+                  </mesh>
+                  <mesh position={[0, 0.09, 0]}>
+                    <cylinderGeometry args={[0.18, 0.2, 0.18, 10]} />
+                    <Mat color="#e2c26a" flat />
+                  </mesh>
+                </group>
+              )}
+              {look.hat === 'panuelo' && (
+                <mesh position={[0, 0.1, -0.01]} rotation={[-0.2, 0, 0]}>
+                  <sphereGeometry args={[0.25, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.42]} />
+                  <Mat color={C.roofRed} />
+                </mesh>
+              )}
+            </>
+          )}
+        </group>
+      </group>
     </group>
   )
 }
 
-/** Un personaje que recorre en bucle una ruta de puntos (x, z), pegado al terreno y mirando hacia delante. */
-export function Walker({ route, terrain, look, speed = 1.1, offset = 0 }: { route: [number, number][]; terrain: Terrain; look: Look; speed?: number; offset?: number }) {
+/** Una parada de la ruta: dónde, qué hace al llegar, cuánto se queda y hacia dónde mira. */
+export interface Stop {
+  x: number
+  z: number
+  action: Action
+  dwell: number
+  /** Dirección hacia la que mira mientras está parado (normalmente hacia el edificio). */
+  face: [number, number]
+}
+
+/**
+ * Un personaje que recorre en bucle una ruta de paradas: camina de una a otra pegado al terreno,
+ * y en cada parada se detiene unos segundos haciendo algo (mirar, saludar, trabajar, cargar).
+ */
+export function Walker({ stops, terrain, look, speed = 1.1, offset = 0 }: { stops: Stop[]; terrain: Terrain; look: Look; speed?: number; offset?: number }) {
   const group = useRef<THREE.Group>(null)
   const walking = useRef(1)
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(route.map(([x, z]) => new THREE.Vector3(x, 0, z)), true, 'centripetal'), [route])
+  const action = useRef<Action>('walk')
+  const curve = useMemo(() => new THREE.CatmullRomCurve3(stops.map((s) => new THREE.Vector3(s.x, 0, s.z)), true, 'centripetal', 0.6), [stops])
   const length = useMemo(() => curve.getLength(), [curve])
   const dist = useRef(offset)
+  const lastStop = useRef(-1)
+  const pauseLeft = useRef(0)
+  const faceY = useRef(0)
   const tmp = useMemo(() => new THREE.Vector3(), [])
   const tmp2 = useMemo(() => new THREE.Vector3(), [])
   useFrame((_, dt) => {
     if (!group.current) return
-    // Se detiene un momento en algunos puntos, como si mirara.
-    const pauseT = (dist.current / length) * 12
-    const pausing = Math.sin(pauseT) > 0.985
-    walking.current += ((pausing ? 0 : 1) - walking.current) * Math.min(1, dt * 6)
+    if (pauseLeft.current > 0) {
+      pauseLeft.current -= dt
+      walking.current += (0 - walking.current) * Math.min(1, dt * 6)
+      // Gira despacio hacia el edificio.
+      const d = faceY.current - group.current.rotation.y
+      group.current.rotation.y += Math.atan2(Math.sin(d), Math.cos(d)) * Math.min(1, dt * 4)
+      if (pauseLeft.current <= 0) action.current = 'walk'
+      return
+    }
+    walking.current += (1 - walking.current) * Math.min(1, dt * 4)
     dist.current = (dist.current + speed * dt * walking.current) % length
     const u = dist.current / length
     curve.getPointAt(u, tmp)
     curve.getPointAt((u + 0.004) % 1, tmp2)
-    const y = terrain.height(tmp.x, tmp.z)
-    group.current.position.set(tmp.x, y, tmp.z)
+    group.current.position.set(tmp.x, terrain.height(tmp.x, tmp.z), tmp.z)
     group.current.rotation.y = Math.atan2(tmp2.x - tmp.x, tmp2.z - tmp.z)
+    // ¿Hemos llegado a una parada nueva?
+    for (let i = 0; i < stops.length; i++) {
+      const s = stops[i]
+      if (i !== lastStop.current && Math.hypot(tmp.x - s.x, tmp.z - s.z) < 0.5) {
+        lastStop.current = i
+        pauseLeft.current = s.dwell
+        action.current = s.action
+        faceY.current = Math.atan2(s.face[0], s.face[1])
+        break
+      }
+    }
   })
   return (
     <group ref={group}>
-      <Character look={look} walking={walking} />
+      <Character look={look} walking={walking} action={action} />
     </group>
   )
 }
 
-/** Todo lo ambiental junto, con rutas derivadas de la isla. */
-export function Ambient({ terrain, walkerRoutes }: { terrain: Terrain; walkerRoutes: [number, number][][] }) {
+/** Un personaje quieto que hace siempre lo mismo (pescar, barrer, cavar…). */
+export function Doer({ position, rotation = 0, look, action, prop = 'none' }: { position: [number, number, number]; rotation?: number; look: Look; action: Action; prop?: Prop }) {
+  const walking = useRef(0)
+  const act = useRef<Action>(action)
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <Character look={look} walking={walking} action={act} prop={prop} />
+    </group>
+  )
+}
+
+/** Todo lo ambiental junto: cielo, mar y vecinos. */
+export function Ambient({ terrain, routes, doers }: { terrain: Terrain; routes: { stops: Stop[]; look: Look; speed: number; offset: number }[]; doers: { position: [number, number, number]; rotation: number; look: Look; action: Action; prop: Prop }[] }) {
   return (
     <group>
       <Clouds seed={terrain.seed} />
@@ -296,8 +506,12 @@ export function Ambient({ terrain, walkerRoutes }: { terrain: Terrain; walkerRou
       <FishShoal seed={terrain.seed + 1} radius={[ISLAND_RX * 1.18, ISLAND_RZ * 1.25]} speed={0.07} />
       <FishShoal seed={terrain.seed + 2} radius={[ISLAND_RX * 1.32, ISLAND_RZ * 1.12]} speed={0.055} />
       <FishShoal seed={terrain.seed + 3} radius={[ISLAND_RX * 1.1, ISLAND_RZ * 1.4]} speed={0.09} />
-      {walkerRoutes[0] && <Walker route={walkerRoutes[0]} terrain={terrain} look="nino" speed={1.2} />}
-      {walkerRoutes[1] && <Walker route={walkerRoutes[1]} terrain={terrain} look="liebre" speed={1.5} offset={9} />}
+      {routes.map((r, i) => (
+        <Walker key={i} stops={r.stops} terrain={terrain} look={r.look} speed={r.speed} offset={r.offset} />
+      ))}
+      {doers.map((d, i) => (
+        <Doer key={i} position={d.position} rotation={d.rotation} look={d.look} action={d.action} prop={d.prop} />
+      ))}
     </group>
   )
 }

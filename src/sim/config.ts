@@ -21,7 +21,7 @@ export const INFLATION_MAX_BPS = 400
 /** Las casillas de la ruleta de inflación: el sorteo cae siempre en una de ellas. */
 export const INFLATION_WHEEL_BPS = [150, 200, 250, 300, 350, 400]
 
-/** Retención de Hacienda sobre rendimientos (19 %). Se activa en el Mundo 2. */
+/** Retención de Hacienda sobre rendimientos (19 %). Se activa en el Nivel 2. */
 export const RETENTION_BPS = 1900
 
 /** La tarea diaria (recoger bellotas) paga entre 1 y 3 euroLukys. */
@@ -67,10 +67,10 @@ export const SHOP_ITEMS: ShopItemDef[] = [
   { id: 'telescopio', name: 'Telescopio', basePriceCents: 450_00, kind: 'objeto', description: 'Para mirar el continente desde el acantilado.', ivaPct: 21, icon: '🔭' },
 ]
 
-/** El objeto cuya compra desbloquea el Mundo 2. */
+/** El objeto cuya compra desbloquea el Nivel 2. */
 export const WORLD2_UNLOCK_ITEM = 'bici'
 
-/* ───────────────────────── Mundo 2: bonos del Ayuntamiento ───────────────────────── */
+/* ───────────────────────── Nivel 2: bonos del Ayuntamiento ───────────────────────── */
 
 export interface BondOffer {
   id: string
@@ -94,7 +94,7 @@ export const BOND_OFFERS: BondOffer[] = [
 export const BOND_COUPON_EVERY = 3
 /** Comisión de compra de bonos: ninguna (el Ayuntamiento no cobra). */
 
-/* ───────────────────────── Mundo 2: lecciones de la escuela ───────────────────────── */
+/* ───────────────────────── Nivel 2: lecciones de la escuela ───────────────────────── */
 
 export interface Lesson {
   id: string
@@ -108,6 +108,6 @@ export const LESSONS: Lesson[] = [
   { id: 'interes-compuesto', title: 'El interés compuesto', icon: '🌱', body: 'El banco paga interés sobre lo que tienes… incluido el interés que ya te dio antes. Es una bola de nieve: al principio crece despacio y luego cada vez más rápido. Cuanto antes empieces, más grande será.' },
   { id: 'bono', title: 'Qué es un bono', icon: '📜', body: 'Comprar un bono es prestar dinero. El Ayuntamiento te paga un cupón fijo cada trimestre y al final del plazo te devuelve lo prestado. Cuanto más tiempo prestas, más cupón te pagan.' },
   { id: 'impuestos', title: 'Los impuestos', icon: '🦉', body: 'Hacienda se lleva un 19 % de lo que ganas con tu dinero (intereses y cupones). Con eso se pagan las farolas y la escuela. Si pagas una vez al año en vez de en cada cobro, el dinero sigue creciendo mientras tanto.' },
-  { id: 'riesgo', title: 'Riesgo y recompensa', icon: '⚖️', body: 'Lo que puede dar más también puede dar menos. El banco y los bonos son seguros y dan poco. Las acciones (Mundo 3) dan más… algunos años. Nunca pongas en lo arriesgado el dinero que necesitas pronto.' },
+  { id: 'riesgo', title: 'Riesgo y recompensa', icon: '⚖️', body: 'Lo que puede dar más también puede dar menos. El banco y los bonos son seguros y dan poco. Las acciones (Nivel 3) dan más… algunos años. Nunca pongas en lo arriesgado el dinero que necesitas pronto.' },
   { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
 ]

@@ -47,10 +47,10 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
   }
   const board = missionsFor(game)
   if (board.completed > seen.seenMissions) {
-    out.push({ id: 'mision', icon: '📜', title: '¡Misión completada!', detail: `${board.completed} de ${board.total} misiones del mundo.`, view: 'misiones', tone: 'purple' })
+    out.push({ id: 'mision', icon: '📜', title: '¡Misión completada!', detail: `${board.completed} de ${board.total} misiones del nivel.`, view: 'misiones', tone: 'purple' })
   }
   if (game.world > seen.seenWorld) {
-    out.push({ id: 'mundo', icon: '🎉', title: `Se abre el Mundo ${game.world}`, detail: 'Hay obras nuevas en la isla.', view: 'misiones', tone: 'purple' })
+    out.push({ id: 'mundo', icon: '🎉', title: `Se abre el Nivel ${game.world}`, detail: 'Hay obras nuevas en la isla.', view: 'misiones', tone: 'purple' })
   }
   return out
 }

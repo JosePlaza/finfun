@@ -162,7 +162,8 @@ export function Acorn({ position, onPick }: { position: V3; onPick: () => void }
   useFrame(({ clock }) => {
     if (!ref.current) return
     const t = clock.getElapsedTime()
-    ref.current.position.y = position[1] + 0.15 + Math.sin(t * 2.4 + position[0]) * 0.05
+    // Flota claramente por encima de la hierba: la malla del terreno tiene facetas y nunca debe taparla.
+    ref.current.position.y = position[1] + 0.35 + Math.sin(t * 2.4 + position[0]) * 0.06
     ref.current.rotation.y = t * 0.8
   })
   return (
@@ -176,8 +177,9 @@ export function Acorn({ position, onPick }: { position: V3; onPick: () => void }
       onPointerOver={() => (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = '')}
     >
-      <mesh visible={false}>
-        <sphereGeometry args={[0.5, 6, 6]} />
+      {/* zona de toque generosa (dedo en móvil); userData.acorn le da prioridad sobre los edificios */}
+      <mesh visible={false} userData={{ acorn: true }}>
+        <sphereGeometry args={[0.8, 6, 6]} />
         <meshBasicMaterial />
       </mesh>
       <mesh castShadow>
@@ -193,9 +195,9 @@ export function Acorn({ position, onPick }: { position: V3; onPick: () => void }
         <Mat color={C.wood} />
       </mesh>
       {/* brillo para que se distinga entre la hierba */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.22, 0.3, 16]} />
-        <meshBasicMaterial color={C.gold} transparent opacity={0.45} />
+      <mesh position={[0, -0.28, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.26, 0.36, 16]} />
+        <meshBasicMaterial color={C.gold} transparent opacity={0.55} depthWrite={false} />
       </mesh>
     </group>
   )

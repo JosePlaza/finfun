@@ -43,7 +43,7 @@ export type View =
   | 'eventos'
   | 'patrimonio'
 
-/** Una celebración a pantalla completa (bellotas, mundo nuevo…). */
+/** Una celebración a pantalla completa (bellotas, nivel nuevo…). */
 export interface Celebration {
   id: number
   icon: string
@@ -127,7 +127,7 @@ export const useGame = create<Store>()(
         if (before && r.state.world > before.world) {
           get().celebrate({
             icon: '🎉',
-            title: `¡Se abre el Mundo ${r.state.world}!`,
+            title: `¡Se abre el Nivel ${r.state.world}!`,
             text: r.state.world === 2 ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos. Desde ahora tus rendimientos pasan por Don Búho.' : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
             tone: 'purple',
           })

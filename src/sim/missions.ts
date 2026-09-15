@@ -1,5 +1,5 @@
 /**
- * MISIONES. Objetivos claros que enseñan el juego y marcan el paso de mundo.
+ * MISIONES. Objetivos claros que enseñan el juego y marcan el paso de nivel.
  * Se calculan a partir del estado (nunca se guardan): así se pueden cambiar sin migraciones.
  */
 import { LESSONS, WORLD2_UNLOCK_ITEM } from './config'
@@ -11,7 +11,7 @@ export interface Mission {
   title: string
   /** Qué hay que hacer, en una frase para un niño. */
   hint: string
-  /** Dónde se hace (lugar del mundo), para poder ir directamente. */
+  /** Dónde se hace (lugar del nivel), para poder ir directamente. */
   place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela'
   progress: number
   goal: number
@@ -56,7 +56,7 @@ function world1Board(state: GameState): MissionBoard {
     m('banco', 'Lleva 50 al banco', 'Cuando abra el banco, mete allí al menos 50 euroLukys.', 'banco', '🏦', state.bankCents, 50_00),
     m('bici', 'Compra la bici', 'Cuesta 180. Con ella se abre el camino al Ayuntamiento y a los bonos.', 'tienda', '🚲', hasBici ? 1 : 0, 1),
   ]
-  return board(1, 'La Isla', missions, 'Mundo 2 · El Ayuntamiento: bonos y Don Búho')
+  return board(1, 'La Isla', missions, 'Nivel 2 · El Ayuntamiento: bonos y Don Búho')
 }
 
 function world2Board(state: GameState): MissionBoard {
@@ -69,7 +69,7 @@ function world2Board(state: GameState): MissionBoard {
     m('prestamista', 'Ten 200 prestados a la vez', 'Suma 200 euroLukys en bonos vivos.', 'ayuntamiento', '🏛️', bondsTotal(state), 200_00),
     m('patrimonio', 'Llega a 600 de patrimonio', 'Cofre, banco y bonos juntos. Cada parte suma.', 'cofre', '💰', state.huchaCents + state.bankCents + bondsTotal(state), 600_00),
   ]
-  return board(2, 'El Ayuntamiento', missions, 'Mundo 3 · El Mercado: acciones y dividendos')
+  return board(2, 'El Ayuntamiento', missions, 'Nivel 3 · El Mercado: acciones y dividendos')
 }
 
 function world3Board(state: GameState): MissionBoard {
@@ -77,7 +77,7 @@ function world3Board(state: GameState): MissionBoard {
     m('huerto', 'Construye el huerto', 'Cuesta 1000 y da una cesta grande cada tres meses: una inversión que se come.', 'huerto', '🌾', state.huertoBuiltMonth !== null ? 1 : 0, 1),
     m('lecciones-todas', 'Lee todas las lecciones', 'La escuela tiene una lección por cada idea importante.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
   ]
-  return board(3, 'El Mercado', missions, 'Mundo 4 · La Tormenta (próximamente)')
+  return board(3, 'El Mercado', missions, 'Nivel 4 · La Tormenta (próximamente)')
 }
 
 function board(world: number, worldName: string, missions: Mission[], reward: string): MissionBoard {

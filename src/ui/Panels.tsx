@@ -224,7 +224,7 @@ function PatrimonioPanel() {
               <div className="flex-1 min-w-0">
                 <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{r.name}</div>
                 {locked ? (
-                  <div className="text-[12px] font-bold text-ink-3">{r.world === 1 ? 'Abre al terminar el año 1' : `Se abre en el Mundo ${r.world}`}</div>
+                  <div className="text-[12px] font-bold text-ink-3">{r.world === 1 ? 'Abre al terminar el año 1' : `Se abre en el Nivel ${r.world}`}</div>
                 ) : (
                   <div className="g-bar g-bar--sm g-bar--orange mt-1">
                     <i style={{ width: `${pct}%` }} />
@@ -613,7 +613,7 @@ function FaroPanel() {
             ['Muévete por la isla', 'Toca un edificio para ir hasta él. Arrastra con un dedo para girar la isla y usa dos dedos para acercarte.'],
             ['La despensa', 'Cada mes se come una ración. Compra cestas en la tienda (la grande sale más barata por mes) o construye el huerto. Seis meses sin comer y la aventura se acaba.'],
             ['La ruleta del año', 'Al cerrar cada año aparece la ruleta de la inflación. La giras tú: lo que salga es lo que suben los precios de la tienda.'],
-            ['Los solares en obras', 'Son edificios que se abrirán cuando llegues a su mundo. Tócalos para leer qué harás allí. Completa las misiones para avanzar.'],
+            ['Los solares en obras', 'Son edificios que se abrirán cuando llegues a su nivel. Tócalos para leer qué harás allí. Completa las misiones para avanzar.'],
           ].map(([t, d]) => (
             <div key={t} className="g-inset p-3.5">
               <div className="g-title text-[15px]">{t}</div>
@@ -637,7 +637,7 @@ function MisionesPanel() {
   const setView = useGame((s) => s.setView)
   const board = missionsFor(game)
   return (
-    <Sheet title={`Mundo ${board.world}`} tone="purple">
+    <Sheet title={`Nivel ${board.world}`} tone="purple">
       <div className="flex items-center gap-3 mb-3">
         <span className="g-title text-[15px] whitespace-nowrap">{board.worldName}</span>
         <div className="g-bar flex-1">
@@ -648,7 +648,7 @@ function MisionesPanel() {
         </span>
       </div>
       <Tortuga>
-        Completa las misiones para abrir el siguiente mundo: <b>{board.reward}</b>. No hay prisa: la isla no se va a ninguna parte.
+        Completa las misiones para abrir el siguiente nivel: <b>{board.reward}</b>. No hay prisa: la isla no se va a ninguna parte.
       </Tortuga>
       <ul className="grid gap-2 mt-3">
         {board.missions.map((mi) => (
@@ -679,7 +679,7 @@ function MisionesPanel() {
         ))}
       </ul>
 
-      <SectionTitle>La isla, mundo a mundo</SectionTitle>
+      <SectionTitle>La isla, nivel a nivel</SectionTitle>
       <div className="grid gap-2">
         {[1, 2, 3, 4].map((w) => {
           const open = game.world >= w
@@ -687,7 +687,7 @@ function MisionesPanel() {
             <div key={w} className={`g-inset p-3 ${open ? '' : 'opacity-80'}`}>
               <div className="flex items-baseline justify-between">
                 <span className="font-display font-extrabold text-ink">
-                  Mundo {w} · {WORLD_NAMES[w]}
+                  Nivel {w} · {WORLD_NAMES[w]}
                 </span>
                 <span className={`g-label ${open ? '!text-green-d' : ''}`}>{open ? 'abierto' : 'en obras'}</span>
               </div>
@@ -1025,7 +1025,7 @@ function EdificioPanel() {
     <Sheet title={def.name} tone={open ? 'blue' : 'sky'}>
       <div className="g-inset p-4 text-center">
         <div className="text-4xl mb-1">{open ? def.icon : '🏗️'}</div>
-        <div className="g-title text-lg">{open ? 'Próximamente' : `Se abre en el Mundo ${def.world} · ${WORLD_NAMES[def.world]}`}</div>
+        <div className="g-title text-lg">{open ? 'Próximamente' : `Se abre en el Nivel ${def.world} · ${WORLD_NAMES[def.world]}`}</div>
         <div className="text-ink-l font-bold text-sm mt-1">{def.teaches}</div>
       </div>
       <SectionTitle>Qué harás aquí</SectionTitle>

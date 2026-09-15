@@ -185,7 +185,7 @@ describe('tienda y tareas', () => {
     expect(s.huchaCents).toBe(PAGA_CENTS - 25_00)
     expect(buy(s, at(0), 'cometa').ok).toBe(false) // ya la tiene
   })
-  it('comprar la bici abre el Mundo 2', () => {
+  it('comprar la bici abre el Nivel 2', () => {
     let s = advanceTo(fresh(), at(6))
     s = must(collectMailbox(s, at(6)))
     const r = buy(s, at(6), 'bici')
@@ -252,7 +252,7 @@ describe('comida y vida', () => {
   })
 })
 
-describe('Mundo 2: bonos y Hacienda', () => {
+describe('Nivel 2: bonos y Hacienda', () => {
   function world2() {
     let s = careful(11)
     s = must(buy(s, at(11), 'bici'))

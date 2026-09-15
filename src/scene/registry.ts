@@ -34,7 +34,7 @@ export interface CameraFrame {
 export interface BuildingDef {
   id: BuildingId
   name: string
-  /** Mundo en el que se desbloquea (1 = disponible desde el principio). */
+  /** Nivel en el que se desbloquea (1 = disponible desde el principio). */
   world: 1 | 2 | 3 | 4
   /** Qué enseña o para qué sirve, en una frase para el niño. */
   teaches: string
@@ -50,7 +50,7 @@ export interface BuildingDef {
   icon: string
   /** Qué se hace ahí, con un poco más de detalle (para la ficha del edificio). */
   about: string
-  /** Construcción que paga el jugador (en euroLukys) en vez de abrirse por mundo. */
+  /** Construcción que paga el jugador (en euroLukys) en vez de abrirse por nivel. */
   costCents?: number
 }
 

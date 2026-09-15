@@ -55,14 +55,14 @@ export function ConstructionSite({ def, position, onTap }: { def: BuildingDef; p
           <dodecahedronGeometry args={[0.45, 0]} />
           <Mat color={C.sand} flat />
         </mesh>
-        {/* cartel del mundo en que abre */}
+        {/* cartel del nivel en que abre */}
         <group position={[0, 0, d / 2 + 0.8]}>
           <Box size={[0.08, 1.4, 0.08]} position={[-0.6, 0.7, 0]} color={C.woodDark} />
           <Box size={[0.08, 1.4, 0.08]} position={[0.6, 0.7, 0]} color={C.woodDark} />
           <Box size={[1.6, 0.7, 0.08]} position={[0, 1.35, 0]} color={C.plasterWarm} />
           <Html position={[0, 1.35, 0.06]} center transform distanceFactor={4} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
             <div className="site-sign">
-              <span className="site-sign__world">Mundo {def.world}</span>
+              <span className="site-sign__world">Nivel {def.world}</span>
               <span className="site-sign__name">{def.name}</span>
             </div>
           </Html>
