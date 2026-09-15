@@ -97,7 +97,7 @@ Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre
 
 HUD (`src/ui/Hud.tsx`): arriba a la izquierda, el nombre de la isla y el año/mes; debajo, en vertical, los botones **Misiones** y **Eventos**
 (este último con un bullet rojo animado y el número de cosas pendientes: paga en el buzón, bellotas, banco recién abierto, diario nuevo,
-misión completada, nivel nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, el **patrimonio**: al pulsarlo se desglosa dónde está
+misión completada, nivel nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, los **seis corazones** de salud (con comida en la despensa están todos; cada mes sin comer se apaga uno y los que quedan laten; al pulsarlos se va a la tienda) y el **patrimonio**: al pulsarlo se desglosa dónde está
 cada parte (cofre, banco, bonos, acciones, fondo; los que aún no existen aparecen bloqueados con el nivel en que abren).
 
 El kit visual de la interfaz vive en `src/index.css` (clases `g-*`): botones con degradado, contorno blanco de 4 px y sombra "profunda" de 7 px
