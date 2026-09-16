@@ -6,7 +6,7 @@ import { NameIsland } from './ui/NameIsland'
 import { Panels } from './ui/Panels'
 import { Toast } from './ui/Toast'
 import { DevBar } from './ui/DevBar'
-import { CelebrationOverlay, GameOverOverlay, InflationWheelOverlay } from './ui/Overlays'
+import { CelebrationOverlay, GameOverOverlay, InflationWheelOverlay, StormOverlay } from './ui/Overlays'
 import { ErrorBoundary } from './ui/ErrorBoundary'
 
 export default function App() {
@@ -47,6 +47,7 @@ export default function App() {
         <Panels />
         <Toast />
         <InflationWheelOverlay />
+        <StormOverlay />
         <CelebrationOverlay />
         <GameOverOverlay />
         {isDevMode && <DevBar />}

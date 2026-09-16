@@ -45,8 +45,11 @@ export type LedgerKind =
   | 'impuestos'
   | 'dividendo'
   | 'tormenta'
+  | 'noticia'
   | 'acciones-compra'
   | 'acciones-venta'
+  | 'fondo-compra'
+  | 'fondo-venta'
 
 export interface LedgerEvent {
   kind: LedgerKind
@@ -192,4 +195,14 @@ export interface GameState {
   stormsSurvived: number
   /** Tormenta en curso: negocio y acciones que se tenían al publicarse (null si ninguna). */
   stormWatch: { businessId: string; shares: number; sinceMonth: number } | null
+
+  // ───── Nivel 4: La Tormenta y el Fondo Isla ─────
+  /** Mes en que llega La Tormenta (se fija al abrir el Nivel 4; null antes). */
+  crashMonth: number | null
+  /** Acciones totales que se tenían al llegar La Tormenta, para la misión de aguantar. */
+  crashWatch: { shares: number; fundUnits: number } | null
+  crashSurvived: boolean
+  /** Participaciones del Fondo Isla (pueden ser fracciones) y lo pagado por ellas. */
+  fundUnits: number
+  fundCostCents: number
 }

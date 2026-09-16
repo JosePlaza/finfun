@@ -81,25 +81,31 @@ Misiones N3: construir el huerto · comprar acciones de dos negocios · cobrar u
 
 ---
 
-## Nivel 4 · La Tormenta (diversificación y crisis) [diseño]
+## Nivel 4 · La Tormenta (diversificación y crisis) [hecho]
 
-Se abren siete negocios más y, a mitad de nivel, **La Tormenta**: un mes en que todos los precios caen un 30 % y el
-diario enseña a no vender con miedo (los que aguantan recuperan en 6–9 meses; los dividendos siguen llegando).
+Se abren seis negocios más (todos en `src/sim/market.ts`, con el mismo motor) y la **Casa del Fondo Isla**. Seis meses después
+de abrir el nivel llega **La Tormenta**, única por partida: un mes en que todos los precios caen un 30 % (la Posada un 40 %),
+con pantalla de noticia urgente y consejo de Doña Tortuga. Los negocios siguen ganando (salvo la Posada ese trimestre), los
+dividendos siguen llegando y los precios vuelven solos hacia su valor justo en 6–9 meses. Aguantar tres meses sin vender
+nada (acciones ni fondo) cumple la misión. Decisiones: Cantera con ciclo predecible (no ligado a las obras del jugador),
+Fondo de acumulación, Tormenta única, descubrimiento del Observatorio permanente, Hacienda al 19 % plano (sin tramos).
 
 | Negocio | Dividendo | Comportamiento | Enseña |
 | --- | --- | --- | --- |
-| **Molino** (energía regulada) | 1,25 % trimestral, muy estable | ±2 %/mes, casi sin crecimiento | El refugio: poco pero seguro. |
-| **Posada del Puerto** | 3 % en septiembre | Llena en verano, medio vacía el resto; sensible a la Tormenta | Cíclico y estacional a la vez. |
-| **Granja** | 3 % en noviembre si la cosecha fue buena | Cada otoño 1 de 4 de plaga/sequía: dividendo 0 y −20 % | Riesgo natural, un solo evento al año. |
-| **Cantera** | 1,5 % trimestral cuando hay obras | Sube cuando el jugador construye o el Ayuntamiento emite bonos; baja si no | Cíclico ligado a la actividad de la isla. |
-| **Taller de juguetes** | 2 % trimestral los años de moda | Alterna años "de moda" (+40 %) y "olvidado" (−25 %) | Modas: lo que arrasa hoy puede no arrasar mañana. |
-| **Observatorio** | Ninguno | La mayoría de los años ±0 %; 1 de 8 años **descubrimiento**: ×3 | Alto riesgo: crece muchísimo o nada. |
-| **Casa del Fondo Isla** | Reparte lo que reparten todos, neto | Cesta con todos los negocios a partes iguales; comisión 0,3 %/año; **traspaso** entre fondos sin pasar por Hacienda | Diversificar; el índice gana a casi todos a largo plazo. |
+| **Molino** (energía) | Trimestral siempre, ≈5 %/año a 40 eL | ±2 %/mes, crecimiento 0,5 %/año | El refugio: aburrido a propósito. |
+| **Posada del Puerto** | Un solo dividendo, grande, en septiembre | Temporada 0,5·1,0·2,0·0,5; en La Tormenta cae un 40 % y ese trimestre casi no gana | Cíclico y estacional a la vez. |
+| **Granja** | Un dividendo anual en diciembre (cosecha) | Otoño 1,6×; un otoño de cada cuatro plaga/sequía: beneficio 0, sin dividendo, −20 % | Riesgo natural, un solo golpe al año. |
+| **Cantera** | Trimestral solo si el beneficio llega al 80 % del normal | Ciclo de obras de 3 años (±50 %), predecible; noticias en el pico y en el valle | Aprender a leer el ciclo. |
+| **Taller de juguetes** | Trimestral los años de moda | Cada año se sortea de moda (×1,6) u olvidado (×0,6); ±8 %/mes | Modas: perseguirlas llega tarde. |
+| **Observatorio** | Ninguno | Beneficio mínimo; cada año 1/8 de **descubrimiento**: ×3 para siempre y salto del precio | Alto riesgo: un trocito pequeño de la cartera. |
+| **Casa del Fondo Isla** | Acumulación: los dividendos se reinvierten dentro | Participaciones (sin tope) a partir de 10 eL; sigue la media de los 10 negocios; comisión 0,3 %/año; sin comisión por operación; tributa solo al sacar | Diversificar sin pensar; la cesta de huevos. |
 
-Hacienda en N4: tramos del ahorro (19 % hasta 6000 eL, 21 % hasta 50 000), compensación de pérdidas, y la declaración
-anual muestra cada apartado con palabras de niño.
+Escuela N4: cuatro lecciones nuevas (la cesta de huevos, ciclos y modas, qué es un fondo, cuando todo cae) más la de
+independencia financiera.
 
-Misiones N4: tener acciones de 5 negocios distintos · comprar Fondo Isla · pasar La Tormenta sin vender nada · 3000 de patrimonio · patrimonio mayor que el de la Liebre → **Isla completa** (modo libre con nuevos años y récords).
+Misiones N4: acciones de 5 negocios distintos · 100 en el Fondo Isla · aguantar La Tormenta sin vender · ampliar el huerto · leer
+todas las lecciones · 3000 de patrimonio → **Isla completa** (modo libre con récords; pendiente de diseño, junto con la
+visita a la isla de la Liebre).
 
 ---
 

@@ -3,7 +3,7 @@
  * la ruleta de la inflación al cerrar el año y la pantalla de fin de la aventura.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { diaryParagraphs, formatCents, formatPct, INFLATION_WHEEL_BPS, inflationForYear, WORLD2_UNLOCK_ITEM } from '../sim'
+import { diaryParagraphs, formatCents, formatPct, INFLATION_WHEEL_BPS, inflationForYear, stocksValue, fundValue, WORLD2_UNLOCK_ITEM } from '../sim'
 import { useGame } from '../store/game'
 
 const CONFETTI_COLORS = ['#f2951c', '#5fa11e', '#2fa6c9', '#7a5fe0', '#e04a46', '#ffc85a']
@@ -225,6 +225,46 @@ export function GameOverOverlay() {
         <button type="button" onClick={restart} className="g-btn g-btn--block g-btn--lg g-btn--red mt-5">
           Isla nueva
         </button>
+      </div>
+    </div>
+  )
+}
+
+/* ───────────────────────── La Tormenta ───────────────────────── */
+
+export function StormOverlay() {
+  const game = useGame((s) => s.game)
+  const seen = useGame((s) => s.stormSeen)
+  const dismiss = useGame((s) => s.dismissStorm)
+  const setView = useGame((s) => s.setView)
+  if (!game || seen || game.dead || game.crashMonth === null || game.processedMonth < game.crashMonth) return null
+  const invested = stocksValue(game, game.processedMonth) + fundValue(game, game.processedMonth)
+  return (
+    <div className="overlay overlay--storm" role="dialog" aria-modal="true" aria-labelledby="storm-title">
+      <div className="overlay__card g-panel g-panel--red p-6 pt-9 text-center">
+        <div className="g-ribbon">Noticia urgente</div>
+        <div className="text-6xl leading-none mb-3" aria-hidden="true">
+          ⛈️
+        </div>
+        <h2 id="storm-title" className="g-title text-2xl m-0">
+          ¡La Tormenta!
+        </h2>
+        <p className="text-ink-l font-semibold text-[15px] leading-relaxed mt-2 mb-0">
+          Todos los precios de la isla han caído de golpe. La gente vende asustada.{' '}
+          {invested > 0 ? <>Tus acciones y tu fondo valen hoy <b className="text-ink">{formatCents(invested)}</b>.</> : 'Tú no tenías acciones: mira lo que pasa.'}
+        </p>
+        <div className="g-inset p-3.5 mt-3 text-left text-[14px] font-semibold leading-relaxed text-ink">
+          <b>Doña Tortuga:</b> Respira. La Panadería sigue vendiendo pan y el Molino sigue dando luz: los negocios ganan lo mismo que ayer, solo ha cambiado el precio que
+          la gente les pone hoy. Quien vende ahora pierde de verdad. Quien aguanta, cobra sus dividendos y ve volver los precios en unos meses. Espera y verás.
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <button type="button" onClick={() => { dismiss(); setView('mercado') }} className="g-btn g-btn--cream">
+            Mercado
+          </button>
+          <button type="button" onClick={dismiss} className="g-btn g-btn--red">
+            Aguantaré
+          </button>
+        </div>
       </div>
     </div>
   )

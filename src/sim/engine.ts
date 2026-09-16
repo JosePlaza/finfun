@@ -25,7 +25,7 @@ import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
 import { missionsFor } from './missions'
-import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS } from './market'
+import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, CRASH_AFTER_MONTHS, cyclePhase, discoveryThisYear, fundNavAt, isHotYear, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS, type MarketCtx } from './market'
 
 const LEDGER_MAX = 80
 
@@ -75,7 +75,17 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     yearLossCents: 0,
     stormsSurvived: 0,
     stormWatch: null,
+    crashMonth: null,
+    crashWatch: null,
+    crashSurvived: false,
+    fundUnits: 0,
+    fundCostCents: 0,
   }
+}
+
+/** Contexto que necesita el mercado: semilla y mes de La Tormenta. */
+export function marketCtx(state: GameState): MarketCtx {
+  return { seed: state.seed, crashMonth: state.crashMonth ?? null }
 }
 
 /**
@@ -90,6 +100,7 @@ export function migrate(state: GameState): GameState {
     state.lessonsRead === undefined ||
     state.declarations === undefined ||
     state.holdings === undefined ||
+    state.fundUnits === undefined ||
     (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
@@ -121,6 +132,11 @@ function clone(state: GameState): GameState {
   c.yearLossCents ??= 0
   c.stormsSurvived ??= 0
   c.stormWatch ??= null
+  c.crashMonth ??= null
+  c.crashWatch ??= null
+  c.crashSurvived ??= false
+  c.fundUnits ??= 0
+  c.fundCostCents ??= 0
   // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
   if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true
   // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
@@ -200,8 +216,15 @@ function earnTaxable(state: GameState, gross: number): { retained: number; net: 
 /** Valor a precio de hoy de las acciones del jugador. */
 export function stocksValue(state: GameState, month: number): number {
   let total = 0
-  for (const [id, h] of Object.entries(state.holdings ?? {})) total += h.shares * priceAt(state.seed, id, month)
+  const ctx = marketCtx(state)
+  for (const [id, h] of Object.entries(state.holdings ?? {})) total += h.shares * priceAt(ctx, id, month)
   return total
+}
+
+/** Valor a precio de hoy de las participaciones del Fondo Isla. */
+export function fundValue(state: GameState, month: number): number {
+  if (!state.fundUnits) return 0
+  return roundCents(state.fundUnits * fundNavAt(marketCtx(state), month))
 }
 
 /** Cobra a Hacienda lo que se debe: primero del cofre, luego del banco; el resto queda como deuda. */
@@ -312,12 +335,48 @@ function processMonth(state: GameState, month: number) {
   }
   state.bonds = state.bonds.filter((b) => month < b.maturityMonth)
 
-  // 5b. Cuentas trimestrales de los negocios: dividendos al cofre y noticias (tormentas).
-  if (state.world >= 3 && isResultsMonth(month)) {
-    const q = Math.floor(month / 3)
+  // 5a. La Tormenta: un mes, todo cae a la vez. Se apunta lo que se tenía para la misión de aguantar.
+  if (state.crashMonth !== null && month === state.crashMonth) {
+    log(state, { kind: 'tormenta', month, amountCents: 0, label: 'LA TORMENTA: todos los precios de la isla caen de golpe. Los negocios siguen ganando; los precios se recuperan con el tiempo.' })
+    const shares = Object.values(state.holdings).reduce((a, h) => a + h.shares, 0)
+    state.crashWatch = { shares, fundUnits: state.fundUnits }
+  }
+  if (state.crashWatch && state.crashMonth !== null && month === state.crashMonth + 3) {
+    const shares = Object.values(state.holdings).reduce((a, h) => a + h.shares, 0)
+    if (shares >= state.crashWatch.shares && state.fundUnits >= state.crashWatch.fundUnits - 1e-9) {
+      state.crashSurvived = true
+      log(state, { kind: 'noticia', month, amountCents: 0, label: 'Aguantaste La Tormenta sin vender. Mira los precios: ya vuelven.' })
+    }
+    state.crashWatch = null
+  }
+
+  // 5b. Noticias de año nuevo (Nivel 4): modas y descubrimientos.
+  if (state.world >= 4 && month % MONTHS_PER_YEAR === 0 && month > 0) {
+    const ctx = marketCtx(state)
+    const yearIndex = Math.floor(month / MONTHS_PER_YEAR)
     for (const def of BUSINESSES) {
       if (def.world > state.world) continue
-      const quarter = quarterFor(state.seed, def, q)
+      if (def.fashion) {
+        const hot = isHotYear(ctx, def, yearIndex)
+        log(state, { kind: 'noticia', month, amountCents: 0, label: hot ? `Este año los juguetes del ${def.name} están de moda: todo el mundo los quiere.` : `Este año nadie se acuerda de los juguetes del ${def.name}. Las modas pasan.` })
+      }
+      if (def.discovery && discoveryThisYear(ctx, def, yearIndex)) log(state, { kind: 'noticia', month, amountCents: 0, label: def.discovery.label })
+    }
+  }
+
+  // 5c. Cuentas trimestrales de los negocios: dividendos al cofre y noticias (tormentas, ciclo de obras).
+  if (state.world >= 3 && isResultsMonth(month)) {
+    const q = Math.floor(month / 3)
+    const ctx = marketCtx(state)
+    for (const def of BUSINESSES) {
+      if (def.world > state.world) continue
+      const quarter = quarterFor(ctx, def, q)
+      if (def.cycle) {
+        const now = cyclePhase(def, q)
+        const before = cyclePhase(def, q - 1)
+        if (now >= 0.95 && before < 0.95) log(state, { kind: 'noticia', month, amountCents: 0, label: 'La isla está de obras por todas partes: la Cantera trabaja a tope. El ciclo está en lo alto.' })
+        if (now <= -0.95 && before > -0.95) log(state, { kind: 'noticia', month, amountCents: 0, label: 'Parón en las obras de la isla: la Cantera casi no vende piedra. El ciclo está en lo bajo.' })
+      }
       const holding = state.holdings[def.id]
       if (quarter.storm && def.storm) {
         log(state, { kind: 'tormenta', month, amountCents: 0, label: def.storm.label })
@@ -375,7 +434,7 @@ function processMonth(state: GameState, month: number) {
       bankInterestYearCents: state.yearBankInterestCents,
       spentYearCents: state.yearSpentCents,
       earnedTasksYearCents: state.yearTasksCents,
-      stocksValueCents: stocksValue(state, month),
+      stocksValueCents: stocksValue(state, month) + fundValue(state, month),
       dividendsYearCents: state.yearDividendsCents,
     })
     state.yearSpentCents = 0
@@ -454,6 +513,8 @@ export function progressWorld(state: GameState) {
     const b = missionsFor(state)
     if (b.completed >= b.total) state.world += 1
   }
+  // Al abrir el Nivel 4 queda fijado el mes de La Tormenta: única por partida.
+  if (state.world >= 4 && state.crashMonth === null) state.crashMonth = state.processedMonth + CRASH_AFTER_MONTHS
 }
 
 export function currentMonth(state: GameState, nowMs: number): number {
@@ -598,7 +659,7 @@ export function buyShares(input: GameState, nowMs: number, businessId: string, s
   shares = Math.floor(shares)
   if (shares <= 0) return { ok: false, reason: 'Elige cuántas acciones.' }
   const month = currentMonth(state, nowMs)
-  const price = priceAt(state.seed, businessId, month)
+  const price = priceAt(marketCtx(state), businessId, month)
   const holding = state.holdings[businessId] ?? { shares: 0, avgCostCents: 0 }
   if (holding.shares + shares > SHARES_PER_BUSINESS) return { ok: false, reason: `${def.name} solo tiene ${SHARES_PER_BUSINESS} acciones.` }
   const cost = price * shares + COMMISSION_CENTS
@@ -622,7 +683,7 @@ export function sellShares(input: GameState, nowMs: number, businessId: string, 
   shares = Math.floor(shares)
   if (shares <= 0 || shares > holding.shares) return { ok: false, reason: `Tienes ${holding.shares} acciones.` }
   const month = currentMonth(state, nowMs)
-  const price = priceAt(state.seed, businessId, month)
+  const price = priceAt(marketCtx(state), businessId, month)
   const gross = price * shares
   const gain = (price - holding.avgCostCents) * shares
   let retained = 0
@@ -634,6 +695,52 @@ export function sellShares(input: GameState, nowMs: number, businessId: string, 
   if (holding.shares === 0) delete state.holdings[businessId]
   const gainText = gain > 0 ? `ganas ${formatCents(gain)}` : gain < 0 ? `pierdes ${formatCents(-gain)}` : 'ni ganas ni pierdes'
   log(state, { kind: 'acciones-venta', month, amountCents: net, label: `Vendes ${shares} ${shares === 1 ? 'acción' : 'acciones'} de ${def.name} a ${formatCents(price)}: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}` })
+  return done(state)
+}
+
+export function buyFund(input: GameState, nowMs: number, cents: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.world < 4) return { ok: false, reason: 'El Fondo Isla abre en el Nivel 4.' }
+  cents = Math.floor(cents)
+  if (cents < 1_00) return { ok: false, reason: 'Como mínimo 1 euroLuky.' }
+  if (cents > state.huchaCents) return { ok: false, reason: `Te faltan ${formatCents(cents - state.huchaCents)} euroLukys.` }
+  const month = currentMonth(state, nowMs)
+  const nav = fundNavAt(marketCtx(state), month)
+  state.huchaCents -= cents
+  state.fundUnits += cents / nav
+  state.fundCostCents += cents
+  log(state, { kind: 'fondo-compra', month, amountCents: -cents, label: `Metes ${formatCents(cents)} en el Fondo Isla (participación a ${formatCents(Math.round(nav), { alwaysDecimals: true })})` })
+  return done(state)
+}
+
+export function sellFund(input: GameState, nowMs: number, cents: number | 'all'): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  const month = currentMonth(state, nowMs)
+  const nav = fundNavAt(marketCtx(state), month)
+  const total = roundCents(state.fundUnits * nav)
+  if (total <= 0) return { ok: false, reason: 'No tienes nada en el Fondo Isla.' }
+  const amount = cents === 'all' ? total : Math.min(Math.floor(cents), total)
+  if (amount <= 0) return { ok: false, reason: 'Elige una cantidad.' }
+  const fraction = cents === 'all' ? 1 : amount / total
+  const costPart = roundCents(state.fundCostCents * fraction)
+  const gain = amount - costPart
+  let retained = 0
+  if (gain > 0) retained = earnTaxable(state, gain).retained
+  else if (gain < 0) state.yearLossCents += -gain
+  state.huchaCents += amount - retained
+  if (cents === 'all') {
+    state.fundUnits = 0
+    state.fundCostCents = 0
+  } else {
+    state.fundUnits -= amount / nav
+    state.fundCostCents -= costPart
+    if (state.fundUnits < 1e-9) {
+      state.fundUnits = 0
+      state.fundCostCents = 0
+    }
+  }
+  const gainText = gain > 0 ? `ganas ${formatCents(gain)}` : gain < 0 ? `pierdes ${formatCents(-gain)}` : 'ni ganas ni pierdes'
+  log(state, { kind: 'fondo-venta', month, amountCents: amount - retained, label: `Sacas ${formatCents(amount)} del Fondo Isla: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}` })
   return done(state)
 }
 
@@ -664,5 +771,5 @@ export function completeTask(input: GameState, nowMs: number): ActionResult {
 
 /** Patrimonio total en céntimos: cofre, buzón, banco, bonos y acciones a precio de hoy. */
 export function netWorth(state: GameState, month = state.processedMonth): number {
-  return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state) + stocksValue(state, month)
+  return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state) + stocksValue(state, month) + fundValue(state, month)
 }

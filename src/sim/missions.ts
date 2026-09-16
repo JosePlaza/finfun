@@ -4,7 +4,7 @@
  */
 import { LESSONS, WORLD2_UNLOCK_ITEM } from './config'
 import type { GameState } from './types'
-import { bondsTotal, stocksValue } from './engine'
+import { bondsTotal, fundValue, stocksValue } from './engine'
 
 export interface Mission {
   id: string
@@ -12,7 +12,7 @@ export interface Mission {
   /** Qué hay que hacer, en una frase para un niño. */
   hint: string
   /** Dónde se hace (lugar del nivel), para poder ir directamente. */
-  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado'
+  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado' | 'fondo'
   progress: number
   goal: number
   done: boolean
@@ -87,13 +87,17 @@ function world3Board(state: GameState): MissionBoard {
 }
 
 function world4Board(state: GameState): MissionBoard {
+  const m0 = state.processedMonth
+  const total = state.huchaCents + state.bankCents + bondsTotal(state) + stocksValue(state, m0) + fundValue(state, m0)
   const missions: Mission[] = [
     m('cinco', 'Acciones de 5 negocios distintos', 'No pongas todos los huevos en la misma cesta.', 'mercado', '🧺', Object.keys(state.holdings ?? {}).length, 5),
-    m('cartera', 'Cartera de 1000 en acciones', 'Valor a precio de hoy de todas tus acciones.', 'mercado', '📈', stocksValue(state, state.processedMonth), 1000_00),
+    m('fondo', 'Mete 100 en el Fondo Isla', 'Un trocito de todos los negocios a la vez, y los dividendos se reinvierten solos.', 'fondo', '🏠', fundValue(state, m0) > 0 ? Math.min(100_00, (state.fundCostCents ?? 0)) : 0, 100_00),
+    m('aguantar', 'Aguanta La Tormenta sin vender', 'Cuando todo caiga a la vez, no vendas nada hasta tres meses después. Los precios vuelven.', 'mercado', '⛈️', state.crashSurvived ? 1 : 0, 1),
     m('independencia', 'Amplía el huerto', 'Tres meses de comida por trimestre: la despensa se llena sola. Independencia financiera.', 'huerto', '🏝️', state.huertoUpgradedMonth !== null ? 1 : 0, 1),
-    m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos y acciones juntos.', 'cofre', '💰', state.huchaCents + state.bankCents + bondsTotal(state) + stocksValue(state, state.processedMonth), 3000_00),
+    m('lecciones-4', 'Lee todas las lecciones', 'La escuela tiene lecciones nuevas sobre la cesta, los ciclos, el fondo y La Tormenta.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
+    m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos, acciones y fondo juntos.', 'cofre', '💰', total, 3000_00),
   ]
-  return board(4, 'La Tormenta', missions, 'Isla completa (próximamente)')
+  return board(4, 'La Tormenta', missions, 'Isla completa: modo libre con récords')
 }
 
 function board(world: number, worldName: string, missions: Mission[], reward: string): MissionBoard {

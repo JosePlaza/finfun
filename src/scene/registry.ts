@@ -6,7 +6,7 @@ import type { Site, Terrain } from './terrain'
 
 type V3 = [number, number, number]
 
-export type PlaceId = 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado'
+export type PlaceId = 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado' | 'fondo'
 
 export type BuildingId =
   | PlaceId
@@ -81,7 +81,7 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'cantera', name: 'Cantera', world: 4, teaches: 'Gana cuando la isla construye: un negocio cíclico.', x: 14.0, z: -14.5, rotation: SE, footprint: 3.0, icon: '⛏️', about: 'Gana cuando la isla construye (tu huerto, las obras del Ayuntamiento, los edificios de la Liebre). Negocio cíclico.' },
   { id: 'taller', name: 'Taller de juguetes', world: 4, teaches: 'Modas: un año arrasa y otro no.', x: -20.5, z: 7.0, rotation: Math.PI / 2, footprint: 3.0, icon: '🧸', about: 'Modas: un año todos quieren sus juguetes y al siguiente nadie. La acción más nerviosa de la isla.' },
   { id: 'observatorio', name: 'Observatorio', world: 4, teaches: 'Ciencia: crece muchísimo o nada. Alto riesgo.', x: 1.5, z: -9.5, rotation: SE, footprint: 2.6, icon: '🔭', about: 'Ciencia: unos años no descubre nada y otro año descubre un cometa y su acción se multiplica. Alto riesgo, alta recompensa… o nada.' },
-  { id: 'fondo', name: 'Casa del Fondo Isla', world: 4, teaches: 'Un trocito de todos los negocios a la vez.', x: -14.5, z: 14.0, rotation: SE + 0.7, footprint: 3.2, icon: '🧺', about: 'Un trocito de todos los negocios a la vez, con una comisión anual pequeña. Diversificar: no poner todos los huevos en la misma cesta. Se puede traspasar sin pasar por Hacienda.' },
+  { id: 'fondo', name: 'Casa del Fondo Isla', world: 4, teaches: 'Un trocito de todos los negocios a la vez.', x: -14.5, z: 14.0, rotation: SE + 0.7, footprint: 3.2, view: 'fondo', icon: '🧺', about: 'Un trocito de todos los negocios a la vez, con una comisión anual pequeña. Diversificar: no poner todos los huevos en la misma cesta. Se puede traspasar sin pasar por Hacienda.' },
 ]
 
 export const WORLD_NAMES: Record<number, string> = { 1: 'La Isla', 2: 'El Ayuntamiento', 3: 'El Mercado', 4: 'La Tormenta' }

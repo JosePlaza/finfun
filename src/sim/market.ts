@@ -6,13 +6,15 @@
  * se acerca a un "valor justo" que sale de esos beneficios. Así la lección es la que queremos: una acción
  * vale lo que gana el negocio, no lo que dice el precio hoy. Las compras del jugador no mueven el precio.
  *
- * Todo sale de la semilla de la isla: la misma isla siempre tiene la misma historia de precios.
+ * Todo sale de la semilla de la isla (y del mes de La Tormenta, único por partida): la misma isla
+ * siempre tiene la misma historia de precios.
  */
 import { MONTHS_PER_YEAR } from './config'
 import { roundCents } from './money'
 import { rngFor } from './rng'
 
-export type BusinessSeason = 'flat' | 'summer'
+/** Factores por trimestre del año (0 = ene-mar … 3 = oct-dic); la media es 1. */
+export type BusinessSeason = 'flat' | 'summer' | 'tourism' | 'autumn'
 
 export interface BusinessDef {
   id: string
@@ -26,13 +28,23 @@ export interface BusinessDef {
   payoutBps: number
   /** Trimestres del año en que reparte (0 = ene-mar … 3 = oct-dic). Vacío = nunca. */
   dividendQuarters: number[]
+  /** Solo reparte si el beneficio del trimestre llega a esta fracción del normal (cíclicos en la parte baja no reparten). */
+  minEpsRatioForDividend?: number
   /** Crecimiento esperado del beneficio al año (puntos básicos). */
   driftBpsYear: number
   /** Ruido mensual máximo del precio (puntos básicos, ±). */
   volBps: number
   season: BusinessSeason
-  /** Tormenta: en cada trimestre, probabilidad de que el beneficio sea cero y el precio caiga `dropBps`. */
-  storm?: { chance: number; dropBps: number; label: string }
+  /** Golpe: en cada trimestre (o solo en `quarters`), probabilidad de beneficio cero y caída `dropBps`. */
+  storm?: { chance: number; dropBps: number; label: string; quarters?: number[] }
+  /** Ciclo económico predecible: el beneficio oscila ±amp a lo largo de `years` años. */
+  cycle?: { years: number; amp: number }
+  /** Modas: cada año se sortea si está de moda (×hot) u olvidado (×cold). */
+  fashion?: { hot: number; cold: number }
+  /** Descubrimiento: cada año, probabilidad de multiplicar el beneficio ×mul para siempre. */
+  discovery?: { chancePerYear: number; mul: number; label: string }
+  /** Cuánto cae en La Tormenta (por defecto 30 %). */
+  crashDropBps?: number
   /** Nivel en que empieza a cotizar. */
   world: number
   /** Cómo se comporta, en una frase para el niño. */
@@ -40,14 +52,18 @@ export interface BusinessDef {
 }
 
 export const SHARES_PER_BUSINESS = 100
-/** Comisión fija por operación de compra o venta. */
+/** Comisión fija por operación de compra o venta de acciones. */
 export const COMMISSION_CENTS = 50
 /** Mes del año (0 = enero) en que se publican las cuentas: el último de cada trimestre. */
 export const RESULT_MONTHS = [2, 5, 8, 11]
-/** Tope de subida o bajada de un mes normal (sin tormenta). */
+/** Tope de subida o bajada de un mes normal (sin golpes). */
 export const MAX_MONTHLY_MOVE_BPS = 800
+/** La Tormenta: caída general por defecto, y meses tras abrir el Nivel 4 en que llega. */
+export const CRASH_DROP_BPS = 3000
+export const CRASH_AFTER_MONTHS = 6
 
 export const BUSINESSES: BusinessDef[] = [
+  // ───────── Nivel 3 ─────────
   {
     id: 'panaderia', name: 'Panadería', icon: '🥖', basePriceCents: 20_00, epsQuarterCents: 25, payoutBps: 8000, dividendQuarters: [0, 1, 2, 3],
     driftBpsYear: 200, volBps: 300, season: 'flat', world: 3,
@@ -69,9 +85,47 @@ export const BUSINESSES: BusinessDef[] = [
     driftBpsYear: 800, volBps: 600, season: 'flat', world: 3,
     character: 'No reparte nada: lo reinvierte todo para crecer. Su acción sube más a largo plazo.',
   },
+  // ───────── Nivel 4 ─────────
+  {
+    id: 'molino', name: 'Molino', icon: '🌬️', basePriceCents: 40_00, epsQuarterCents: 55, payoutBps: 9000, dividendQuarters: [0, 1, 2, 3],
+    driftBpsYear: 50, volBps: 200, season: 'flat', world: 4,
+    character: 'Aburrido a propósito: energía para toda la isla, dividendo seguro cada trimestre y un precio que casi no se mueve.',
+  },
+  {
+    id: 'posada', name: 'Posada del Puerto', icon: '🛎️', basePriceCents: 22_00, epsQuarterCents: 30, payoutBps: 9000, dividendQuarters: [2],
+    driftBpsYear: 200, volBps: 600, season: 'tourism', crashDropBps: 4000, world: 4,
+    character: 'Llena en verano, medio vacía el resto del año. Paga un solo dividendo, grande, en septiembre. Cuando hay crisis, la gente deja de viajar.',
+  },
+  {
+    id: 'granja', name: 'Granja', icon: '🌾', basePriceCents: 18_00, epsQuarterCents: 24, payoutBps: 9000, dividendQuarters: [3],
+    driftBpsYear: 150, volBps: 400, season: 'autumn', world: 4,
+    storm: { chance: 1 / 4, dropBps: 2000, label: 'Mala cosecha en la Granja: plaga o sequía, este año no hay dividendo y el precio cae.', quarters: [3] },
+    character: 'Todo el año depende de la cosecha de otoño. Un otoño de cada cuatro sale mal.',
+  },
+  {
+    id: 'cantera', name: 'Cantera', icon: '⛏️', basePriceCents: 24_00, epsQuarterCents: 32, payoutBps: 8000, dividendQuarters: [0, 1, 2, 3], minEpsRatioForDividend: 0.8,
+    driftBpsYear: 150, volBps: 500, season: 'flat', cycle: { years: 3, amp: 0.5 }, world: 4,
+    character: 'Sigue el ciclo de obras de la isla: tres años de subida y bajada. En la parte baja no reparte. Aprende a leer en qué punto estás.',
+  },
+  {
+    id: 'taller', name: 'Taller de juguetes', icon: '🧸', basePriceCents: 16_00, epsQuarterCents: 20, payoutBps: 7000, dividendQuarters: [0, 1, 2, 3], minEpsRatioForDividend: 0.9,
+    driftBpsYear: 300, volBps: 800, season: 'flat', fashion: { hot: 1.6, cold: 0.6 }, world: 4,
+    character: 'Modas: un año todos quieren sus juguetes y al siguiente nadie. El precio más nervioso de la isla.',
+  },
+  {
+    id: 'observatorio', name: 'Observatorio', icon: '🔭', basePriceCents: 12_00, epsQuarterCents: 4, payoutBps: 0, dividendQuarters: [],
+    driftBpsYear: 100, volBps: 800, season: 'flat', discovery: { chancePerYear: 1 / 8, mul: 3, label: '¡El Observatorio ha descubierto un cometa! Su beneficio se triplica para siempre.' }, world: 4,
+    character: 'Casi nunca gana nada… hasta que descubre algo y se multiplica por tres para siempre. Alto riesgo: un trocito pequeño de la cartera, no más.',
+  },
 ]
 
 export const BUSINESS_BY_ID = Object.fromEntries(BUSINESSES.map((b) => [b.id, b])) as Record<string, BusinessDef>
+
+/** Lo que el mercado necesita saber de la partida: la semilla y el mes de La Tormenta (null = aún no fijado). */
+export interface MarketCtx {
+  seed: number
+  crashMonth: number | null
+}
 
 /** Cuentas de un trimestre. */
 export interface Quarter {
@@ -80,18 +134,20 @@ export interface Quarter {
   year: number
   /** 0..3 dentro del año. */
   quarterOfYear: number
-  /** Beneficio por acción del trimestre. 0 si hubo tormenta. */
+  /** Beneficio por acción del trimestre. 0 si hubo golpe. */
   epsCents: number
   /** Ventas por acción (para las cuentas: el beneficio es una parte). */
   salesCents: number
-  /** Dividendo por acción que se paga al cerrar el trimestre (0 si no toca o hubo tormenta). */
+  /** Dividendo por acción que se paga al cerrar el trimestre (0 si no toca o hubo golpe). */
   dividendCents: number
+  /** Golpe propio del negocio este trimestre (tormenta, mala cosecha). */
   storm: boolean
-}
-
-export interface MarketPoint {
-  month: number
-  priceCents: number
+  /** Fase del ciclo (-1 valle … +1 pico), solo cíclicos. */
+  cyclePhase?: number
+  /** Modas: ¿de moda este año? */
+  hot?: boolean
+  /** Descubrimientos acumulados hasta este año. */
+  discoveries?: number
 }
 
 export interface BusinessState {
@@ -110,26 +166,15 @@ export interface BusinessState {
   yieldBps: number
 }
 
-function seasonFactor(season: BusinessSeason, quarterOfYear: number): number {
-  if (season === 'flat') return 1
-  // Verano: ene-mar 0,4 · abr-jun 1,2 · jul-sep 1,8 · oct-dic 0,6 (media 1)
-  return [0.4, 1.2, 1.8, 0.6][quarterOfYear]
+const SEASONS: Record<BusinessSeason, number[]> = {
+  flat: [1, 1, 1, 1],
+  summer: [0.4, 1.2, 1.8, 0.6],
+  tourism: [0.5, 1.0, 2.0, 0.5],
+  autumn: [0.6, 0.8, 1.0, 1.6],
 }
 
-/** Cuentas del trimestre `q` de un negocio: deterministas por semilla. */
-export function quarterFor(seed: number, def: BusinessDef, q: number): Quarter {
-  const rng = rngFor(seed, q * 31 + hash(def.id), 101)
-  const quarterOfYear = ((q % 4) + 4) % 4
-  const year = Math.floor(q / 4) + 1
-  const growth = Math.pow(1 + def.driftBpsYear / 10_000, q / 4)
-  const noise = 1 + (rng() * 2 - 1) * 0.15
-  const storm = !!def.storm && rng() < def.storm.chance
-  const base = def.epsQuarterCents * growth * seasonFactor(def.season, quarterOfYear) * noise
-  const epsCents = storm ? 0 : Math.max(0, roundCents(base))
-  const salesCents = roundCents(base * 4 * (storm ? 0.3 : 1))
-  const pays = def.dividendQuarters.includes(quarterOfYear) && !storm
-  const dividendCents = pays ? roundCents((epsCents * def.payoutBps) / 10_000) : 0
-  return { q, year, quarterOfYear, epsCents, salesCents, dividendCents, storm }
+function seasonFactor(season: BusinessSeason, quarterOfYear: number): number {
+  return SEASONS[season][quarterOfYear]
 }
 
 function hash(s: string): number {
@@ -138,22 +183,75 @@ function hash(s: string): number {
   return h
 }
 
+/** ¿Está de moda este año? (Taller) */
+export function isHotYear(ctx: MarketCtx, def: BusinessDef, yearIndex: number): boolean {
+  if (!def.fashion) return false
+  return rngFor(ctx.seed, yearIndex * 17 + hash(def.id), 303)() < 0.5
+}
+
+/** Descubrimientos acumulados hasta el año dado incluido (Observatorio). El primer año nunca descubre. */
+export function discoveriesUntil(ctx: MarketCtx, def: BusinessDef, yearIndex: number): number {
+  if (!def.discovery) return 0
+  let n = 0
+  for (let y = 1; y <= yearIndex; y++) if (rngFor(ctx.seed, y * 23 + hash(def.id), 404)() < def.discovery.chancePerYear) n++
+  return n
+}
+
+/** ¿Este año hay descubrimiento nuevo? */
+export function discoveryThisYear(ctx: MarketCtx, def: BusinessDef, yearIndex: number): boolean {
+  return yearIndex >= 1 && discoveriesUntil(ctx, def, yearIndex) > discoveriesUntil(ctx, def, yearIndex - 1)
+}
+
+/** Fase del ciclo de obras (-1 … +1) en el trimestre q. */
+export function cyclePhase(def: BusinessDef, q: number): number {
+  if (!def.cycle) return 0
+  return Math.sin((2 * Math.PI * q) / (4 * def.cycle.years))
+}
+
+/** Cuentas del trimestre `q` de un negocio: deterministas por semilla (y La Tormenta, para la Posada). */
+export function quarterFor(ctx: MarketCtx, def: BusinessDef, q: number): Quarter {
+  const rng = rngFor(ctx.seed, q * 31 + hash(def.id), 101)
+  const quarterOfYear = ((q % 4) + 4) % 4
+  const yearIndex = Math.floor(q / 4)
+  const year = yearIndex + 1
+  const growth = Math.pow(1 + def.driftBpsYear / 10_000, q / 4)
+  const noise = 1 + (rng() * 2 - 1) * 0.15
+  const stormRoll = rng()
+  const storm = !!def.storm && (!def.storm.quarters || def.storm.quarters.includes(quarterOfYear)) && stormRoll < def.storm.chance
+  let mul = seasonFactor(def.season, quarterOfYear)
+  const phase = cyclePhase(def, q)
+  if (def.cycle) mul *= 1 + def.cycle.amp * phase
+  const hot = def.fashion ? isHotYear(ctx, def, yearIndex) : undefined
+  if (def.fashion) mul *= hot ? def.fashion.hot : def.fashion.cold
+  const discoveries = def.discovery ? discoveriesUntil(ctx, def, yearIndex) : undefined
+  if (def.discovery && discoveries) mul *= Math.pow(def.discovery.mul, discoveries)
+  // La Tormenta: el trimestre en que llega, los negocios de turismo se quedan casi sin clientes.
+  const crashQ = ctx.crashMonth !== null ? Math.floor(ctx.crashMonth / 3) : null
+  const crashHit = crashQ === q && def.season === 'tourism'
+  const base = def.epsQuarterCents * growth * mul * noise * (crashHit ? 0.3 : 1)
+  const epsCents = storm ? 0 : Math.max(0, roundCents(base))
+  const salesCents = roundCents(base * 4 * (storm ? 0.3 : 1))
+  const enough = epsCents >= def.epsQuarterCents * growth * (def.minEpsRatioForDividend ?? 0)
+  const pays = def.dividendQuarters.includes(quarterOfYear) && !storm && enough
+  const dividendCents = pays ? roundCents((epsCents * def.payoutBps) / 10_000) : 0
+  return { q, year, quarterOfYear, epsCents, salesCents, dividendCents, storm, cyclePhase: def.cycle ? phase : undefined, hot, discoveries }
+}
+
 /** Valor "justo" de la acción según los beneficios: mezcla del último trimestre publicado anualizado y del último año. */
-function fairPrice(seed: number, def: BusinessDef, q: number): number {
+function fairPrice(ctx: MarketCtx, def: BusinessDef, q: number): number {
   const pe = def.basePriceCents / (4 * def.epsQuarterCents)
   if (q < 0) return def.basePriceCents
-  const cur = quarterFor(seed, def, q).epsCents
+  const cur = quarterFor(ctx, def, q).epsCents
   let trailing = 0
-  for (let i = 0; i < 4; i++) trailing += q - i >= 0 ? quarterFor(seed, def, q - i).epsCents : def.epsQuarterCents * seasonFactor(def.season, (((q - i) % 4) + 4) % 4)
-  // Con tormenta el trimestre actual vale 0 y el valor justo baja; el resto lo hace el golpe explícito.
+  for (let i = 0; i < 4; i++) trailing += q - i >= 0 ? quarterFor(ctx, def, q - i).epsCents : def.epsQuarterCents * seasonFactor(def.season, (((q - i) % 4) + 4) % 4)
   return pe * (0.5 * cur * 4 + 0.5 * trailing)
 }
 
 const cache = new Map<string, number[]>()
 
-/** Precio por acción de cada mes desde el 0 hasta `month` (incluido). Cacheado por semilla y negocio. */
-export function priceSeries(seed: number, def: BusinessDef, month: number): number[] {
-  const key = `${seed}:${def.id}`
+/** Precio por acción de cada mes desde el 0 hasta `month` (incluido). Cacheado por contexto y negocio. */
+export function priceSeries(ctx: MarketCtx, def: BusinessDef, month: number): number[] {
+  const key = `${ctx.seed}:${ctx.crashMonth ?? 'x'}:${def.id}`
   let s = cache.get(key)
   if (!s) {
     s = [def.basePriceCents]
@@ -162,47 +260,50 @@ export function priceSeries(seed: number, def: BusinessDef, month: number): numb
   for (let m = s.length; m <= month; m++) {
     const prev = s[m - 1]
     const q = Math.floor(m / 3)
-    const rng = rngFor(seed, m * 7 + hash(def.id), 202)
+    const rng = rngFor(ctx.seed, m * 7 + hash(def.id), 202)
     const noise = (rng() * 2 - 1) * (def.volBps / 10_000)
     const results = RESULT_MONTHS.includes(m % MONTHS_PER_YEAR)
     // Hasta que se publican las cuentas, el mercado solo conoce el trimestre anterior.
-    const fair = fairPrice(seed, def, results ? q : q - 1)
-    // El precio se acerca al valor justo (más deprisa el mes de cuentas) y tiembla un poco cada mes.
+    const fair = fairPrice(ctx, def, results ? q : q - 1)
     const pull = results ? 0.6 : 0.15
     let next = prev + (fair - prev) * pull + prev * noise
-    const stormNow = results && quarterFor(seed, def, q).storm
+    const stormNow = results && quarterFor(ctx, def, q).storm
     if (stormNow && def.storm) next = Math.min(next, prev * (1 - def.storm.dropBps / 10_000))
-    // Tope de movimiento mensual (la tormenta puede pasarse).
-    const cap = stormNow ? 0.35 : MAX_MONTHLY_MOVE_BPS / 10_000
+    // Descubrimiento: el mes de las primeras cuentas del año en que ocurre, el precio salta.
+    const jump = results && m % MONTHS_PER_YEAR === RESULT_MONTHS[0] && def.discovery && discoveryThisYear(ctx, def, Math.floor(m / MONTHS_PER_YEAR))
+    // La Tormenta: todo cae a la vez; después el precio vuelve solo hacia su valor justo.
+    const crash = ctx.crashMonth !== null && m === ctx.crashMonth
+    if (crash) next = Math.min(next, prev * (1 - (def.crashDropBps ?? CRASH_DROP_BPS) / 10_000))
+    const cap = stormNow || crash ? 0.45 : jump ? 2.5 : MAX_MONTHLY_MOVE_BPS / 10_000
     next = Math.max(prev * (1 - cap), Math.min(prev * (1 + cap), next))
     s.push(Math.max(1_00, roundCents(next)))
   }
   return s.slice(0, month + 1)
 }
 
-export function priceAt(seed: number, businessId: string, month: number): number {
+export function priceAt(ctx: MarketCtx, businessId: string, month: number): number {
   const def = BUSINESS_BY_ID[businessId]
   if (!def) return 0
-  return priceSeries(seed, def, month)[month]
+  return priceSeries(ctx, def, month)[month]
 }
 
 /** Estado del mercado en un mes: para el panel del Mercado y las fichas. */
-export function marketAt(seed: number, month: number, world: number): BusinessState[] {
+export function marketAt(ctx: MarketCtx, month: number, world: number): BusinessState[] {
   return BUSINESSES.filter((b) => b.world <= world).map((def) => {
-    const series = priceSeries(seed, def, month)
+    const series = priceSeries(ctx, def, month)
     const priceCents = series[month]
     const previousPriceCents = series[Math.max(0, month - 1)]
     const q = Math.floor(month / 3)
     const lastPublished = RESULT_MONTHS.includes(month % MONTHS_PER_YEAR) ? q : q - 1
-    const lastQuarter = quarterFor(seed, def, Math.max(0, lastPublished))
-    const currentQuarter = quarterFor(seed, def, q)
+    const lastQuarter = quarterFor(ctx, def, Math.max(0, lastPublished))
+    const currentQuarter = quarterFor(ctx, def, q)
     const monthsToResults = 2 - (month % 3)
-    // Dividendo anual esperado a este precio: suma de los cuatro trimestres normales.
+    // Dividendo anual esperado a este precio: los próximos cuatro trimestres, sin contar golpes.
     let annual = 0
     for (let i = 0; i < 4; i++) {
-      const qq = quarterFor(seed, def, q + i)
+      const qq = quarterFor(ctx, def, q + i)
       if (!qq.storm) annual += qq.dividendCents
-      else annual += def.dividendQuarters.includes(qq.quarterOfYear) ? roundCents((def.epsQuarterCents * def.payoutBps) / 10_000) : 0
+      else if (def.dividendQuarters.includes(qq.quarterOfYear)) annual += roundCents((def.epsQuarterCents * seasonFactor(def.season, qq.quarterOfYear) * def.payoutBps) / 10_000)
     }
     const yieldBps = priceCents > 0 ? Math.round((annual / priceCents) * 10_000) : 0
     return { def, priceCents, previousPriceCents, history: series.slice(Math.max(0, month - 11), month + 1), lastQuarter, currentQuarter, monthsToResults, yieldBps }
@@ -212,4 +313,47 @@ export function marketAt(seed: number, month: number, world: number): BusinessSt
 /** ¿Este mes se publican cuentas (y se pagan dividendos)? */
 export function isResultsMonth(month: number): boolean {
   return RESULT_MONTHS.includes(month % MONTHS_PER_YEAR)
+}
+
+/* ───────────────────────── Fondo Isla (acumulación) ───────────────────────── */
+
+/** Precio inicial de la participación. */
+export const FUND_BASE_CENTS = 10_00
+/** Comisión anual de gestión (0,3 %), descontada mes a mes del valor de la participación. */
+export const FUND_FEE_BPS_YEAR = 30
+
+const fundCache = new Map<string, number[]>()
+
+/**
+ * Valor liquidativo de la participación mes a mes. El fondo tiene un trocito igual de todos los negocios:
+ * sigue la media de sus variaciones de precio y, como es de acumulación, los dividendos que cobran sus
+ * negocios no salen del fondo: se reinvierten y suben la participación. Cada mes descuenta su comisión.
+ */
+export function fundNavSeries(ctx: MarketCtx, month: number): number[] {
+  const key = `${ctx.seed}:${ctx.crashMonth ?? 'x'}`
+  let s = fundCache.get(key)
+  if (!s) {
+    s = [FUND_BASE_CENTS]
+    fundCache.set(key, s)
+  }
+  for (let m = s.length; m <= month; m++) {
+    let sum = 0
+    for (const def of BUSINESSES) {
+      const series = priceSeries(ctx, def, m)
+      let r = series[m] / series[m - 1]
+      if (RESULT_MONTHS.includes(m % MONTHS_PER_YEAR)) {
+        const qq = quarterFor(ctx, def, Math.floor(m / 3))
+        r += qq.dividendCents / series[m - 1] // dividendo reinvertido
+      }
+      sum += r
+    }
+    const avg = sum / BUSINESSES.length
+    const fee = 1 - FUND_FEE_BPS_YEAR / 10_000 / MONTHS_PER_YEAR
+    s.push(Math.max(1, Math.round(s[m - 1] * avg * fee * 100) / 100))
+  }
+  return s.slice(0, month + 1)
+}
+
+export function fundNavAt(ctx: MarketCtx, month: number): number {
+  return fundNavSeries(ctx, month)[month]
 }

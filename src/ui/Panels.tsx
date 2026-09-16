@@ -6,7 +6,11 @@ import {
   bondCoupon,
   bondsTotal,
   COMMISSION_CENTS,
+  FUND_FEE_BPS_YEAR,
+  fundNavSeries,
+  fundValue,
   marketAt,
+  marketCtx,
   SHARES_PER_BUSINESS,
   stocksValue,
   type BusinessState,
@@ -102,6 +106,9 @@ const KIND_ICON: Record<LedgerEvent['kind'], string> = {
   tormenta: '⛈️',
   'acciones-compra': '📈',
   'acciones-venta': '📉',
+  noticia: '📰',
+  'fondo-compra': '🏠',
+  'fondo-venta': '🏠',
 }
 
 /** Línea de precio de los últimos meses, sin ejes: solo la forma. */
@@ -234,9 +241,10 @@ function PatrimonioPanel() {
   const month = currentMonth(game, nowMs)
   const bonds = bondsTotal(game)
   const stocks = stocksValue(game, month)
+  const fund = fundValue(game, month)
   const invested = Object.values(game.holdings ?? {}).reduce((a, h) => a + h.shares * h.avgCostCents, 0)
-  const total = game.huchaCents + game.bankCents + bonds + stocks
-  const rows: { icon: string; name: string; cents: number | null; world: number; view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento' | 'mercado'; tone: string; note?: string }[] = [
+  const total = game.huchaCents + game.bankCents + bonds + stocks + fund
+  const rows: { icon: string; name: string; cents: number | null; world: number; view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento' | 'mercado' | 'fondo'; tone: string; note?: string }[] = [
     { icon: '🪙', name: 'Cofre de la cueva', cents: game.huchaCents, world: 1, view: 'cofre', tone: 'g-icon--orange' },
     { icon: '🏦', name: 'Banco de la Isla', cents: game.bankUnlocked ? game.bankCents : null, world: 1, view: 'banco', tone: 'g-icon--green' },
     { icon: '📜', name: 'Bonos del Ayuntamiento', cents: game.world >= 2 ? bonds : null, world: 2, view: 'ayuntamiento', tone: 'g-icon--blue' },
@@ -244,7 +252,10 @@ function PatrimonioPanel() {
       icon: '📈', name: 'Acciones', cents: game.world >= 3 ? stocks : null, world: 3, view: 'mercado', tone: 'g-icon--purple',
       note: stocks > 0 ? `${stocks - invested >= 0 ? 'ganas' : 'pierdes'} ${formatCents(Math.abs(stocks - invested))} sin vender` : undefined,
     },
-    { icon: '🧺', name: 'Fondo Isla', cents: null, world: 4, tone: 'g-icon--purple' },
+    {
+      icon: '🏠', name: 'Fondo Isla', cents: game.world >= 4 ? fund : null, world: 4, view: 'fondo', tone: 'g-icon--purple',
+      note: fund > 0 ? `${fund - game.fundCostCents >= 0 ? 'ganas' : 'pierdes'} ${formatCents(Math.abs(fund - game.fundCostCents))} sin vender` : undefined,
+    },
   ]
   return (
     <Sheet title="Tu patrimonio" tone="orange">
@@ -1189,7 +1200,7 @@ function MercadoPanel() {
   const showBusiness = useGame((s) => s.showBusiness)
   const [tab, setTab] = useState<'negocios' | 'cartera'>('negocios')
   const month = currentMonth(game, nowMs)
-  const market = marketAt(game.seed, month, game.world)
+  const market = marketAt(marketCtx(game), month, game.world)
   const stocks = stocksValue(game, month)
   const invested = Object.values(game.holdings ?? {}).reduce((a, h) => a + h.shares * h.avgCostCents, 0)
   const mine = market.filter((b) => (game.holdings[b.def.id]?.shares ?? 0) > 0)
@@ -1261,7 +1272,7 @@ function MercadoPanel() {
             </ul>
           )}
           <SectionTitle>Últimos movimientos</SectionTitle>
-          <Ledger events={game.ledger.filter((e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta')} />
+          <Ledger events={game.ledger.filter((e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'noticia' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta')} />
         </>
       )}
     </Sheet>
@@ -1281,7 +1292,7 @@ function NegocioPanel() {
   const [custom, setCustom] = useState('')
   if (!id) return null
   const month = currentMonth(game, nowMs)
-  const b = marketAt(game.seed, month, game.world).find((x) => x.def.id === id)
+  const b = marketAt(marketCtx(game), month, game.world).find((x) => x.def.id === id)
   const def = BUILDING_BY_ID[id]
   if (!b) return null
   const holding = game.holdings[id] ?? { shares: 0, avgCostCents: 0 }
@@ -1315,6 +1326,13 @@ function NegocioPanel() {
 
       <SectionTitle>Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}</SectionTitle>
       {q.storm && b.def.storm && <p className="m-0 mb-2 text-[13px] font-bold text-red-d">⛈️ {b.def.storm.label}</p>}
+      {b.def.cycle && q.cyclePhase !== undefined && (
+        <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">
+          🎢 Ciclo de obras: {q.cyclePhase > 0.5 ? 'en lo alto' : q.cyclePhase < -0.5 ? 'en lo bajo' : q.cyclePhase > 0 ? 'subiendo' : 'bajando'} ({Math.round((q.cyclePhase + 1) * 50)} % del camino).
+        </p>
+      )}
+      {b.def.fashion && q.hot !== undefined && <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">{q.hot ? '🔥 Este año está de moda.' : '🥶 Este año nadie se acuerda de sus juguetes.'}</p>}
+      {b.def.discovery && (q.discoveries ?? 0) > 0 && <p className="m-0 mb-2 text-[13px] font-bold text-green-d">🌠 Descubrimientos: {q.discoveries}. Su beneficio se multiplicó por {Math.pow(b.def.discovery.mul, q.discoveries!)}.</p>}
       <div className="grid grid-cols-3 gap-2">
         <div className="g-inset p-2.5 text-center">
           <div className="g-label !text-[10px]">Ventas / acción</div>
@@ -1391,6 +1409,111 @@ function NegocioPanel() {
   )
 }
 
+/* ───────────────────────── Casa del Fondo Isla ───────────────────────── */
+
+const FUND_QUICK = [10_00, 25_00, 50_00, 100_00]
+
+function FondoPanel() {
+  const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
+  const buyFund = useGame((s) => s.buyFund)
+  const sellFund = useGame((s) => s.sellFund)
+  const [mode, setMode] = useState<'meter' | 'sacar'>('meter')
+  const [custom, setCustom] = useState('')
+  const month = currentMonth(game, nowMs)
+  const nav = fundNavSeries(marketCtx(game), month)
+  const navNow = nav[month]
+  const navBefore = nav[Math.max(0, month - 1)]
+  const value = fundValue(game, month)
+  const gain = value - game.fundCostCents
+  const source = mode === 'meter' ? game.huchaCents : value
+  const parsed = Math.round(parseFloat(custom.replace(',', '.')) * 100)
+  const customOk = Number.isFinite(parsed) && parsed > 0 && parsed <= source
+  const act = (cents: number) => {
+    if (mode === 'meter') buyFund(cents)
+    else sellFund(cents >= value ? 'all' : cents)
+    setCustom('')
+  }
+  const inFund = marketAt(marketCtx(game), month, 4)
+  return (
+    <Sheet title="Fondo Isla" tone="purple">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="g-label">Cada participación vale</div>
+          <div className="font-display font-extrabold text-ink text-3xl leading-none flex items-center gap-1.5 mt-1">
+            <CoinIcon size={22} />
+            {formatCents(Math.round(navNow), { alwaysDecimals: true })}
+          </div>
+          <div className="mt-1">
+            <PctChange now={navNow} before={navBefore} /> <span className="text-[11px] font-bold text-ink-3">este mes</span>
+          </div>
+        </div>
+        <Sparkline values={nav.slice(Math.max(0, month - 11), month + 1)} up={navNow >= navBefore} />
+      </div>
+      <div className="mt-3">
+        <Tortuga>
+          El fondo tiene un trocito igual de los {inFund.length} negocios de la isla. Es de <b>acumulación</b>: los dividendos que cobra no salen, se reinvierten y suben la
+          participación. Cobra un {formatPct(FUND_FEE_BPS_YEAR)} al año por hacerlo. Si se rompe un huevo, quedan diez.
+        </Tortuga>
+      </div>
+
+      <SectionTitle>Lo tuyo en el fondo</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <Big label="Vale hoy" cents={value} />
+        <div className="g-inset p-3.5">
+          <div className="g-label">{value > 0 ? 'Sin vender' : 'Participaciones'}</div>
+          {value > 0 ? (
+            <div className={`font-display font-extrabold text-2xl mt-1 tabular-nums ${gain >= 0 ? 'text-green-d' : 'text-red-d'}`}>
+              {gain >= 0 ? '+' : '−'}
+              {formatCents(Math.abs(gain))}
+            </div>
+          ) : (
+            <div className="font-display font-extrabold text-2xl mt-1 text-ink-3">0</div>
+          )}
+        </div>
+      </div>
+      {value > 0 && <p className="text-[12px] font-bold text-ink-3 mt-1 mb-0">{game.fundUnits.toFixed(2)} participaciones · metiste {formatCents(game.fundCostCents)}</p>}
+
+      <div className="mt-4">
+        <Tabs value={mode} onChange={setMode} options={[['meter', 'Meter'], ['sacar', 'Sacar']]} />
+      </div>
+      <div className="grid grid-cols-4 gap-2 mt-3">
+        {FUND_QUICK.map((q) => (
+          <button key={q} type="button" disabled={q > source} onClick={() => act(q)} className="g-btn g-btn--cream g-btn--sm !px-0 tabular-nums">
+            {formatCents(q)}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 mt-2 items-center">
+        <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
+          <CoinIcon size={16} />
+          <input inputMode="decimal" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Otra cantidad" className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+        </div>
+        <button type="button" disabled={!customOk} onClick={() => act(parsed)} className={`g-btn g-btn--sm ${mode === 'meter' ? 'g-btn--purple' : 'g-btn--orange'}`}>
+          {mode === 'meter' ? 'Meter' : 'Sacar'}
+        </button>
+        <button type="button" disabled={source <= 0} onClick={() => act(source)} className="g-btn g-btn--cream g-btn--sm">
+          Todo
+        </button>
+      </div>
+      <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+        {mode === 'meter'
+          ? 'Sin comisión de compra: la única comisión es la anual. Puedes meter cualquier cantidad, aunque sea 1.'
+          : 'Sacas al valor de hoy. Si ganas respecto a lo que metiste, Hacienda se lleva el 19 % de la ganancia; si pierdes, resta de tus ganancias del año.'}
+      </p>
+
+      <SectionTitle>Qué hay dentro</SectionTitle>
+      <div className="flex flex-wrap gap-1.5">
+        {inFund.map((b) => (
+          <span key={b.def.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-extrabold bg-white text-ink shadow-[0_2px_0_var(--color-cream-d)]">
+            <span aria-hidden="true">{b.def.icon}</span> {b.def.name} <PctChange now={b.priceCents} before={b.previousPriceCents} />
+          </span>
+        ))}
+      </div>
+    </Sheet>
+  )
+}
+
 export function Panels() {
   const view = useGame((s) => s.view)
   switch (view) {
@@ -1418,6 +1541,8 @@ export function Panels() {
       return <MercadoPanel />
     case 'negocio':
       return <NegocioPanel />
+    case 'fondo':
+      return <FondoPanel />
     case 'misiones':
       return <MisionesPanel />
     case 'eventos':

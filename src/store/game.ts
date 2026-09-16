@@ -8,6 +8,8 @@ import {
   buyBond as simBuyBond,
   buyShares as simBuyShares,
   sellShares as simSellShares,
+  buyFund as simBuyFund,
+  sellFund as simSellFund,
   canDoTask,
   chooseTaxMode as simChooseTaxMode,
   collectMailbox,
@@ -45,6 +47,7 @@ export type View =
   | 'escuela'
   | 'mercado'
   | 'negocio'
+  | 'fondo'
   | 'edificio'
   | 'misiones'
   | 'eventos'
@@ -89,6 +92,9 @@ interface Store {
   acornReveal: boolean
   /** Punto de la isla al que vuela la cámara (pista de bellota); null = vista general. */
   focusPoint: [number, number] | null
+  /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
+  stormSeen: boolean
+  dismissStorm: () => void
 
   boot: () => Promise<void>
   tick: () => void
@@ -105,6 +111,8 @@ interface Store {
   buyBond: (offerId: string, cents: number) => void
   buyShares: (businessId: string, shares: number) => void
   sellShares: (businessId: string, shares: number) => void
+  buyFund: (cents: number) => void
+  sellFund: (cents: number | 'all') => void
   showBusiness: (id: BuildingId) => void
   chooseTaxMode: (mode: TaxMode) => void
   readLesson: (id: string) => void
@@ -173,6 +181,8 @@ export const useGame = create<Store>()(
         acornHint: null,
         acornReveal: false,
         focusPoint: null,
+        stormSeen: false,
+        dismissStorm: () => set({ stormSeen: true }),
 
         boot: async () => {
           try {
@@ -336,6 +346,16 @@ export const useGame = create<Store>()(
           if (!g) return
           apply(simSellShares(g, now(), businessId, shares))
         },
+        buyFund: (cents) => {
+          const g = get().game
+          if (!g) return
+          apply(simBuyFund(g, now(), cents), 'Ya está repartido entre todos los negocios.')
+        },
+        sellFund: (cents) => {
+          const g = get().game
+          if (!g) return
+          apply(simSellFund(g, now(), cents))
+        },
         showBusiness: (id) => set({ infoBuilding: id, view: 'negocio' }),
         chooseTaxMode: (mode) => {
           const g = get().game
@@ -359,7 +379,7 @@ export const useGame = create<Store>()(
         openWheel: (open) => set({ wheelOpen: open }),
         restart: () => {
           const name = get().game?.islandName ?? 'Mi isla'
-          set({ game: null, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0 })
+          set({ game: null, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
           get().createIsland(name)
         },
         showBuilding: (id) => set({ infoBuilding: id, view: 'edificio' }),
@@ -394,13 +414,13 @@ export const useGame = create<Store>()(
           get().tick()
         },
         devReset: () => {
-          set({ game: null, devOffsetMs: 0, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, wheelAutoShownFor: -1 })
+          set({ game: null, devOffsetMs: 0, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, wheelAutoShownFor: -1, stormSeen: false })
         },
       }
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions }),
+      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen }),
     },
   ),
 )
