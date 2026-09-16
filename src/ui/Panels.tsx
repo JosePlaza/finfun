@@ -1868,6 +1868,8 @@ function CompartirSection() {
 function AjustesPanel() {
   const account = useGame((s) => s.account)
   const signOut = useGame((s) => s.signOut)
+  const setTutorialStep = useGame((s) => s.setTutorialStep)
+  const setView = useGame((s) => s.setView)
   const musicOn = useGame((s) => s.musicOn)
   const musicVolume = useGame((s) => s.musicVolume)
   const setMusicOn = useGame((s) => s.setMusicOn)
@@ -1895,6 +1897,21 @@ function AjustesPanel() {
         />
       </div>
       <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes de sonido se guardan en este dispositivo.</p>
+      <SectionTitle>Ayuda</SectionTitle>
+      <div className="g-inset p-3.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="g-icon g-icon--green shrink-0" aria-hidden="true">
+            🐢
+          </span>
+          <div className="min-w-0">
+            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Recorrido con Doña Tortuga</div>
+            <div className="text-[12px] font-semibold text-ink-l leading-snug">Los cinco pasos básicos, otra vez.</div>
+          </div>
+        </div>
+        <button type="button" onClick={() => { setTutorialStep(0); setView('isla') }} className="g-btn g-btn--cream g-btn--sm shrink-0">
+          Repetir
+        </button>
+      </div>
       <CompartirSection />
       {account && (
         <>

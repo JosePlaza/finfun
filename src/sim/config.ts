@@ -86,6 +86,11 @@ export const SHOP_ITEMS: ShopItemDef[] = [
 /** El objeto cuya compra desbloquea el Nivel 2. */
 export const WORLD2_UNLOCK_ITEM = 'bici'
 
+/* ───────────────────────── Recorrido inicial ───────────────────────── */
+
+/** Número de pasos del recorrido con Doña Tortuga; `tutorialStep >= TUTORIAL_DONE` = terminado. */
+export const TUTORIAL_DONE = 7
+
 /* ───────────────────────── Compartir ───────────────────────── */
 
 /** Dirección pública del juego (la del QR de Ajustes → Compartir Finfun). */
@@ -147,6 +152,7 @@ export const LESSONS: Lesson[] = [
   { id: 'ciclos', title: 'Modas y refugios', icon: '🪙', body: 'El Taller de juguetes depende de las modas, que nadie puede predecir: comprar lo que está arriba porque está arriba suele salir caro. El oro de la Cantera es lo contrario: no gana ni reparte nada, pero cuando todos tienen miedo lo quieren y sube. Un poco de oro amortigua las tormentas; mucho oro es una cartera que no crece.' },
   { id: 'fondo', title: 'Qué es un fondo', icon: '🏠', body: 'El Fondo Isla tiene un trocito igual de todos los negocios. Compras participaciones y ya estás repartido sin pensar. Es de acumulación: los dividendos que cobra no salen, se reinvierten y hacen subir la participación. Cobra una comisión pequeña cada año por hacerlo.' },
   { id: 'tormenta', title: 'Cuando todo cae', icon: '⛈️', body: 'Algún día todos los precios caen a la vez. Los negocios siguen ganando dinero, pero la gente vende asustada. Quien vende en la caída pierde de verdad; quien aguanta ve cómo los precios vuelven poco a poco y sigue cobrando dividendos mientras tanto.' },
+  { id: 'paciencia', title: 'Espera y verás', icon: '🐢', body: 'Finfun no se juega durante horas: se juega diez minutos al día, muchos días. Aquí un día tuyo es un mes de la isla, y lo importante (los intereses, los dividendos, la despensa que se llena sola) no pasa deprisa: pasa cada día, un poco. Este juego entrena dos músculos que sirven para toda la vida: la paciencia y la constancia. Quien quiere tenerlo todo hoy, acaba como la Liebre.' },
   { id: 'independencia', title: 'Independencia financiera', icon: '🏝️', body: 'Cuando lo que producen tus inversiones paga lo que necesitas para vivir, eres libre: trabajas si quieres, no porque te haga falta. En la isla, el huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola. Eso es la independencia financiera, en pequeño.' },
   { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
 ]

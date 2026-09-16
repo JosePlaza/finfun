@@ -221,6 +221,8 @@ export interface GameState {
   liebreLoansLate: number
   /** Patrimonio al cierre de cada mes (índice = mes). -1 = desconocido (partidas antiguas). */
   netWorthHistory: number[]
+  /** Paso del recorrido inicial con Doña Tortuga (0 = empieza; TUTORIAL_DONE = terminado o saltado). */
+  tutorialStep: number
 }
 
 export interface LiebreLoan {

@@ -3,6 +3,7 @@ import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
 import { TopBar } from './ui/Hud'
 import { AuthScreen } from './ui/Auth'
+import { Coach } from './ui/Coach'
 import { hasSupabase } from './lib/supabase'
 import { EventSounds, Music } from './ui/Music'
 import { NameIsland } from './ui/NameIsland'
@@ -52,6 +53,7 @@ export default function App() {
         <EventSounds />
         <TopBar />
         <Panels />
+        <Coach />
         <Toast />
         <InflationWheelOverlay />
         <StormOverlay />

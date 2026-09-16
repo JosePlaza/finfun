@@ -3,7 +3,7 @@ import { Canvas, events as defaultEvents, useFrame, useThree } from '@react-thre
 import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
-import { BUSINESS_BY_ID, calendarOf, currentMonth } from '../sim'
+import { BUSINESS_BY_ID, calendarOf, currentMonth, TUTORIAL_DONE } from '../sim'
 import { mulberry32 } from '../sim/rng'
 import { isDevMode, useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
@@ -24,6 +24,7 @@ import { GenericBuilding } from './buildings/Generic'
 import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
 import { forwardOf } from './registry'
 import { boatPose, LiebreBoat, LiebreIsland, liebreIslandPose } from './LiebreIsland'
+import { COACH_STEPS } from '../ui/coach'
 
 type V3 = [number, number, number]
 
@@ -365,6 +366,11 @@ function Scene() {
       <Pier position={[PIER.x, 0, PIER.z]} rotation={PIER.rotation} length={PIER.length} />
       <MerchantBoat position={[PIER.x + 1.9, 0.04, PIER.z + 3.2]} rotation={PIER.rotation + 0.2} onTap={() => setView('tienda')} />
       <Rowboat position={[PIER.x - 1.2, 0.02, PIER.z + 2.6]} rotation={-0.35} />
+
+      {/* ===== RECORRIDO INICIAL: haz sobre el edificio del paso ===== */}
+      {game.tutorialStep < TUTORIAL_DONE && COACH_STEPS[game.tutorialStep]?.target && (
+        <Beacon position={positions[COACH_STEPS[game.tutorialStep].target as BuildingId]} />
+      )}
 
       {/* ===== LA ISLA DE LA LIEBRE (a lo lejos) Y SU BARCA ===== */}
       <LiebreIsland palette={palette} night={night} />

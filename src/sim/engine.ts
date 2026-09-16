@@ -22,6 +22,7 @@ import {
   SHOP_ITEMS,
   TASK_MAX_CENTS,
   TASK_MIN_CENTS,
+  TUTORIAL_DONE,
   WORLD2_UNLOCK_ITEM,
 } from './config'
 import { calendarOf, describeMonth, monthAt } from './calendar'
@@ -94,6 +95,7 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     liebreLoansRepaid: 0,
     liebreLoansLate: 0,
     netWorthHistory: [],
+    tutorialStep: 0,
   }
 }
 
@@ -122,6 +124,7 @@ export function migrate(state: GameState): GameState {
     state.fundUnits === undefined ||
     state.worldOpened === undefined ||
     state.netWorthHistory === undefined ||
+    state.tutorialStep === undefined ||
     state.netWorthHistory.some((v) => v < 0) ||
     (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
@@ -169,6 +172,8 @@ function clone(state: GameState): GameState {
   c.liebreLoan ??= null
   c.liebreLoansRepaid ??= 0
   c.liebreLoansLate ??= 0
+  // Partidas anteriores al recorrido inicial: se da por hecho (ya saben jugar).
+  c.tutorialStep ??= TUTORIAL_DONE
   // Partidas anteriores: reconstruimos la historia de patrimonio con lo que sabemos (cierres de año del diario y
   // el valor de hoy), uniendo los puntos en línea recta. Desde ahora se guarda mes a mes.
   if (!c.netWorthHistory || c.netWorthHistory.some((v) => v < 0)) {
@@ -678,6 +683,14 @@ function openWorld2(state: GameState) {
     state.bankUnlocked = true
     log(state, { kind: 'banco-abierto', month: state.processedMonth, amountCents: 0, label: 'Abre el Banco de la Isla (llegaste al Nivel 2)' })
   }
+}
+
+/** Avanza (o termina) el recorrido inicial. Al terminarlo, la lección "Espera y verás" queda leída. */
+export function setTutorialStep(input: GameState, step: number): ActionResult {
+  const state = clone(input)
+  state.tutorialStep = Math.max(0, Math.min(TUTORIAL_DONE, step))
+  if (state.tutorialStep >= TUTORIAL_DONE && !state.lessonsRead.includes('paciencia')) state.lessonsRead.push('paciencia')
+  return done(state)
 }
 
 /** Visitar la isla de la Liebre (desde el Nivel 2). Solo cuenta la visita: no cuesta nada. */

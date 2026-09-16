@@ -1,4 +1,5 @@
-import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, fundValue, TASK_ACORNS } from '../sim'
+import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, fundValue, TASK_ACORNS, TUTORIAL_DONE } from '../sim'
+import { COACH_STEPS } from './coach'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
@@ -17,6 +18,7 @@ export function TopBar() {
   const setView = useGame((s) => s.setView)
   const trip = useGame((s) => s.trip)
   const returnHome = useGame((s) => s.returnHome)
+  const coachHud = game.tutorialStep < TUTORIAL_DONE ? COACH_STEPS[game.tutorialStep]?.hud : undefined
   const acornsFound = useGame((s) => s.acornsFound)
   const seenDiary = useGame((s) => s.seenDiary)
   const seenBankOpen = useGame((s) => s.seenBankOpen)
@@ -71,10 +73,10 @@ export function TopBar() {
       {/* Botones verticales: Misiones y Eventos */}
       {onIsland && (
         <div className="mt-3 flex flex-col items-start gap-3.5">
-          <button type="button" onClick={() => setView('misiones')} className="pointer-events-auto g-hud-btn g-hud-btn--purple" aria-label="Misiones" title="Misiones">
+          <button type="button" onClick={() => setView('misiones')} className={`pointer-events-auto g-hud-btn g-hud-btn--purple ${coachHud === 'misiones' ? 'g-hud-btn--pulse' : ''}`} aria-label="Misiones" title="Misiones">
             <span className="g-hud-btn__icon" aria-hidden="true">📜</span>
           </button>
-          <button type="button" onClick={() => setView('eventos')} className="pointer-events-auto g-hud-btn g-hud-btn--orange" aria-label="Eventos pendientes" title="Eventos">
+          <button type="button" onClick={() => setView('eventos')} className={`pointer-events-auto g-hud-btn g-hud-btn--orange ${coachHud === 'eventos' ? 'g-hud-btn--pulse' : ''}`} aria-label="Eventos pendientes" title="Eventos">
             <span className="g-hud-btn__icon" aria-hidden="true">🔔</span>
             {events.length > 0 && <span className="g-badge">{events.length}</span>}
           </button>

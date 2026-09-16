@@ -22,6 +22,8 @@ import {
   migrate,
   readLesson as simReadLesson,
   spinInflation as simSpinInflation,
+  setTutorialStep as simSetTutorialStep,
+  TUTORIAL_DONE,
   visitLiebre as simVisitLiebre,
   lendToLiebre as simLendToLiebre,
   LIEBRE_VISIT_WORLD,
@@ -111,6 +113,11 @@ interface Store {
   /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
   stormSeen: boolean
   dismissStorm: () => void
+  /** Recorrido inicial: vistas abiertas desde que empezó (para saber si ya ha mirado el cofre o las misiones). */
+  coachVisited: View[]
+  setTutorialStep: (step: number) => void
+  skipTutorial: () => void
+  setFocusPoint: (p: [number, number] | null) => void
   /** Ajustes (persistidos): música de fondo y efectos de sonido, con sus volúmenes (0..1). */
   musicOn: boolean
   musicVolume: number
@@ -265,6 +272,33 @@ export const useGame = create<Store>()(
         focusPoint: null,
         stormSeen: false,
         dismissStorm: () => set({ stormSeen: true }),
+        coachVisited: [],
+        setTutorialStep: (step) => {
+          const g = get().game
+          if (!g) return
+          const r = simSetTutorialStep(g, step)
+          if (!r.ok) return
+          set({ game: r.state, focusPoint: null, acornHint: null })
+          scheduleRemoteSave(r.state)
+          if (step >= TUTORIAL_DONE && g.tutorialStep < TUTORIAL_DONE) {
+            get().celebrate({
+              icon: '🐢',
+              title: '¡Ya sabes jugar!',
+              text: 'Tienes tu primer carné de la escuela: "Espera y verás". Ahora, cada día diez minutos: recoge, decide, vuelve mañana.',
+              tone: 'green',
+            })
+          }
+        },
+        skipTutorial: () => {
+          const g = get().game
+          if (!g) return
+          const r = simSetTutorialStep(g, TUTORIAL_DONE)
+          if (r.ok) {
+            set({ game: r.state, focusPoint: null, acornHint: null })
+            scheduleRemoteSave(r.state)
+          }
+        },
+        setFocusPoint: (p) => set({ focusPoint: p }),
         musicOn: true,
         musicVolume: 0.6,
         sfxOn: true,
@@ -528,6 +562,8 @@ export const useGame = create<Store>()(
           if (view !== 'edificio' && view !== 'negocio') patch.infoBuilding = null
           // Salir de la isla (o volver a ella desde un panel) deja la cámara libre otra vez.
           if (view !== 'isla') patch.focusPoint = null
+          // El recorrido inicial mira qué lugares se han abierto ya.
+          if (g && g.tutorialStep < TUTORIAL_DONE && !get().coachVisited.includes(view)) patch.coachVisited = [...get().coachVisited, view]
           set(patch)
         },
         showToast: (text) => {
