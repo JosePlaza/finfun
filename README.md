@@ -16,15 +16,15 @@ Sin configurar nada, el juego funciona en **modo local**: guarda la partida en e
 
 ### Modo de pruebas
 
-Con `npm run dev` (o añadiendo `?dev` a la URL en producción) aparece una barra que permite adelantar el reloj de la isla (+1, +3, +12 días) y borrar la partida. `?hour=22` fuerza la hora del día para ver la isla de noche (ventanas encendidas, haz del faro). Así se puede ver un año completo en un minuto: estaciones, inflación, apertura del banco y diario.
+Con `npm run dev` (o añadiendo `?dev` a la URL en producción si `VITE_ALLOW_DEV=true`) aparece una barra que permite adelantar el reloj de la isla (+1, +3, +12 días) y borrar la partida. `?hour=22` fuerza la hora del día para ver la isla de noche (ventanas encendidas, haz del faro). Así se puede ver un año completo en un minuto: estaciones, inflación, apertura del banco y diario.
 
-### Supabase (opcional, recomendado para jugar de verdad)
+### Supabase + Vercel (para jugar de verdad)
 
-1. Crea un proyecto en Supabase y activa **Authentication → Providers → Anonymous sign-ins**.
-2. Ejecuta `supabase/schema.sql` en el SQL Editor.
-3. Copia `.env.example` a `.env.local` y rellena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+1. Crea un proyecto en Supabase y ejecuta en orden los SQL de `supabase/migrations/` (ver `supabase/README.md`).
+2. Authentication → Providers → Email activado con **Confirm email desactivado**; Anonymous sign-ins desactivado.
+3. Copia `.env.example` a `.env` y rellena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (las mismas en Vercel).
 
-Con Supabase, el reloj del juego es la **hora del servidor** (adelantar la hora del móvil no adelanta la isla) y la partida se guarda en la nube con un usuario anónimo.
+Con Supabase la cuenta es obligatoria (la registra el adulto responsable), el reloj del juego es la **hora del servidor** (adelantar la hora del móvil no adelanta la isla) y la partida se guarda en la cuenta. Paso a paso en `docs/despliegue.md`.
 
 ## Scripts
 
@@ -58,7 +58,7 @@ src/
     Island.tsx     Composición de la isla + CameraRig (la cámara vuela al lugar activo)
   ui/         Interfaz móvil: bautizo, barra superior, navegación inferior (= lugares), paneles por lugar
   lib/        Cliente Supabase opcional (hora de servidor, guardado)
-supabase/schema.sql   Función server_now() y tabla saves con RLS
+supabase/migrations/  SQL a ejecutar en Supabase (server_now, saves, profiles, ranking)
 docs/concepto.html    Documento de concepto del juego
 ```
 
@@ -132,6 +132,7 @@ La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operat
 - Banco: abre al cerrar el primer año (o antes, al llegar al Nivel 2); paga un 2,5 % anual repartido por meses.
 - Nivel 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
 - Nivel 3: Mercado de acciones (`src/sim/market.ts`): 100 acciones por negocio, precio mensual que sigue al beneficio trimestral (cuentas en marzo/junio/septiembre/diciembre), dividendos al cofre vía Hacienda, comisión 0,50 por operación, ganancia por precio medio al vender (19 % si hay ganancia; las pérdidas compensan). Panadería estable, Heladería estacional, Puerto con tormentas, Astillero sin dividendo. Propiedad visible en el cartel del edificio.
+- Cuentas (con Supabase configurado): pantalla de acceso con el logo y el fondo de la isla, registro del adulto responsable (correo + contraseña, sin confirmación) con nombre de jugador único, inicio de sesión, partida guardada en la cuenta y "Cerrar sesión" en Ajustes. Sin Supabase, modo local sin cuentas. Ver `docs/despliegue.md` y `supabase/`.
 - Ajustes (botón ⚙️ bajo Eventos): música de fondo (`public/audio/ambient.mp3`, en bucle; arranca con el primer toque por la política de autoplay de los navegadores) y efectos de sonido (`public/audio/events.mp3` cuando aparece un evento nuevo en Eventos), cada uno con interruptor y volumen, guardados en el dispositivo.
 - La isla de la Liebre (desde el Nivel 2): barca de vela en la playa del sur que cruza el mar hasta el islote de la vecina, simulada mes a mes con reglas fijas (gasta todo, persigue modas, vende en La Tormenta); pizarra "Tú y la Liebre" con la gráfica de patrimonio de ambos, préstamo de 5 → 6 eL con retraso ocasional y misiones N2–N4.
 - Nivel 4: seis negocios más con carácter propio (Molino refugio, Posada turística, Granja con cosecha y plagas, Cantera de Oro como activo refugio (lingotes sin dividendo que siguen la inflación y suben un 20 % en La Tormenta), Taller de modas, Observatorio con descubrimientos ×3), la Casa del Fondo Isla (fondo de acumulación con participaciones, 0,3 %/año) y La Tormenta: única por partida, seis meses después de abrir el nivel, −30 % general (−40 % la Posada), con pantalla de noticia y misión de aguantar tres meses sin vender.

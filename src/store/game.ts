@@ -34,7 +34,8 @@ import {
 } from '../sim'
 import type { BuildingId } from '../scene/registry'
 import { dayAcornSpots } from '../scene/acorns'
-import { hasSupabase, loadRemote, saveRemote, serverNow, syncClock } from '../lib/supabase'
+import { currentAccount, deleteRemote, hasSupabase, loadRemote, onAuthChange, saveRemote, serverNow, signIn as sbSignIn, signOut as sbSignOut, signUp as sbSignUp, syncClock, type Account } from '../lib/supabase'
+import { netWorth } from '../sim'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
 export type View =
@@ -72,6 +73,13 @@ export interface Celebration {
 
 interface Store {
   game: GameState | null
+  /** Cuenta con sesión abierta (null en modo local o sin entrar). */
+  account: Account | null
+  /** A qué cuenta pertenece la partida guardada en este navegador (null = partida local de antes de las cuentas). */
+  saveOwner: string | null
+  signUp: (p: { email: string; password: string; username: string }) => Promise<string | null>
+  signIn: (p: { email: string; password: string }) => Promise<string | null>
+  signOut: () => Promise<void>
   /** Hora de juego (servidor si hay Supabase) más el desplazamiento de desarrollo. */
   nowMs: number
   /** Solo para probar: adelanta el reloj del juego. Se guarda para poder seguir probando tras recargar. */
@@ -160,7 +168,15 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 function scheduleRemoteSave(game: GameState) {
   if (!hasSupabase) return
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => void saveRemote(game), 1500)
+  saveTimer = setTimeout(() => void saveRemote(game, netWorth(game)), 1500)
+}
+
+/** Guarda ya, sin esperar (al salir de la página o al cerrar sesión). */
+function flushRemoteSave(game: GameState | null) {
+  if (!hasSupabase || !game) return
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = null
+  void saveRemote(game, netWorth(game))
 }
 
 export const useGame = create<Store>()(
@@ -187,8 +203,48 @@ export const useGame = create<Store>()(
         }
       }
 
+      /**
+       * Con una cuenta ya identificada: decide qué partida se juega. Gana la más avanzada entre la de la
+       * cuenta (servidor) y la de este navegador, siempre que la local sea de esta cuenta o de antes de que
+       * hubiera cuentas (esa se sube a la cuenta la primera vez).
+       */
+      const adoptGameFor = async (account: Account) => {
+        const remote = await loadRemote()
+        const local = get().game
+        const owner = get().saveOwner
+        const localUsable = local && (owner === null || owner === account.id)
+        let game: GameState | null = null
+        if (remote && localUsable && local) game = local.processedMonth > remote.processedMonth ? local : remote
+        else if (remote) game = remote
+        else if (localUsable && local) game = local
+        if (game) game = migrate(game)
+        set({ game, account, saveOwner: account.id, view: 'isla', trip: 'home' })
+        // La partida local de antes de las cuentas (o más avanzada) pasa a la cuenta.
+        if (game && (!remote || game !== remote)) flushRemoteSave(game)
+        get().tick()
+      }
+
       return {
         game: null,
+        account: null,
+        saveOwner: null,
+        signUp: async (p) => {
+          const r = await sbSignUp(p)
+          if (!r.ok) return r.error
+          await adoptGameFor(r.account)
+          return null
+        },
+        signIn: async (p) => {
+          const r = await sbSignIn(p)
+          if (!r.ok) return r.error
+          await adoptGameFor(r.account)
+          return null
+        },
+        signOut: async () => {
+          flushRemoteSave(get().game)
+          await sbSignOut()
+          set({ account: null, game: null, saveOwner: null, view: 'isla', trip: 'home', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, wheelAutoShownFor: -1, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
+        },
         nowMs: Date.now(),
         devOffsetMs: 0,
         view: 'isla',
@@ -249,14 +305,20 @@ export const useGame = create<Store>()(
         boot: async () => {
           try {
             await syncClock()
-            const remote = await loadRemote()
-            const local = get().game
-            // La partida más avanzada gana; normalmente son la misma.
-            if (remote && (!local || remote.processedMonth >= local.processedMonth)) set({ game: remote })
-            // Partidas guardadas con versiones anteriores: se completan los campos nuevos.
-            const g = get().game
-            if (g) set({ game: migrate(g) })
-            get().tick()
+            if (hasSupabase) {
+              // Cuenta obligatoria: si hay sesión abierta, se carga su partida; si no, la pantalla de acceso espera.
+              const account = await currentAccount()
+              if (account) await adoptGameFor(account)
+              else set({ account: null })
+              onAuthChange((acc) => {
+                if (!acc) set({ account: null, game: null, saveOwner: null, view: 'isla', trip: 'home' })
+              })
+            } else {
+              // Modo local: partidas guardadas con versiones anteriores se completan con los campos nuevos.
+              const g = get().game
+              if (g) set({ game: migrate(g) })
+              get().tick()
+            }
           } catch (err) {
             console.error('Finfun: error al arrancar', err)
           } finally {
@@ -267,7 +329,8 @@ export const useGame = create<Store>()(
         tick: () => {
           const t = now()
           const g0 = get().game
-          if (!g0) {
+          // Con cuentas, la partida solo avanza (y se guarda) cuando hay sesión.
+          if (!g0 || (hasSupabase && !get().account)) {
             set({ nowMs: t })
             return
           }
@@ -441,6 +504,7 @@ export const useGame = create<Store>()(
         openWheel: (open) => set({ wheelOpen: open }),
         restart: () => {
           const name = get().game?.islandName ?? 'Mi isla'
+          if (hasSupabase) void deleteRemote()
           set({ game: null, view: 'isla', trip: 'home', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
           get().createIsland(name)
         },
@@ -485,13 +549,20 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
+      partialize: (s) => ({ game: s.game, saveOwner: s.saveOwner, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
     },
   ),
 )
 
-/** ¿Está activado el modo de pruebas? (`npm run dev` o `?dev` en la URL) */
-export const isDevMode = import.meta.env.DEV || new URLSearchParams(location.search).has('dev')
+/** ¿Está activado el modo de pruebas? (`npm run dev`, o `?dev` en la URL si VITE_ALLOW_DEV=true) */
+export const isDevMode = import.meta.env.DEV || (new URLSearchParams(location.search).has('dev') && import.meta.env.VITE_ALLOW_DEV === 'true')
+
+// Al salir de la página o dejarla en segundo plano, la partida se guarda en el servidor sin esperar.
+if (typeof window !== 'undefined') {
+  const flush = () => flushRemoteSave(useGame.getState().game)
+  window.addEventListener('pagehide', flush)
+  document.addEventListener('visibilitychange', () => document.hidden && flush())
+}
 
 // En modo de pruebas, el estado queda accesible desde la consola: `finfun.getState()`.
 if (isDevMode) (window as unknown as { finfun: typeof useGame }).finfun = useGame

@@ -797,3 +797,26 @@ textarea {
   box-shadow: 0 3px 0 var(--color-orange-d), 0 6px 10px rgba(0, 0, 0, 0.2);
 }
 .g-slider:disabled { opacity: 0.45; cursor: default; }
+
+/* ───────── Pantalla de acceso ───────── */
+.auth { position: relative; background-color: #2f8fd6; }
+/* El fondo va fijo detrás y el contenido se desplaza por encima (en móvil el formulario es más alto que la pantalla). */
+.auth__bg {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center 62%;
+  background-repeat: no-repeat;
+}
+@media (min-aspect-ratio: 1/1) {
+  .auth__bg { background-position: center 100%; }
+}
+.auth__logo { filter: drop-shadow(0 4px 0 rgba(18, 43, 96, 0.35)) drop-shadow(0 10px 18px rgba(0, 30, 80, 0.25)); }
+.auth__tagline, .auth__footer { text-shadow: 0 2px 0 rgba(18, 43, 96, 0.45), 0 4px 12px rgba(0, 30, 80, 0.35); }
+.auth__check {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  accent-color: var(--color-green);
+  border-radius: 6px;
+}

@@ -1,11 +1,23 @@
 {
   "name": "Finfun",
   "short_name": "Finfun",
-  "description": "Un día real es un mes de isla. Haz crecer tu isla y tu dinero.",
+  "description": "Educación financiera para niños. Un día real es un mes de isla.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#cfe8ee",
-  "theme_color": "#cfe8ee",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "background_color": "#1740b8",
+  "theme_color": "#2fa6c9",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

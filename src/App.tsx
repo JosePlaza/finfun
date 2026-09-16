@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
 import { TopBar } from './ui/Hud'
+import { AuthScreen } from './ui/Auth'
+import { hasSupabase } from './lib/supabase'
 import { EventSounds, Music } from './ui/Music'
 import { NameIsland } from './ui/NameIsland'
 import { Panels } from './ui/Panels'
@@ -12,6 +14,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary'
 
 export default function App() {
   const game = useGame((s) => s.game)
+  const account = useGame((s) => s.account)
   const ready = useGame((s) => s.ready)
   const boot = useGame((s) => s.boot)
   const tick = useGame((s) => s.tick)
@@ -38,6 +41,7 @@ export default function App() {
     )
   }
 
+  if (hasSupabase && !account) return <AuthScreen />
   if (!game) return <NameIsland />
 
   return (

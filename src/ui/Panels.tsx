@@ -1822,6 +1822,8 @@ function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolu
 }
 
 function AjustesPanel() {
+  const account = useGame((s) => s.account)
+  const signOut = useGame((s) => s.signOut)
   const musicOn = useGame((s) => s.musicOn)
   const musicVolume = useGame((s) => s.musicVolume)
   const setMusicOn = useGame((s) => s.setMusicOn)
@@ -1848,7 +1850,27 @@ function AjustesPanel() {
           onTest={() => playEventSfx(true)}
         />
       </div>
-      <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes se guardan en este dispositivo.</p>
+      <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes de sonido se guardan en este dispositivo.</p>
+      {account && (
+        <>
+          <SectionTitle>Cuenta</SectionTitle>
+          <div className="g-inset p-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="g-icon g-icon--green shrink-0" aria-hidden="true">
+                👤
+              </span>
+              <div className="min-w-0">
+                <div className="font-display font-extrabold text-ink text-[15px] leading-tight truncate">{account.username}</div>
+                <div className="text-[12px] font-semibold text-ink-l leading-snug truncate">{account.email}</div>
+              </div>
+            </div>
+            <button type="button" onClick={() => void signOut()} className="g-btn g-btn--cream g-btn--sm shrink-0">
+              Cerrar sesión
+            </button>
+          </div>
+          <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">La isla se guarda en tu cuenta: puedes seguir en otro dispositivo entrando con el mismo correo.</p>
+        </>
+      )}
     </Sheet>
   )
 }
