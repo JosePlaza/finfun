@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { BUSINESS_BY_ID, calendarOf, currentMonth } from '../sim'
 import { mulberry32 } from '../sim/rng'
-import { useGame } from '../store/game'
+import { isDevMode, useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
 import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, fitDistance, ISLAND_VIEW, islandPose, PIER, SITES, type BuildingDef, type BuildingId } from './registry'
 import { makeTerrain, scatter, type Terrain } from './terrain'
@@ -113,6 +113,8 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
   const goalTarget = useRef(new THREE.Vector3())
   const lastKey = useRef<string>('')
   const flying = useRef(false)
+  /** Cuándo empezó el vuelo actual: si el objetivo no es alcanzable (límites de los controles), se corta a los 2,5 s. */
+  const flightStart = useRef(0)
   const boat = useMemo(() => ({ pos: new THREE.Vector3(), dir: new THREE.Vector3() }), [])
 
   useFrame((_, dt) => {
@@ -140,10 +142,13 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     const focus = view === 'isla' ? focusPoint : null
     const there = trip === 'there'
     const panelOpen = there && view !== 'isla'
-    const key = `${there ? 'liebre' : view}:${there ? (panelOpen ? 'panel' : '') : target ?? ''}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
+    // Los paneles generales (misiones, eventos, patrimonio, ajustes) no mueven la cámara: se queda donde la dejó el jugador.
+    const scene = there ? 'liebre' : OVERVIEW_VIEWS.has(view) ? 'isla' : view
+    const key = `${scene}:${there ? (panelOpen ? 'panel' : '') : target ?? ''}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
+      flightStart.current = performance.now()
       const pose = there
         ? liebreIslandPose(fov, aspect, portrait, panelOpen && portrait ? 0.5 : 0)
         : focus
@@ -155,14 +160,18 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
       goalTarget.current.set(...pose.target)
     }
     const free = OVERVIEW_VIEWS.has(view) || there
-    ctl.enabled = free && !flying.current
     if (flying.current || !free) {
       const a = 1 - Math.exp(-4 * dt)
       camera.position.lerp(goalPos.current, a)
       ctl.target.lerp(goalTarget.current, a)
-      if (camera.position.distanceTo(goalPos.current) < 0.03) flying.current = false
+      // El vuelo termina al llegar… o al cabo de 2,5 s si los límites de los controles no dejan llegar
+      // (por ejemplo, la vista general en un móvil vertical queda más lejos que maxDistance). Si no,
+      // los controles se quedarían bloqueados para siempre.
+      if (camera.position.distanceTo(goalPos.current) < 0.05 || performance.now() - flightStart.current > 2500) flying.current = false
     }
+    ctl.enabled = free && !flying.current
     ctl.update()
+    if (isDevMode) (window as unknown as { finfunCam: unknown }).finfunCam = { flying: flying.current, enabled: ctl.enabled, dist: camera.position.distanceTo(goalPos.current), pos: camera.position.toArray() }
   })
   return null
 }
@@ -396,7 +405,7 @@ function Scene() {
         enableDamping
         dampingFactor={0.12}
         minDistance={10}
-        maxDistance={110}
+        maxDistance={170}
         minPolarAngle={0.45}
         maxPolarAngle={1.25}
         touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
