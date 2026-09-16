@@ -86,6 +86,11 @@ export const SHOP_ITEMS: ShopItemDef[] = [
 /** El objeto cuya compra desbloquea el Nivel 2. */
 export const WORLD2_UNLOCK_ITEM = 'bici'
 
+/* ───────────────────────── Compartir ───────────────────────── */
+
+/** Dirección pública del juego (la del QR de Ajustes → Compartir Finfun). */
+export const SHARE_URL = 'https://finfun-l2xi.vercel.app/'
+
 /* ───────────────────────── La Liebre ───────────────────────── */
 
 /** El préstamo de la Liebre: pide 5 eL cuando pasa hambre y promete devolver 6 al mes siguiente. */

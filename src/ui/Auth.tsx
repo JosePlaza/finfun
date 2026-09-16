@@ -10,6 +10,7 @@ import { USERNAME_RE } from '../lib/supabase'
 type Mode = 'crear' | 'entrar'
 
 export const BG_SRC = `${import.meta.env.BASE_URL}bg.jpg`
+export const BG_DESKTOP_SRC = `${import.meta.env.BASE_URL}bg2.jpg`
 export const LOGO_SRC = `${import.meta.env.BASE_URL}logo.png`
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -27,11 +28,10 @@ const INPUT = 'w-full h-12 px-4 g-inset font-display font-extrabold text-[17px] 
 export function AuthScreen() {
   const signUp = useGame((s) => s.signUp)
   const signIn = useGame((s) => s.signIn)
-  const [mode, setMode] = useState<Mode>('crear')
+  const [mode, setMode] = useState<Mode>('entrar')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [adult, setAdult] = useState(false)
   const [showPw, setShowPw] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +39,12 @@ export function AuthScreen() {
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   const pwOk = password.length >= 6
   const userOk = USERNAME_RE.test(username.trim())
-  const canSubmit = mode === 'crear' ? emailOk && pwOk && userOk && adult : emailOk && password.length > 0
+  const canSubmit = mode === 'crear' ? emailOk && pwOk && userOk : emailOk && password.length > 0
+
+  const switchMode = (m: Mode) => {
+    setMode(m)
+    setError(null)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -53,30 +58,15 @@ export function AuthScreen() {
 
   return (
     <div className="auth h-full overflow-y-auto">
-      <div className="auth__bg" style={{ backgroundImage: `url(${BG_SRC})` }} aria-hidden="true" />
+      <div className="auth__bg" style={{ ['--bg-movil' as string]: `url(${BG_SRC})`, ['--bg-escritorio' as string]: `url(${BG_DESKTOP_SRC})` }} aria-hidden="true" />
       <div className="relative min-h-full flex flex-col safe-top safe-bottom">
         <div className="flex-1 flex flex-col items-center md:items-start justify-start px-5 md:pl-[8vw] pt-[4vh] md:pt-[5vh]">
           <div className="w-full max-w-sm flex flex-col items-center">
-            <img src={LOGO_SRC} alt="Finfun" className="auth__logo w-[54vw] max-w-[300px] h-auto" draggable={false} />
-            <p className="auth__tagline mt-1 mb-4 font-display font-extrabold text-white text-[16px] tracking-wide text-center">Educación financiera para niños</p>
+            <img src={LOGO_SRC} alt="Finfun" className="auth__logo w-[58vw] max-w-[320px] h-auto" draggable={false} />
+            <p className="auth__tag mt-3 mb-6">Educación financiera para niños</p>
 
             <form onSubmit={submit} className="g-panel g-panel--blue relative w-full max-w-sm p-5 pt-9" noValidate>
               <div className="g-ribbon">{mode === 'crear' ? 'Crear cuenta' : 'Entrar'}</div>
-              <div className="grid gap-2 g-inset p-1.5 grid-cols-2 mb-4">
-                {(['crear', 'entrar'] as Mode[]).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => {
-                      setMode(m)
-                      setError(null)
-                    }}
-                    className={`h-11 rounded-2xl font-display font-extrabold uppercase tracking-wide text-[14px] transition ${mode === m ? 'bg-white text-ink shadow-[0_3px_0_var(--color-cream-d)]' : 'text-ink-l'}`}
-                  >
-                    {m === 'crear' ? 'Crear cuenta' : 'Entrar'}
-                  </button>
-                ))}
-              </div>
 
               <div className="grid gap-3">
                 {mode === 'crear' && (
@@ -92,7 +82,7 @@ export function AuthScreen() {
                     />
                   </Field>
                 )}
-                <Field label={mode === 'crear' ? 'Correo del adulto responsable' : 'Correo'}>
+                <Field label="Correo">
                   <input
                     type="email"
                     value={email}
@@ -124,14 +114,6 @@ export function AuthScreen() {
                     </button>
                   </div>
                 </Field>
-                {mode === 'crear' && (
-                  <label className="flex items-start gap-3 g-inset p-3 cursor-pointer">
-                    <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="auth__check mt-0.5" />
-                    <span className="text-[13px] font-semibold text-ink leading-snug">
-                      Soy el <b>adulto responsable</b> y creo esta cuenta para que un niño o niña juegue con mi permiso.
-                    </span>
-                  </label>
-                )}
               </div>
 
               {error && (
@@ -140,21 +122,21 @@ export function AuthScreen() {
                 </p>
               )}
 
-              <button type="submit" disabled={!canSubmit || busy} className={`g-btn g-btn--block g-btn--lg mt-4 ${mode === 'crear' ? 'g-btn--orange' : 'g-btn--blue'}`}>
-                {busy ? 'Un momento…' : mode === 'crear' ? 'Crear y jugar' : 'Entrar'}
+              <button type="submit" disabled={!canSubmit || busy} className={`g-btn g-btn--block g-btn--lg mt-4 ${mode === 'crear' ? 'g-btn--orange' : 'g-btn--green'}`}>
+                {busy ? 'Un momento…' : mode === 'crear' ? 'Crear' : 'Jugar'}
               </button>
-              <p className="text-center text-[12px] font-bold text-ink-3 mt-3 mb-0">
+              <p className="text-center text-[13px] font-bold text-ink-3 mt-3 mb-0">
                 {mode === 'crear' ? (
                   <>
                     ¿Ya tienes cuenta?{' '}
-                    <button type="button" onClick={() => setMode('entrar')} className="text-blue-d underline">
+                    <button type="button" onClick={() => switchMode('entrar')} className="text-blue-d underline">
                       Entra aquí
                     </button>
                   </>
                 ) : (
                   <>
                     ¿Primera vez?{' '}
-                    <button type="button" onClick={() => setMode('crear')} className="text-blue-d underline">
+                    <button type="button" onClick={() => switchMode('crear')} className="text-blue-d underline">
                       Crea una cuenta
                     </button>
                   </>

@@ -43,12 +43,14 @@ import {
   MONTH_NAMES,
   netWorth,
   BUSINESS_BY_ID,
+  SHARE_URL,
 } from '../sim'
 import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
 import { BUILDING_BY_ID, BUILDINGS, WORLD_NAMES, type BuildingId } from '../scene/registry'
 import { pendingEvents } from './events'
 import { playEventSfx } from './Music'
+import { ShareQr } from './ShareQr'
 
 type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'sky'
 
@@ -1821,6 +1823,48 @@ function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolu
   )
 }
 
+function CompartirSection() {
+  const showToast = useGame((s) => s.showToast)
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(SHARE_URL)
+      setCopied(true)
+      showToast('Dirección copiada. ¡Pásala a quien quieras!')
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // Sin permiso de portapapeles (o sin https): se muestra para copiarla a mano.
+      window.prompt('Copia la dirección de Finfun:', SHARE_URL)
+    }
+  }
+  const share = async () => {
+    if (!navigator.share) return copy()
+    try {
+      await navigator.share({ title: 'Finfun', text: 'Educación financiera para niños: haz crecer tu isla y tu dinero.', url: SHARE_URL })
+    } catch {
+      /* cancelado */
+    }
+  }
+  return (
+    <>
+      <SectionTitle>Compartir Finfun</SectionTitle>
+      <div className="g-inset p-3.5 flex flex-col items-center gap-3">
+        <ShareQr url={SHARE_URL} size={176} />
+        <div className="w-full text-center font-display font-extrabold text-ink text-[14px] break-all select-all">{SHARE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')}</div>
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <button type="button" onClick={copy} className="g-btn g-btn--blue g-btn--sm">
+            {copied ? '¡Copiada!' : 'Copiar'}
+          </button>
+          <button type="button" onClick={share} className="g-btn g-btn--orange g-btn--sm">
+            Enviar
+          </button>
+        </div>
+      </div>
+      <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">Quien escanee el QR o abra la dirección llega a la pantalla de acceso de Finfun.</p>
+    </>
+  )
+}
+
 function AjustesPanel() {
   const account = useGame((s) => s.account)
   const signOut = useGame((s) => s.signOut)
@@ -1851,6 +1895,7 @@ function AjustesPanel() {
         />
       </div>
       <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes de sonido se guardan en este dispositivo.</p>
+      <CompartirSection />
       {account && (
         <>
           <SectionTitle>Cuenta</SectionTitle>
