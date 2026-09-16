@@ -124,7 +124,7 @@ Luz: la isla nunca se oscurece. A partir de las 19 h (o antes de las 8) el cielo
 La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operativa.md`](docs/operativa.md). Resumen de lo que ya funciona:
 
 - Paga: 30 euroLukys al mes de isla. Llega al buzón de la casa y se acumula sin tope si no entras. Lo recogido va al cofre de la cueva.
-- Comida: cada mes se come una ración de la despensa (se empieza con 3). Cesta pequeña 5 (1 mes), cesta grande 9,50 (2 meses). Seis meses sin comer terminan la aventura y hay que empezar una isla nueva.
+- Comida: cada mes se come una ración de la despensa (se empieza con 3). Cesta pequeña 5 (1 mes), cesta grande 9,50 (2 meses). Cesta domiciliada (por defecto): si la despensa se vacía, se compra sola con el dinero del cofre o del banco. Seis meses sin comer → rescate de Doña Tortuga: se pierde lo del cofre, la isla sigue.
 - Huerto: construcción que paga el jugador (1000); da una cesta grande (2 meses) cada 3 meses para siempre. Ampliación (1500): 3 meses por trimestre, la despensa se llena sola → celebración de independencia financiera.
 - Tarea diaria: cinco bellotas escondidas por la isla; al recogerlas, de 1 a 3 euroLukys y una celebración.
 - Tienda: comida (cestas), caprichos que se gastan (chuches, helado, cómic, cine) y cosas que se quedan en la isla (cometa, balón, patinete, tienda de campaña, columpio, bici 180, guitarra, cámara, telescopio, consola, canoa 900). Los objetos con modelo 3D aparecen alrededor de la casa, el telescopio junto al faro y la canoa en la playa. Comprar la bici abre el Nivel 2.

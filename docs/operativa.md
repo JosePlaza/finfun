@@ -10,8 +10,12 @@ Estado de implementación: **[hecho]** funciona en el juego · **[diseño]** def
 ## Reglas transversales
 
 **Comida [hecho].** Cada mes se come una ración de la despensa. Se empieza con 3 meses. En la tienda: cesta pequeña
-5 eL (1 mes) y cesta grande 9,50 eL (2 meses, 4,75 por mes). Sin comida empieza a contar el hambre; a los **6 meses sin
-comer la aventura termina** y hay que empezar una isla nueva (se pierde todo). Avisos en Eventos desde que queda 1 mes.
+5 eL (1 mes) y cesta grande 9,50 eL (2 meses, 4,75 por mes). **Cesta domiciliada** (activada por defecto, interruptor en
+la tienda): cuando la despensa se vacía, la isla compra sola la cesta pequeña con el dinero del cofre y, si no llega, del
+banco, como un recibo domiciliado; sin dinero en ninguno, empieza el hambre. A los **6 meses sin comer Doña Tortuga te
+rescata**: se pierde todo lo que había en el cofre (banco, bonos, acciones y fondo se conservan), la despensa vuelve a un
+mes y la isla sigue. Así, ausentarse unos días no borra la partida; descuidar la comida sale caro. Avisos en Eventos desde
+que queda 1 mes.
 
 **Ruleta de la inflación [hecho].** Al cerrar cada año no suben los precios solos: aparece la ruleta con las casillas
 1,5 · 2,0 · 2,5 · 3,0 · 3,5 · 4,0 % y la gira el jugador. El resultado ya está decidido por la semilla de la isla

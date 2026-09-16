@@ -52,6 +52,7 @@ export type LedgerKind =
   | 'fondo-venta'
   | 'prestamo'
   | 'devolucion'
+  | 'rescate'
 
 export interface LedgerEvent {
   kind: LedgerKind
@@ -157,10 +158,16 @@ export interface GameState {
   // ───── Comida y vida ─────
   /** Meses de comida que quedan en la despensa. Cada mes se consume uno. */
   foodMonths: number
-  /** Meses seguidos sin comer. A los 6 la aventura termina. */
+  /** Meses seguidos sin comer. A los 6, Doña Tortuga te rescata (se pierde lo del cofre). */
   hunger: number
+  /** Ya no se usa: la aventura no termina, hay rescate. Se conserva por compatibilidad de partidas. */
   dead: boolean
   deathMonth: number | null
+  /** Cesta domiciliada: cuando la despensa se vacía, la isla compra sola la cesta pequeña (cofre, y si no, banco). */
+  autoFood: boolean
+  /** Rescates de Doña Tortuga (seis meses sin comer) y mes del último (-1 = ninguno). */
+  rescues: number
+  lastRescueMonth: number
   /** Mes en que se construyó el huerto (null = sin construir). Da una cesta grande cada 3 meses. */
   huertoBuiltMonth: number | null
   /** Mes en que se amplió el huerto (null = sin ampliar). Ampliado da 3 meses de comida cada trimestre. */

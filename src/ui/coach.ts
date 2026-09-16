@@ -43,7 +43,7 @@ export const COACH_STEPS: CoachStep[] = [
     id: 'comida',
     target: 'tienda',
     title: 'Primero, comer',
-    text: 'Cada mes se gasta una cesta de comida de tu despensa. Empiezas con tres. Si un día se acaba, empiezas a perder corazones; a los seis meses sin comer, la aventura termina.',
+    text: 'Cada mes se gasta una cesta de comida de tu despensa. Empiezas con tres. Si se acaba, pierdes corazones; a los seis meses sin comer te tengo que rescatar y pierdes lo del cofre. La cesta está domiciliada: si tienes dinero, se compra sola. Pero hoy cómprala tú.',
     action: 'Entra en la tienda y compra la cesta pequeña.',
     done: (g) => g.purchases.some((p) => p.itemId.startsWith('cesta')),
   },

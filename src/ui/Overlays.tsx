@@ -110,7 +110,7 @@ export function InflationWheelOverlay() {
   }, [open])
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
-  if (!game || !open || year === null || game.dead) return null
+  if (!game || !open || year === null) return null
 
   const target = inflationForYear(game.seed, year - 1)
   const n = INFLATION_WHEEL_BPS.length
@@ -202,29 +202,39 @@ export function InflationWheelOverlay() {
   )
 }
 
-/* ───────────────────────── Fin de la aventura ───────────────────────── */
+/* ───────────────────────── El rescate de Doña Tortuga ───────────────────────── */
 
-export function GameOverOverlay() {
+export function RescueOverlay() {
   const game = useGame((s) => s.game)
-  const restart = useGame((s) => s.restart)
-  if (!game?.dead) return null
+  const seen = useGame((s) => s.rescueSeen)
+  const dismiss = useGame((s) => s.dismissRescue)
+  const setView = useGame((s) => s.setView)
+  if (!game || game.lastRescueMonth < 0 || seen >= game.lastRescueMonth) return null
+  const ev = game.ledger.filter((e) => e.kind === 'rescate').slice(-1)[0]
+  const lost = ev ? -ev.amountCents : 0
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="rescue-title">
       <div className="overlay__card g-panel g-panel--red p-6 pt-9 text-center">
         <div className="g-ribbon">Oh, no…</div>
         <div className="text-6xl leading-none mb-3" aria-hidden="true">
-          🍂
+          🍲
         </div>
-        <h2 id="gameover-title" className="g-title text-2xl m-0">
-          La despensa estuvo vacía seis meses
+        <h2 id="rescue-title" className="g-title text-2xl m-0">
+          Seis meses sin comer
         </h2>
         <p className="text-ink-l font-semibold text-[15px] leading-relaxed mt-2 mb-0">
-          <b className="text-ink">Doña Tortuga:</b> Antes de invertir, hay que comer. En la próxima isla, compra la cesta cada mes o ahorra para el huerto: él te dará comida
-          solo. Tenías {formatCents(game.huchaCents + game.bankCents)} guardados; se quedan en {game.islandName}.
+          <b className="text-ink">Doña Tortuga:</b> Te encontré desmayado en la puerta de casa y te traje sopa. Los médicos y la comida se han llevado todo lo que había en el
+          cofre{lost > 0 ? ` (${formatCents(lost)})` : ''}. Lo del banco, los bonos y las acciones sigue siendo tuyo. Antes de invertir, hay que comer: deja la cesta domiciliada
+          y algo de dinero en el cofre, o ahorra para el huerto.
         </p>
-        <button type="button" onClick={restart} className="g-btn g-btn--block g-btn--lg g-btn--red mt-5">
-          Isla nueva
-        </button>
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <button type="button" onClick={() => { dismiss(); setView('tienda') }} className="g-btn g-btn--cream">
+            Tienda
+          </button>
+          <button type="button" onClick={dismiss} className="g-btn g-btn--red">
+            Entendido
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -237,7 +247,7 @@ export function StormOverlay() {
   const seen = useGame((s) => s.stormSeen)
   const dismiss = useGame((s) => s.dismissStorm)
   const setView = useGame((s) => s.setView)
-  if (!game || seen || game.dead || game.crashMonth === null || game.processedMonth < game.crashMonth) return null
+  if (!game || seen || game.crashMonth === null || game.processedMonth < game.crashMonth) return null
   const invested = stocksValue(game, game.processedMonth) + fundValue(game, game.processedMonth)
   return (
     <div className="overlay overlay--storm" role="dialog" aria-modal="true" aria-labelledby="storm-title">

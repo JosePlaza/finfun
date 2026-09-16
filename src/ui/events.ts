@@ -17,7 +17,7 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
   // Lo urgente primero: la comida y la ruleta del año.
   if (game.hunger > 0) {
     const left = HUNGER_DEATH_MONTHS - game.hunger
-    out.push({ id: 'hambre', icon: '😟', title: '¡No hay comida en casa!', detail: `Llevas ${game.hunger} ${game.hunger === 1 ? 'mes' : 'meses'} sin comer. Quedan ${left}. Compra una cesta en la tienda.`, view: 'tienda', tone: 'red' })
+    out.push({ id: 'hambre', icon: '😟', title: '¡No hay comida en casa!', detail: `Llevas ${game.hunger} ${game.hunger === 1 ? 'mes' : 'meses'} sin comer. Quedan ${left} antes del rescate (perderías lo del cofre). Compra una cesta en la tienda.`, view: 'tienda', tone: 'red' })
   } else if (game.foodMonths <= 1) {
     out.push({ id: 'despensa', icon: '🧺', title: 'La despensa se acaba', detail: game.foodMonths === 0 ? 'Hoy se ha comido lo último. Compra comida antes de mañana.' : 'Queda comida para un mes. Ve a la tienda.', view: 'tienda', tone: 'orange' })
   }
@@ -50,6 +50,10 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
       else if (e.kind === 'noticia') out.push({ id: `noticia-${e.month}-${i}`, icon: '📰', title: 'Noticias de la isla', detail: e.label, view: 'mercado', tone: 'blue' })
       else out.push({ id: `div-${e.label}`, icon: '🎁', title: 'Ha llegado un dividendo', detail: `+${formatCents(e.amountCents)} en el cofre. ${e.label}.`, view: 'mercado', tone: 'purple' })
     })
+  const rescue = game.ledger.filter((e) => e.kind === 'rescate').slice(-1)[0]
+  if (rescue && rescue.month === game.processedMonth) {
+    out.push({ id: `rescate-${rescue.month}`, icon: '🍲', title: 'Doña Tortuga te ha rescatado', detail: rescue.label, view: 'tienda', tone: 'red' })
+  }
   const loanBack = game.ledger.filter((e) => e.kind === 'devolucion').slice(-1)[0]
   if (loanBack && loanBack.month === game.processedMonth) {
     out.push({ id: 'devolucion', icon: '🐰', title: 'La Liebre te ha devuelto el préstamo', detail: `+${formatCents(loanBack.amountCents)} en el cofre. Prestaste 5 y vuelven 6: eso es el interés.`, view: 'cofre', tone: 'green' })

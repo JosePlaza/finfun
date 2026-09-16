@@ -10,6 +10,7 @@ import {
   HUERTO_UPGRADE_COST_CENTS,
   HUERTO_UPGRADED_FOOD_MONTHS,
   HUNGER_DEATH_MONTHS,
+  AUTO_FOOD_ITEM,
   LESSONS,
   LIEBRE_LOAN_CENTS,
   LIEBRE_LOAN_LATE_CHANCE,
@@ -65,6 +66,9 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     hunger: 0,
     dead: false,
     deathMonth: null,
+    autoFood: true,
+    rescues: 0,
+    lastRescueMonth: -1,
     huertoBuiltMonth: null,
     huertoUpgradedMonth: null,
     pendingYearEnds: [],
@@ -122,6 +126,8 @@ export function migrate(state: GameState): GameState {
     state.declarations === undefined ||
     state.holdings === undefined ||
     state.fundUnits === undefined ||
+    state.autoFood === undefined ||
+    state.dead === true ||
     state.worldOpened === undefined ||
     state.netWorthHistory === undefined ||
     state.tutorialStep === undefined ||
@@ -139,6 +145,15 @@ function clone(state: GameState): GameState {
   c.hunger ??= 0
   c.dead ??= false
   c.deathMonth ??= null
+  c.autoFood ??= true
+  c.rescues ??= 0
+  c.lastRescueMonth ??= -1
+  // Ya no hay muerte: una partida que había terminado vuelve a la vida con el rescate.
+  if (c.dead) {
+    c.dead = false
+    c.hunger = 0
+    c.foodMonths = Math.max(c.foodMonths, 1)
+  }
   c.huertoBuiltMonth ??= null
   c.huertoUpgradedMonth ??= null
   c.pendingYearEnds ??= []
@@ -296,11 +311,6 @@ export function bondsTotal(state: GameState): number {
 }
 
 function processMonth(state: GameState, month: number) {
-  // Si la aventura terminó, la isla se detiene.
-  if (state.dead) {
-    state.processedMonth = month
-    return
-  }
   const cal = calendarOf(month)
 
   // 1. Llega la paga al buzón.
@@ -320,17 +330,38 @@ function processMonth(state: GameState, month: number) {
 
   // 3. Comida: cada mes se come una ración de la despensa (el primer mes no cuenta).
   if (month > 0) {
+    // 3a. Cesta domiciliada: si la despensa está vacía, la isla compra sola la cesta pequeña. Primero del
+    // cofre; si no llega, del banco (como un recibo domiciliado). Sin dinero en ninguno, empieza el hambre.
+    if (state.foodMonths <= 0 && state.autoFood) {
+      const item = state.shop.find((i) => i.id === AUTO_FOOD_ITEM)
+      const def = SHOP_ITEMS.find((i) => i.id === AUTO_FOOD_ITEM)
+      if (item && def) {
+        const price = item.priceCents
+        const from = state.huchaCents >= price ? 'cofre' : state.bankUnlocked && state.bankCents >= price ? 'banco' : null
+        if (from) {
+          if (from === 'cofre') state.huchaCents -= price
+          else state.bankCents -= price
+          state.yearSpentCents += price
+          state.foodMonths += def.foodMonths ?? 1
+          log(state, { kind: 'comida', month, amountCents: -price, label: `Cesta domiciliada: ${def.name} cobrada del ${from} (+${def.foodMonths ?? 1} mes de comida)` })
+        }
+      }
+    }
     if (state.foodMonths > 0) {
       state.foodMonths -= 1
       state.hunger = 0
     } else {
       state.hunger += 1
       if (state.hunger >= HUNGER_DEATH_MONTHS) {
-        state.dead = true
-        state.deathMonth = month
-        log(state, { kind: 'comida', month, amountCents: 0, label: 'Sin comida durante seis meses: la aventura termina' })
-        state.processedMonth = month
-        return
+        // 3b. Rescate: Doña Tortuga te encuentra desmayado y te lleva sopa. Se pierde lo que había en el
+        // cofre (el banco, los bonos y las acciones se quedan) y la despensa vuelve a tener un mes.
+        const lost = state.huchaCents
+        state.huchaCents = 0
+        state.hunger = 0
+        state.foodMonths = 1
+        state.rescues += 1
+        state.lastRescueMonth = month
+        log(state, { kind: 'rescate', month, amountCents: -lost, label: lost > 0 ? `Doña Tortuga te rescata: seis meses sin comer. El cofre (${formatCents(lost)}) se fue en médicos y sopa` : 'Doña Tortuga te rescata: seis meses sin comer. El cofre estaba vacío' })
       }
     }
   }
@@ -683,6 +714,15 @@ function openWorld2(state: GameState) {
     state.bankUnlocked = true
     log(state, { kind: 'banco-abierto', month: state.processedMonth, amountCents: 0, label: 'Abre el Banco de la Isla (llegaste al Nivel 2)' })
   }
+}
+
+/** Activa o desactiva la cesta domiciliada (la isla compra sola la cesta pequeña cuando la despensa se vacía). */
+export function setAutoFood(input: GameState, nowMs: number, on: boolean): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  state.autoFood = on
+  const month = currentMonth(state, nowMs)
+  log(state, { kind: 'comida', month, amountCents: 0, label: on ? 'Cesta domiciliada: la despensa se rellenará sola cuando se vacíe' : 'Cesta domiciliada desactivada: compra tú la comida cada mes' })
+  return done(state)
 }
 
 /** Avanza (o termina) el recorrido inicial. Al terminarlo, la lección "Espera y verás" queda leída. */

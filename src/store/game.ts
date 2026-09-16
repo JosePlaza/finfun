@@ -23,6 +23,7 @@ import {
   readLesson as simReadLesson,
   spinInflation as simSpinInflation,
   setTutorialStep as simSetTutorialStep,
+  setAutoFood as simSetAutoFood,
   TUTORIAL_DONE,
   visitLiebre as simVisitLiebre,
   lendToLiebre as simLendToLiebre,
@@ -117,6 +118,10 @@ interface Store {
   coachVisited: View[]
   setTutorialStep: (step: number) => void
   skipTutorial: () => void
+  setAutoFood: (on: boolean) => void
+  /** Mes del último rescate que ya se ha enseñado (persistido). */
+  rescueSeen: number
+  dismissRescue: () => void
   setFocusPoint: (p: [number, number] | null) => void
   /** Ajustes (persistidos): música de fondo y efectos de sonido, con sus volúmenes (0..1). */
   musicOn: boolean
@@ -299,6 +304,13 @@ export const useGame = create<Store>()(
           }
         },
         setFocusPoint: (p) => set({ focusPoint: p }),
+        setAutoFood: (on) => {
+          const g = get().game
+          if (!g) return
+          apply(simSetAutoFood(g, now(), on), on ? 'Cesta domiciliada: la despensa se rellena sola.' : 'Ahora compras tú la comida cada mes.')
+        },
+        rescueSeen: -1,
+        dismissRescue: () => set({ rescueSeen: get().game?.lastRescueMonth ?? -1 }),
         musicOn: true,
         musicVolume: 0.6,
         sfxOn: true,
@@ -384,7 +396,7 @@ export const useGame = create<Store>()(
             patch.focusPoint = null
           }
           // Si hay un año por cerrar, la ruleta aparece sola una vez por mes de isla.
-          if (advanced.pendingYearEnds.length > 0 && !advanced.dead && get().wheelAutoShownFor !== month && !get().wheelOpen) {
+          if (advanced.pendingYearEnds.length > 0 && get().wheelAutoShownFor !== month && !get().wheelOpen) {
             patch.wheelOpen = true
             patch.wheelAutoShownFor = month
             patch.view = 'isla'
@@ -585,7 +597,7 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, saveOwner: s.saveOwner, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
+      partialize: (s) => ({ game: s.game, saveOwner: s.saveOwner, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, rescueSeen: s.rescueSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
     },
   ),
 )

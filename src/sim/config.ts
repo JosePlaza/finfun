@@ -34,7 +34,10 @@ export const BANK_UNLOCK_MONTH = 12
 
 /** Comida: meses de despensa que da cada cesta y comida con la que se empieza. */
 export const FOOD_START_MONTHS = 3
+/** Meses seguidos sin comer hasta que Doña Tortuga te rescata (y se pierde lo del cofre). */
 export const HUNGER_DEATH_MONTHS = 6
+/** Artículo que compra sola la cesta domiciliada. */
+export const AUTO_FOOD_ITEM = 'cesta-pequena'
 /** El huerto: cuesta 1000 euroLukys y da una cesta grande (2 meses) cada 3 meses. */
 export const HUERTO_COST_CENTS = 1000_00
 export const HUERTO_EVERY_MONTHS = 3
@@ -154,5 +157,5 @@ export const LESSONS: Lesson[] = [
   { id: 'tormenta', title: 'Cuando todo cae', icon: '⛈️', body: 'Algún día todos los precios caen a la vez. Los negocios siguen ganando dinero, pero la gente vende asustada. Quien vende en la caída pierde de verdad; quien aguanta ve cómo los precios vuelven poco a poco y sigue cobrando dividendos mientras tanto.' },
   { id: 'paciencia', title: 'Espera y verás', icon: '🐢', body: 'Finfun no se juega durante horas: se juega diez minutos al día, muchos días. Aquí un día tuyo es un mes de la isla, y lo importante (los intereses, los dividendos, la despensa que se llena sola) no pasa deprisa: pasa cada día, un poco. Este juego entrena dos músculos que sirven para toda la vida: la paciencia y la constancia. Quien quiere tenerlo todo hoy, acaba como la Liebre.' },
   { id: 'independencia', title: 'Independencia financiera', icon: '🏝️', body: 'Cuando lo que producen tus inversiones paga lo que necesitas para vivir, eres libre: trabajas si quieres, no porque te haga falta. En la isla, el huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola. Eso es la independencia financiera, en pequeño.' },
-  { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
+  { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta domiciliada se compra sola cuando hace falta, como los recibos de casa: pero solo si hay dinero. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
 ]

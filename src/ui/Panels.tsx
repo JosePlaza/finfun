@@ -124,6 +124,7 @@ const KIND_ICON: Record<LedgerEvent['kind'], string> = {
   'fondo-venta': '🏠',
   prestamo: '🐰',
   devolucion: '🐰',
+  rescate: '🐢',
 }
 
 /** Línea de precio de los últimos meses, sin ejes: solo la forma. */
@@ -207,10 +208,33 @@ function Pantry({ compact = false }: { compact?: boolean }) {
       </div>
       {hungry && (
         <p className="m-0 mt-2 text-[12.5px] font-bold text-red-d">
-          A los {HUNGER_DEATH_MONTHS} meses sin comer la aventura se acaba. Quedan {HUNGER_DEATH_MONTHS - game.hunger}. Compra una cesta cuanto antes.
+          A los {HUNGER_DEATH_MONTHS} meses sin comer Doña Tortuga tendrá que rescatarte y perderás lo del cofre. Quedan {HUNGER_DEATH_MONTHS - game.hunger}. Compra una cesta cuanto antes.
         </p>
       )}
       {!hungry && months <= 1 && <p className="m-0 mt-2 text-[12.5px] font-bold text-orange-d">Queda poco. Cada mes de isla se come una ración.</p>}
+    </div>
+  )
+}
+
+/** La cesta domiciliada: interruptor en la tienda. */
+function AutoFoodRow() {
+  const game = useGame((s) => s.game)!
+  const setAutoFood = useGame((s) => s.setAutoFood)
+  const on = game.autoFood
+  return (
+    <div className="g-inset p-3.5 mt-2 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className={`g-icon ${on ? 'g-icon--green' : 'g-icon--orange'} shrink-0 !w-10 !h-10`} aria-hidden="true">
+          🔁
+        </span>
+        <div className="min-w-0">
+          <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Cesta domiciliada</div>
+          <div className="text-[12px] font-semibold text-ink-l leading-snug">
+            {on ? 'Cuando la despensa se vacíe, la isla compra sola la cesta pequeña con tu dinero (del cofre; si no llega, del banco).' : 'Desactivada: la comida la compras tú cada mes. Si te olvidas, hambre.'}
+          </div>
+        </div>
+      </div>
+      <button type="button" role="switch" aria-checked={on} aria-label="Cesta domiciliada" className="g-switch shrink-0" onClick={() => setAutoFood(!on)} />
     </div>
   )
 }
@@ -516,6 +540,7 @@ function TiendaPanel() {
         </div>
       )}
       <Pantry compact />
+      <AutoFoodRow />
       <SectionTitle>Comida</SectionTitle>
       <ItemGrid kinds={['comida']} />
       <SectionTitle>Cosas que apetecen</SectionTitle>

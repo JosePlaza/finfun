@@ -26,7 +26,7 @@ export function Coach() {
 
   const stepIndex = game?.tutorialStep ?? TUTORIAL_DONE
   const step = COACH_STEPS[stepIndex]
-  const active = !!game && !game.dead && stepIndex < TUTORIAL_DONE && !!step
+  const active = !!game && stepIndex < TUTORIAL_DONE && !!step
 
   // Al entrar en un paso: la cámara vuela a su edificio, o se enciende la pista de la bellota.
   useEffect(() => {

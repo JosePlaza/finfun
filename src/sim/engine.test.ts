@@ -41,7 +41,10 @@ function must(r: ActionResult): GameState {
 }
 
 function fresh() {
-  return createGame({ islandName: 'Isla Bellota', seed: 12345, epochMs: EPOCH })
+  // Sin cesta domiciliada: así las pruebas de despensa y hambre ven el efecto de no comprar comida.
+  const g = createGame({ islandName: 'Isla Bellota', seed: 12345, epochMs: EPOCH })
+  g.autoFood = false
+  return g
 }
 
 /** Partida cuidada: cada día recoge la paga, compra comida si hace falta y gira la ruleta si toca. */
@@ -226,15 +229,47 @@ describe('comida y vida', () => {
     expect(advanceTo(fresh(), at(3)).hunger).toBe(0)
     expect(advanceTo(fresh(), at(5)).hunger).toBe(2)
   })
-  it('seis meses sin comer terminan la aventura y la isla se detiene', () => {
+  it('seis meses sin comer: Doña Tortuga te rescata, se pierde el cofre y la isla sigue', () => {
     const s = advanceTo(fresh(), at(8))
     expect(s.hunger).toBe(5)
-    expect(s.dead).toBe(false)
-    const d = advanceTo(fresh(), at(9))
-    expect(d.dead).toBe(true)
-    expect(d.deathMonth).toBe(9)
-    const later = advanceTo(d, at(20))
-    expect(later.mailboxCents).toBe(d.mailboxCents)
+    let d = must(collectMailbox(s, at(8)))
+    expect(d.huchaCents).toBeGreaterThan(0)
+    d = advanceTo(d, at(9))
+    expect(d.dead).toBe(false)
+    expect(d.rescues).toBe(1)
+    expect(d.lastRescueMonth).toBe(9)
+    expect(d.huchaCents).toBe(0)
+    expect(d.hunger).toBe(0)
+    expect(d.foodMonths).toBe(1) // la sopa de Doña Tortuga: un mes de despensa
+    expect(d.ledger.some((e) => e.kind === 'rescate')).toBe(true)
+    // La isla no se detiene: la paga sigue llegando.
+    const later = advanceTo(d, at(11))
+    expect(later.mailboxCents).toBeGreaterThan(0)
+  })
+  it('la cesta domiciliada compra sola la cesta pequeña cuando la despensa se vacía (cofre y luego banco)', () => {
+    let g = createGame({ islandName: 'Isla Bellota', seed: 12345, epochMs: EPOCH })
+    expect(g.autoFood).toBe(true)
+    g = advanceTo(g, at(0))
+    g = must(collectMailbox(g, at(0)))
+    // Mes 3: despensa a cero → se compra sola con el dinero del cofre.
+    g = advanceTo(g, at(4))
+    expect(g.hunger).toBe(0)
+    expect(g.ledger.some((e) => e.label.startsWith('Cesta domiciliada'))).toBe(true)
+    expect(g.huchaCents).toBe(PAGA_CENTS - 5_00)
+    // Sin dinero en el cofre ni en el banco, sí hay hambre.
+    let poor = createGame({ islandName: 'Isla Pobre', seed: 7, epochMs: EPOCH })
+    poor = advanceTo(poor, at(5)) // la paga se queda en el buzón: el cofre está vacío
+    expect(poor.hunger).toBe(2)
+    // Con el dinero en el banco, la cesta se cobra del banco.
+    let banked = createGame({ islandName: 'Isla Banco', seed: 7, epochMs: EPOCH })
+    banked.bankUnlocked = true
+    banked = advanceTo(banked, at(0))
+    banked = must(collectMailbox(banked, at(0)))
+    banked = must(deposit(banked, at(0), PAGA_CENTS))
+    banked = advanceTo(banked, at(4))
+    expect(banked.hunger).toBe(0)
+    expect(banked.bankCents).toBeLessThan(PAGA_CENTS)
+    expect(banked.ledger.some((e) => e.label.includes('cobrada del banco'))).toBe(true)
   })
   it('las cestas llenan la despensa y quitan el hambre', () => {
     let s = advanceTo(fresh(), at(5))
@@ -248,11 +283,11 @@ describe('comida y vida', () => {
     expect(buy(s, at(5), 'cesta-pequena').ok).toBe(true) // la comida se puede comprar las veces que haga falta
   })
   it('el huerto cuesta 1000 y da una cesta grande cada tres meses', () => {
-    // Sin comprar comida, la aventura termina antes de poder ahorrar 1000.
-    expect(advanceTo(fresh(), at(40)).dead).toBe(true)
+    // Sin comprar comida ni domiciliar la cesta, hay rescates antes de poder ahorrar 1000.
+    expect(advanceTo(fresh(), at(40)).rescues).toBeGreaterThan(0)
     // Partida cuidada: compra comida a tiempo y ahorra para el huerto.
     let g = careful(40)
-    expect(g.dead).toBe(false)
+    expect(g.rescues).toBe(0)
     expect(g.huchaCents).toBeGreaterThanOrEqual(HUERTO_COST_CENTS)
     const r = buildHuerto(g, at(40))
     expect(r.ok).toBe(true)
