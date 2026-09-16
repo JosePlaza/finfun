@@ -723,3 +723,17 @@ textarea {
   font-size: 28px;
 }
 .wheel-result { animation: pop-in 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
+
+/* Pizarra de la isla de la Liebre: tiza sobre verde oscuro */
+.chalk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #f4efe0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.chalk__title { font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.95; }
+.chalk svg { opacity: 0.95; }

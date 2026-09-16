@@ -109,41 +109,45 @@ visita a la isla de la Liebre).
 
 ---
 
-## La isla de la Liebre (visita) [diseño]
+## La isla de la Liebre (visita) [hecho]
 
 La Liebre es la vecina desde el primer día: recibe **la misma paga**, vive **la misma inflación** y ve **el mismo mercado**
 que el jugador, pero decide distinto. Su isla es el "¿y si…?" hecho lugar: el grupo de control que se puede visitar.
 
-**Cómo se llega.** Desde el Nivel 2 aparece en el muelle la barca de la Liebre con un cartel "Visitar". Al tocarla la
-cámara sigue a la barca por el mar (3 s) y llega a una isla más pequeña, con su propia orografía y paleta un punto más
-chillona. Un botón fijo "Volver a casa" deshace el viaje. La visita no consume nada ni cambia el tiempo: es mirar.
+**Cómo se llega.** Desde el Nivel 2 aparece en la playa del sur la barca de vela de la Liebre con un cartel "Visitar su
+isla". Al tocarla la cámara sigue a la barca por el mar (3,6 s) hasta un islote a lo lejos (mismo mar y misma luz; terreno
+del mismo generador, encogido, con la hierba un punto más viva). Al llegar se abre la pizarra; el cartel del HUD y la
+barca ofrecen "Volver a casa". La visita no consume nada ni cambia el tiempo: es mirar (y, si toca, prestar).
 
-**Qué hace la Liebre (simulación pura, `src/sim/liebre.ts`).** Su historia se calcula mes a mes a partir de la semilla y del
-mes actual, sin estado guardado (`liebreAt(seed, month)`), como el mercado. Reglas fijas y legibles para el niño:
+**Qué hace la Liebre (simulación pura, `src/sim/liebre.ts`).** Su historia se calcula mes a mes a partir de la semilla, del
+mes de La Tormenta y de los meses en que el jugador abrió cada nivel (`worldOpened`, guardado en la partida), sin estado
+propio (`liebreAt(ctx, month)`), como el mercado. Reglas fijas y legibles para el niño:
 
 | Nivel del jugador | Regla de la Liebre | Lo que se ve en su isla |
 | --- | --- | --- |
-| 1–2 | Gasta la paga **entera cada mes** en el capricho más caro que le llega; compra la cesta pequeña solo cuando la despensa está vacía, así que uno de cada tres meses pasa hambre (pierde corazones, nunca muere: Doña Tortuga le lleva sopa). No abre cuenta en el banco ni compra bonos. | Casa desbordada de cosas (patinete, consola, cometas por el suelo), cofre de la cueva con telarañas y **0 eL**, solar del huerto siempre "en obras". |
-| 3 | Descubre el Mercado y compra **lo que más subió el mes pasado** (persigue la moda) y vende **lo que bajó más de un 10 %**. Comisiones y ventas con pérdida todos los meses. | Cartel del Mercado con sus operaciones del mes; una pizarra "compró caro, vendió barato". |
-| 4 | En **La Tormenta vende todo** el primer día. Después, cuando los precios ya han vuelto, compra otra vez. | La barca vacía en la playa; su pizarra con la venta del mes de la Tormenta en rojo. |
+| 1–2 | Cada mes compra un capricho de cada (cine, cómic, helado, chuches) y, con lo que le queda, **la cosa más cara que pueda pagar** y no tenga; compra la cesta pequeña solo cuando la despensa está vacía y dos de cada tres veces, así que uno de cada tres meses pasa hambre (pierde hasta 3 corazones, nunca muere: Doña Tortuga le lleva sopa). No abre cuenta en el banco ni compra bonos. | Casa con sus cosas alrededor (cometa, balón, patinete, bici…) y envoltorios por el suelo, cueva con el cofre casi vacío, solar del huerto siempre "Se construye". |
+| 3 | Descubre el Mercado: la mitad de lo que le queda va al negocio que **más subió el mes pasado** (persigue la moda) y vende todo lo que **baje más de un 10 %** en un mes. Comisión en cada operación; casi siempre vende perdiendo. | Pestaña "Qué hace ella": sus últimas 12 operaciones con precio y ganancia/pérdida, comisiones y pérdidas acumuladas. |
+| 4 | En **La Tormenta vende todo** el primer día (y con ese dinero se compra algo). Después, cuando los precios ya han vuelto, compra otra vez. | Operación "¡Vendió asustada!" en su lista; Doña Tortuga lo explica en la pizarra. |
 
-**El tablero "Tú y la Liebre".** En el centro de su isla, una pizarra grande con dos columnas y una gráfica de patrimonio mes a
-mes desde el primer día: ambos empezaron con lo mismo. Debajo, tres frases de Doña Tortuga que cambian con el nivel
-("La Liebre ha cobrado lo mismo que tú: {paga × meses}. Tú tienes {X}; ella {Y} y {N} cosas."). Es la única pantalla del
-juego que compara: nunca se burla de la Liebre, explica qué decisión marcó la diferencia.
+**La pizarra "Tú y la Liebre".** En el centro de su isla; al tocarla (o cualquier cosa de la isla) se abre el panel con dos
+columnas (tu patrimonio y cosas compradas · el suyo, sus cosas y sus caprichos), la frase "los dos habéis cobrado lo mismo:
+{paga × meses}", la gráfica de patrimonio mes a mes desde el primer día (la tuya sale de `netWorthHistory`, que la partida
+guarda al cerrar cada mes; la suya, de la simulación) y una frase de Doña Tortuga que cambia con el nivel. Nunca se burla
+de la Liebre: explica qué decisión marcó la diferencia.
 
-**Ganchos opcionales (a decidir).**
-- **El préstamo de la Liebre.** Los meses que pasa hambre, al visitarla pide 5 eL y promete devolver 6 el mes que viene.
-  Enseña prestar con interés y el riesgo de impago: la Liebre devuelve casi siempre, pero una de cada cinco veces tarda
-  dos meses más. Sería la única deuda del juego (la contraria del bono: ahora prestas tú a alguien menos fiable que el
-  Ayuntamiento, y por eso cobras más).
-- **La misión.** N2: "Visita a la Liebre" (abre la barca). N3: "Ten el doble de patrimonio que la Liebre". N4: tras La
-  Tormenta, "Vuelve a la isla de la Liebre" para ver qué hizo ella (y leer la lección "Cuando todo cae" con su ejemplo).
-- **El diario.** El cierre de año del Faro añade una línea con su patrimonio junto al tuyo (ya previsto en el concepto).
+**El préstamo de la Liebre.** Los meses que pasa hambre (o tiene la despensa vacía), en la pizarra pide **5 eL** y promete
+devolver **6** el mes que viene. Una de cada cinco veces se retrasa dos meses (aviso en Eventos). El eL de interés pasa
+por Hacienda como cualquier rendimiento. Es la única deuda del juego, la contraria del bono: prestas a alguien menos
+fiable que el Ayuntamiento y por eso cobras más (20 % en un mes), pero puede fallarte. Solo un préstamo vivo a la vez.
 
-**Técnica.** Vista `liebre` con su propia `Canvas` scene (`src/scene/LiebreIsland.tsx`: terreno pequeño reutilizando
-`Landscape`, casa/cueva/muelle del kit, props de `SHOP_ITEMS` que ella haya comprado apilados en su jardín, la Liebre
-haciendo algo); simulación `liebreAt` con tests; panel `LiebrePanel` (pizarra) y, si se aprueba, `lendToLiebre` en el motor.
+**Misiones.** N2 "Visita a la Liebre" · N3 "Ten el doble de patrimonio que la Liebre" · N4 "Vuelve a ver a la Liebre tras
+La Tormenta" (visita con fecha posterior a La Tormenta).
+
+**Técnica.** `src/sim/liebre.ts` (`liebreAt`, `worldAt`, `liebreLesson`, con tests) · motor: `worldOpened`,
+`netWorthHistory`, `visitLiebre`, `lendToLiebre`, `liebreCanBorrow`, devolución en `processMonth` · store: `trip`
+('home' | 'going' | 'there' | 'returning'), `travelToLiebre` / `returnHome` · escena `src/scene/LiebreIsland.tsx`
+(islote en `LIEBRE_OFFSET`, `LiebreBoat` con la curva del viaje, `liebreIslandPose`; la cámara sigue a la barca desde
+`CameraRig`) · panel `LiebrePanel` (vista `liebre`).
 
 ---
 

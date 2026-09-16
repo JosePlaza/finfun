@@ -22,6 +22,9 @@ import {
   migrate,
   readLesson as simReadLesson,
   spinInflation as simSpinInflation,
+  visitLiebre as simVisitLiebre,
+  lendToLiebre as simLendToLiebre,
+  LIEBRE_VISIT_WORLD,
   TASK_ACORNS,
   missionsFor,
   withdraw as simWithdraw,
@@ -52,6 +55,10 @@ export type View =
   | 'misiones'
   | 'eventos'
   | 'patrimonio'
+  | 'liebre'
+
+/** Dónde está el jugador: en su isla, cruzando el mar, en la isla de la Liebre o volviendo. */
+export type Trip = 'home' | 'going' | 'there' | 'returning'
 
 /** Una celebración a pantalla completa (bellotas, nivel nuevo…). */
 export interface Celebration {
@@ -95,6 +102,15 @@ interface Store {
   /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
   stormSeen: boolean
   dismissStorm: () => void
+  /** El viaje a la isla de la Liebre (no se guarda). */
+  trip: Trip
+  /** Momento (ms de reloj de pantalla) en que empezó el viaje en curso. */
+  tripStartMs: number
+  travelToLiebre: () => void
+  arriveAtLiebre: () => void
+  returnHome: () => void
+  arriveHome: () => void
+  lendToLiebre: () => void
 
   boot: () => Promise<void>
   tick: () => void
@@ -183,6 +199,34 @@ export const useGame = create<Store>()(
         focusPoint: null,
         stormSeen: false,
         dismissStorm: () => set({ stormSeen: true }),
+        trip: 'home',
+        tripStartMs: 0,
+        travelToLiebre: () => {
+          const g = get().game
+          if (!g) return
+          if (g.world < LIEBRE_VISIT_WORLD) return get().showToast('La barca de la Liebre llega en el Nivel 2.')
+          if (get().trip !== 'home') return
+          set({ trip: 'going', tripStartMs: performance.now(), view: 'isla', focusPoint: null, infoBuilding: null })
+        },
+        arriveAtLiebre: () => {
+          if (get().trip !== 'going') return
+          const g = get().game
+          set({ trip: 'there', view: 'liebre' })
+          if (g) apply(simVisitLiebre(g, now()))
+        },
+        returnHome: () => {
+          if (get().trip !== 'there') return
+          set({ trip: 'returning', tripStartMs: performance.now(), view: 'isla' })
+        },
+        arriveHome: () => {
+          if (get().trip !== 'returning') return
+          set({ trip: 'home', view: 'isla' })
+        },
+        lendToLiebre: () => {
+          const g = get().game
+          if (!g) return
+          apply(simLendToLiebre(g, now()), 'Prestado. La Liebre promete devolverte 6 el mes que viene.')
+        },
 
         boot: async () => {
           try {
@@ -379,7 +423,7 @@ export const useGame = create<Store>()(
         openWheel: (open) => set({ wheelOpen: open }),
         restart: () => {
           const name = get().game?.islandName ?? 'Mi isla'
-          set({ game: null, view: 'isla', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
+          set({ game: null, view: 'isla', trip: 'home', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
           get().createIsland(name)
         },
         showBuilding: (id) => set({ infoBuilding: id, view: 'edificio' }),
@@ -388,6 +432,9 @@ export const useGame = create<Store>()(
 
         setView: (view) => {
           const g = get().game
+          // "Ir" a la Liebre desde casa es coger la barca; desde su isla, abrir la pizarra.
+          if (view === 'liebre' && get().trip === 'home') return get().travelToLiebre()
+          if (view === 'liebre' && get().trip !== 'there') return
           const patch: Partial<Store> = { view }
           // Abrir el lugar correspondiente marca sus avisos como vistos.
           if (g && view === 'faro') patch.seenDiary = g.diary.length

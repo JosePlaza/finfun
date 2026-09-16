@@ -4,7 +4,8 @@
  */
 import { LESSONS, WORLD2_UNLOCK_ITEM } from './config'
 import type { GameState } from './types'
-import { bondsTotal, fundValue, stocksValue } from './engine'
+import { bondsTotal, fundValue, liebreCtx, stocksValue } from './engine'
+import { liebreAt } from './liebre'
 
 export interface Mission {
   id: string
@@ -12,7 +13,7 @@ export interface Mission {
   /** Qué hay que hacer, en una frase para un niño. */
   hint: string
   /** Dónde se hace (lugar del nivel), para poder ir directamente. */
-  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado' | 'fondo'
+  place: 'casa' | 'cofre' | 'banco' | 'tienda' | 'faro' | 'isla' | 'huerto' | 'ayuntamiento' | 'hacienda' | 'escuela' | 'mercado' | 'fondo' | 'liebre'
   progress: number
   goal: number
   done: boolean
@@ -68,6 +69,7 @@ function world2Board(state: GameState): MissionBoard {
     m('cupon', 'Cobra un cupón', 'A los tres meses de comprar un bono llega el primer cupón al cofre.', 'ayuntamiento', '🪙', coupons, 1),
     m('hacienda', 'Visita a Don Búho', 'Decide en Hacienda si pagas en cada cobro o una vez al año.', 'hacienda', '🦉', state.taxModeChosen ? 1 : 0, 1),
     m('lecciones', 'Lee 3 lecciones', 'En la escuela, Doña Tortuga explica lo que pasa con tu dinero.', 'escuela', '🏫', (state.lessonsRead ?? []).length, 3),
+    m('liebre', 'Visita a la Liebre', 'Su barca espera en el muelle. Cobra lo mismo que tú… mira en qué lo convierte.', 'liebre', '🐰', state.liebreVisits ?? 0, 1),
     m('prestamista', 'Ten 200 prestados a la vez', 'Suma 200 euroLukys en bonos vivos.', 'ayuntamiento', '🏛️', bondsTotal(state), 200_00),
     m('patrimonio', 'Llega a 600 de patrimonio', 'Cofre, banco y bonos juntos. Cada parte suma.', 'cofre', '💰', state.huchaCents + state.bankCents + bondsTotal(state), 600_00),
   ]
@@ -76,11 +78,15 @@ function world2Board(state: GameState): MissionBoard {
 
 function world3Board(state: GameState): MissionBoard {
   const dividends = state.ledger.filter((e) => e.kind === 'dividendo').length
+  const m0 = Math.max(0, state.processedMonth)
+  const total3 = state.huchaCents + state.bankCents + bondsTotal(state) + stocksValue(state, m0) + fundValue(state, m0)
+  const liebre3 = liebreAt(liebreCtx(state), m0)
   const missions: Mission[] = [
     m('acciones', 'Compra acciones de dos negocios', 'En el Mercado. Un trozo de la Panadería y otro de la Heladería, por ejemplo.', 'mercado', '📈', (state.businessesBought ?? []).length, 2),
     m('dividendo', 'Cobra un dividendo', 'Al cerrar el trimestre, los negocios que ganan reparten. El dividendo no está prometido.', 'mercado', '🎁', dividends, 1),
     m('tormenta', 'Aguanta una tormenta sin vender', 'Ten acciones del Puerto cuando llegue una tormenta y no las vendas hasta las siguientes cuentas.', 'mercado', '⛈️', state.stormsSurvived ?? 0, 1),
     m('huerto', 'Construye el huerto', 'Cuesta 1000 y da una cesta grande cada tres meses: una inversión que se come.', 'huerto', '🌾', state.huertoBuiltMonth !== null ? 1 : 0, 1),
+    m('doble-liebre', 'Ten el doble de patrimonio que la Liebre', 'Mira la pizarra de su isla: dos líneas que empezaron iguales.', 'liebre', '🐰', total3, Math.max(1_00, liebre3.netWorthCents * 2)),
     m('lecciones-todas', 'Lee todas las lecciones', 'La escuela tiene una lección por cada idea importante.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
   ]
   return board(3, 'El Mercado', missions, 'Nivel 4 · La Tormenta: siete negocios más y el Fondo Isla')
@@ -93,6 +99,7 @@ function world4Board(state: GameState): MissionBoard {
     m('cinco', 'Acciones de 5 negocios distintos', 'No pongas todos los huevos en la misma cesta.', 'mercado', '🧺', Object.keys(state.holdings ?? {}).length, 5),
     m('fondo', 'Mete 100 en el Fondo Isla', 'Un trocito de todos los negocios a la vez, y los dividendos se reinvierten solos.', 'fondo', '🏠', fundValue(state, m0) > 0 ? Math.min(100_00, (state.fundCostCents ?? 0)) : 0, 100_00),
     m('aguantar', 'Aguanta La Tormenta sin vender', 'Cuando todo caiga a la vez, no vendas nada hasta tres meses después. Los precios vuelven.', 'mercado', '⛈️', state.crashSurvived ? 1 : 0, 1),
+    m('liebre-tormenta', 'Vuelve a ver a la Liebre tras La Tormenta', 'Cuando pase La Tormenta, cruza a su isla y mira qué hizo ella ese día.', 'liebre', '🐰', state.crashMonth !== null && (state.liebreLastVisitMonth ?? -1) >= state.crashMonth ? 1 : 0, 1),
     m('independencia', 'Amplía el huerto', 'Tres meses de comida por trimestre: la despensa se llena sola. Independencia financiera.', 'huerto', '🏝️', state.huertoUpgradedMonth !== null ? 1 : 0, 1),
     m('lecciones-4', 'Lee todas las lecciones', 'La escuela tiene lecciones nuevas sobre la cesta, las modas y el oro, el fondo y La Tormenta.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
     m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos, acciones y fondo juntos.', 'cofre', '💰', total, 3000_00),

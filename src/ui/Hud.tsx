@@ -15,6 +15,8 @@ export function TopBar() {
   const nowMs = useGame((s) => s.nowMs)
   const view = useGame((s) => s.view)
   const setView = useGame((s) => s.setView)
+  const trip = useGame((s) => s.trip)
+  const returnHome = useGame((s) => s.returnHome)
   const acornsFound = useGame((s) => s.acornsFound)
   const seenDiary = useGame((s) => s.seenDiary)
   const seenBankOpen = useGame((s) => s.seenBankOpen)
@@ -26,7 +28,7 @@ export function TopBar() {
   const total = game.huchaCents + game.bankCents + bondsTotal(game) + stocksValue(game, month) + fundValue(game, month)
   const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
   const events = pendingEvents(game, acornsLeft, seen)
-  const onIsland = view === 'isla'
+  const onIsland = view === 'isla' && trip === 'home'
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 safe-top px-3">
@@ -50,6 +52,21 @@ export function TopBar() {
           </button>
         </div>
       </div>
+
+      {/* En la isla de la Liebre: cartel y botón de volver */}
+      {trip !== 'home' && (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="pointer-events-auto g-pill !cursor-default !px-4 !py-1.5 whitespace-nowrap">
+            <span aria-hidden="true">🐰</span>
+            <span className="g-title text-[13px] whitespace-nowrap">{trip === 'there' ? 'Isla de la Liebre' : trip === 'going' ? 'Cruzando el mar…' : 'Volviendo a casa…'}</span>
+          </div>
+          {trip === 'there' && (
+            <button type="button" onClick={returnHome} className="pointer-events-auto g-btn g-btn--cream g-btn--sm">
+              Volver a casa
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Botones verticales: Misiones y Eventos */}
       {onIsland && (

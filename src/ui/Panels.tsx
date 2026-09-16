@@ -34,6 +34,15 @@ import {
   SHOP_ITEMS,
   TASK_ACORNS,
   type LedgerEvent,
+  liebreAt,
+  liebreCtx,
+  liebreCanBorrow,
+  liebreLesson,
+  LIEBRE_LOAN_CENTS,
+  LIEBRE_LOAN_REPAY_CENTS,
+  MONTH_NAMES,
+  netWorth,
+  BUSINESS_BY_ID,
 } from '../sim'
 import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
@@ -110,6 +119,8 @@ const KIND_ICON: Record<LedgerEvent['kind'], string> = {
   noticia: '📰',
   'fondo-compra': '🏠',
   'fondo-venta': '🏠',
+  prestamo: '🐰',
+  devolucion: '🐰',
 }
 
 /** Línea de precio de los últimos meses, sin ejes: solo la forma. */
@@ -1546,6 +1557,202 @@ function FondoPanel() {
   )
 }
 
+/* ───────────────────────── La isla de la Liebre: la pizarra ───────────────────────── */
+
+/** Dos líneas de patrimonio desde el primer mes: la tuya y la de la Liebre. */
+function TwoLines({ mine, hers }: { mine: number[]; hers: number[] }) {
+  const n = Math.max(mine.length, hers.length)
+  if (n < 2) return <div className="g-inset p-3 text-[12px] font-bold text-ink-3 text-center">La gráfica empieza a dibujarse mañana.</div>
+  const W = 300
+  const H = 110
+  const all = [...mine.filter((v) => v >= 0), ...hers]
+  const max = Math.max(1, ...all)
+  const pt = (i: number, v: number) => `${(i / (n - 1)) * (W - 8) + 4},${H - 6 - (Math.max(0, v) / max) * (H - 14)}`
+  const minePts = mine.map((v, i) => (v >= 0 ? pt(i, v) : null)).filter(Boolean).join(' ')
+  const hersPts = hers.map((v, i) => pt(i, v)).join(' ')
+  return (
+    <div className="g-inset p-3">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block" role="img" aria-label="Patrimonio tuyo y de la Liebre mes a mes">
+        {[0.25, 0.5, 0.75].map((k) => (
+          <line key={k} x1="4" x2={W - 4} y1={H - 6 - k * (H - 14)} y2={H - 6 - k * (H - 14)} stroke="rgba(60,50,40,0.12)" strokeWidth="1" />
+        ))}
+        <polyline points={hersPts} fill="none" stroke="#f2951c" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="7 5" />
+        {minePts && <polyline points={minePts} fill="none" stroke="#5fa11e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />}
+      </svg>
+      <div className="flex items-center justify-between text-[11px] font-extrabold mt-1">
+        <span className="text-green-d">— Tú</span>
+        <span className="text-ink-3">mes 1 → hoy</span>
+        <span className="text-orange-d">- - La Liebre</span>
+      </div>
+    </div>
+  )
+}
+
+function LiebrePanel() {
+  const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
+  const returnHome = useGame((s) => s.returnHome)
+  const lend = useGame((s) => s.lendToLiebre)
+  const [tab, setTab] = useState<'pizarra' | 'liebre'>('pizarra')
+  const month = Math.max(0, currentMonth(game, nowMs))
+  const liebre = liebreAt(liebreCtx(game), month)
+  const mine = netWorth(game, month)
+  const monthsPaid = month + 1
+  const canLend = liebreCanBorrow(game, month) && game.huchaCents >= LIEBRE_LOAN_CENTS
+  const loan = game.liebreLoan
+  const history = [...(game.netWorthHistory ?? [])]
+  while (history.length <= month) history.push(-1)
+  history[month] = mine
+  const monthName = (m: number) => `${MONTH_NAMES[m % 12]} del año ${Math.floor(m / 12) + 1}`
+  const items = liebre.items.map((i) => SHOP_ITEMS.find((d) => d.id === i.itemId)).filter(Boolean)
+  return (
+    <Sheet title="Tú y la Liebre" tone="orange">
+      <Tabs value={tab} onChange={setTab} options={[['pizarra', 'La pizarra'], ['liebre', 'Qué hace ella']]} />
+      {tab === 'pizarra' ? (
+        <>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <div className="g-inset p-3.5 ring-2 ring-green/60">
+              <div className="g-label">Tú</div>
+              <Amount cents={mine} size="lg" className="text-ink mt-1" />
+              <div className="text-[11px] font-bold text-ink-l mt-1">{game.purchases.filter((p) => !p.itemId.startsWith('cesta')).length} cosas compradas</div>
+            </div>
+            <div className="g-inset p-3.5">
+              <div className="g-label">La Liebre</div>
+              <Amount cents={liebre.netWorthCents} size="lg" className="text-ink mt-1" />
+              <div className="text-[11px] font-bold text-ink-l mt-1">
+                {liebre.items.length} cosas · {liebre.treats} caprichos
+              </div>
+            </div>
+          </div>
+          <p className="text-[12px] font-bold text-ink-3 mt-2 mb-2 text-center">
+            Los dos habéis cobrado lo mismo: {formatCents(PAGA_CENTS * monthsPaid)} en {monthsPaid} {monthsPaid === 1 ? 'mes' : 'meses'}.
+          </p>
+          <TwoLines mine={history} hers={liebre.netWorthSeries} />
+          <div className="mt-3">
+            <Tortuga>{liebreLesson(game.world, mine, liebre.netWorthCents, liebre.items.length)}</Tortuga>
+          </div>
+
+          {/* El préstamo */}
+          <SectionTitle>El préstamo</SectionTitle>
+          {loan ? (
+            <div className="g-inset p-3.5 text-[14px] font-semibold text-ink leading-snug">
+              🐰 La Liebre te debe <b>{formatCents(loan.repayCents)}</b>. Prometió devolverlos en {monthName(loan.dueMonth)}
+              {loan.late ? ' (ya se ha retrasado una vez).' : '.'}
+            </div>
+          ) : canLend ? (
+            <div className="g-card g-card--orange">
+              <div className="g-card__head">
+                <span className="g-icon g-icon--orange" aria-hidden="true">
+                  🐰
+                </span>
+                <div className="min-w-0">
+                  <div className="font-display font-extrabold text-ink text-[15px] leading-tight">"¡No tengo para la cesta! ¿Me prestas {formatCents(LIEBRE_LOAN_CENTS)}?"</div>
+                  <div className="text-[13px] font-semibold text-ink-l leading-snug mt-0.5">
+                    Promete devolverte {formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene: 1 eL de interés por prestar a alguien menos fiable que el Ayuntamiento. A veces se retrasa.
+                  </div>
+                </div>
+              </div>
+              <div className="g-card__foot">
+                <button type="button" onClick={lend} className="g-btn g-btn--orange g-btn--sm">
+                  Prestar {formatCents(LIEBRE_LOAN_CENTS)}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="g-inset p-3.5 text-[13px] font-semibold text-ink-l leading-snug">
+              {liebre.hungryNow || liebre.foodMonths === 0
+                ? `Hoy la Liebre tiene hambre, pero te faltan ${formatCents(LIEBRE_LOAN_CENTS - game.huchaCents)} en el cofre para prestarle.`
+                : `Hoy la Liebre tiene comida. Los meses que pasa hambre te pide ${formatCents(LIEBRE_LOAN_CENTS)} y devuelve ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}.`}
+              {game.liebreLoansRepaid > 0 && ` Te ha devuelto ${game.liebreLoansRepaid} ${game.liebreLoansRepaid === 1 ? 'préstamo' : 'préstamos'}${game.liebreLoansLate > 0 ? ` (${game.liebreLoansLate} con retraso)` : ''}.`}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="mt-3">
+            <Tortuga>
+              {game.world <= 2
+                ? 'Cada mes se gasta la paga en caprichos y en la cosa más cara que le llega. Solo compra comida cuando la despensa está vacía… y a veces se le olvida. No tiene cuenta en el banco ni bonos.'
+                : game.world === 3
+                  ? 'Ahora también va al Mercado: compra el negocio que más subió el mes pasado y vende cualquiera que baje más de un 10 %. Paga comisión cada vez y vende casi siempre perdiendo.'
+                  : 'Cuando llegue La Tormenta venderá todo el primer día. Después, cuando los precios ya hayan vuelto, comprará otra vez.'}
+            </Tortuga>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Despensa</div>
+              <div className="font-display font-extrabold text-ink text-[17px]">{liebre.foodMonths} {liebre.foodMonths === 1 ? 'mes' : 'meses'}</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Meses con hambre</div>
+              <div className="font-display font-extrabold text-red-d text-[17px]">{liebre.hungryMonths}</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">En el cofre</div>
+              <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(liebre.huchaCents)}</div>
+            </div>
+          </div>
+          <SectionTitle>Sus cosas · {formatCents(liebre.spentCents)} gastados</SectionTitle>
+          {items.length === 0 ? (
+            <div className="g-inset p-3 text-[13px] font-semibold text-ink-l">Todavía nada grande: todo se va en chuches, helados, cómics y cine.</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {items.map((d) => (
+                <span key={d!.id} className="g-pill !px-3 !py-1 text-[13px]">
+                  <span aria-hidden="true">{d!.icon}</span> {d!.name}
+                </span>
+              ))}
+            </div>
+          )}
+          {game.world >= 3 && (
+            <>
+              <SectionTitle>Sus operaciones en el Mercado</SectionTitle>
+              {liebre.ops.length === 0 ? (
+                <div className="g-inset p-3 text-[13px] font-semibold text-ink-l">Todavía no ha operado.</div>
+              ) : (
+                <ul className="grid gap-1.5">
+                  {[...liebre.ops].reverse().map((o, i) => {
+                    const b = BUSINESS_BY_ID[o.businessId]
+                    return (
+                      <li key={i} className="g-row">
+                        <span className="g-icon g-icon--orange" aria-hidden="true">
+                          {o.kind === 'compra' ? '📈' : o.kind === 'panico' ? '⛈️' : '📉'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-display font-extrabold text-ink text-[14px] leading-tight">
+                            {o.kind === 'compra' ? 'Compró' : o.kind === 'panico' ? '¡Vendió asustada!' : 'Vendió'} {o.shares} de {b?.name ?? o.businessId}
+                          </div>
+                          <div className="text-[12px] font-semibold text-ink-l">
+                            {MONTH_NAMES[o.month % 12]} · a {formatCents(o.priceCents, { alwaysDecimals: true })}
+                            {o.gainCents !== undefined && (
+                              <span className={o.gainCents >= 0 ? ' text-green-d' : ' text-red-d'}>
+                                {' '}· {o.gainCents >= 0 ? 'ganó' : 'perdió'} {formatCents(Math.abs(o.gainCents))}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+                Comisiones pagadas: {formatCents(liebre.commissionsCents)} · pérdidas al vender: {formatCents(liebre.realizedLossCents)}
+                {liebre.soldInCrash && ' · vendió todo en La Tormenta.'}
+              </p>
+            </>
+          )}
+        </>
+      )}
+      <div className="mt-3">
+        <GButton onClick={returnHome} tone="g-btn--cream">
+          Volver a casa
+        </GButton>
+      </div>
+    </Sheet>
+  )
+}
+
 export function Panels() {
   const view = useGame((s) => s.view)
   switch (view) {
@@ -1581,6 +1788,8 @@ export function Panels() {
       return <EventosPanel />
     case 'patrimonio':
       return <PatrimonioPanel />
+    case 'liebre':
+      return <LiebrePanel />
     default:
       return null
   }

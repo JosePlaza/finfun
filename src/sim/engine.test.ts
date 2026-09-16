@@ -19,7 +19,12 @@ import {
   spinInflation,
   upgradeHuerto,
   withdraw,
+  visitLiebre,
+  lendToLiebre,
+  liebreCanBorrow,
+  liebreCtx,
 } from './engine'
+import { liebreAt } from './liebre'
 import { HUERTO_COST_CENTS, INFLATION_WHEEL_BPS } from './config'
 import { formatCents } from './money'
 import type { ActionResult, GameState } from './index'
@@ -312,6 +317,56 @@ describe('Nivel 2: bonos y Hacienda', () => {
     expect(tax.amountCents).toBe(-76) // 19 % de cuatro cupones de 1 euroLuky
     expect(s.declarations).toHaveLength(1)
     expect(s.yearPendingTaxableCents).toBe(0)
+  })
+})
+
+describe('La isla de la Liebre', () => {
+  function world2() {
+    let s = careful(11)
+    s = must(buy(s, at(11), 'bici'))
+    return s
+  }
+  it('apunta el mes en que se abre cada nivel y guarda el patrimonio mes a mes', () => {
+    const s = world2()
+    expect(s.worldOpened[0]).toBe(0)
+    expect(s.worldOpened[1]).toBe(11)
+    expect(s.netWorthHistory.length).toBe(12)
+    expect(s.netWorthHistory[11]).toBeGreaterThan(0)
+  })
+  it('la visita solo se puede hacer desde el Nivel 2 y cuenta para la misión', () => {
+    expect(visitLiebre(fresh(), at(0)).ok).toBe(false)
+    const s = must(visitLiebre(world2(), at(11)))
+    expect(s.liebreVisits).toBe(1)
+    expect(s.liebreLastVisitMonth).toBe(11)
+  })
+  it('el préstamo se concede cuando ella pasa hambre y vuelve con interés (a veces con retraso)', () => {
+    let s = world2()
+    // Buscamos el primer mes en que la Liebre necesita comida.
+    let m = 11
+    while (!liebreCanBorrow(s, m) && m < 60) {
+      m++
+      s = advanceTo(s, at(m))
+    }
+    expect(m).toBeLessThan(60)
+    const before = s.huchaCents
+    s = must(lendToLiebre(s, at(m)))
+    expect(s.huchaCents).toBe(before - 5_00)
+    expect(s.liebreLoan?.dueMonth).toBe(m + 1)
+    expect(lendToLiebre(s, at(m)).ok).toBe(false)
+    // Como mucho tres meses después ha devuelto 6 (menos la retención del interés).
+    s = advanceTo(s, at(m + 4))
+    expect(s.liebreLoan).toBeNull()
+    expect(s.liebreLoansRepaid).toBe(1)
+    const back = s.ledger.find((e) => e.kind === 'devolucion')
+    expect(back).toBeDefined()
+    expect(back!.amountCents).toBeGreaterThanOrEqual(5_81)
+    expect(back!.amountCents).toBeLessThanOrEqual(6_00)
+  })
+  it('la simulación de la Liebre usa el nivel real del jugador', () => {
+    const s = world2()
+    const ctx = liebreCtx(s)
+    expect(ctx.worldOpened).toEqual([0, 11])
+    expect(liebreAt(ctx, 11).receivedCents).toBe(PAGA_CENTS * 12)
   })
 })
 

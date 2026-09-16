@@ -23,6 +23,7 @@ import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
 import { GenericBuilding } from './buildings/Generic'
 import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
 import { forwardOf } from './registry'
+import { boatPose, LiebreBoat, LiebreIsland, liebreIslandPose } from './LiebreIsland'
 
 type V3 = [number, number, number]
 
@@ -92,7 +93,7 @@ function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number
  * La cámara vuela suavemente hacia el lugar activo. En la vista de isla el jugador puede girar
  * y acercarse; al entrar en un lugar la cámara se coloca de frente y los controles se apagan.
  */
-const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio'])
+const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio', 'liebre'])
 
 function CameraRig({ controls, positions, terrain }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3>; terrain: Terrain }) {
   /** Vista cercana de un punto del suelo (pista de bellota): mismo ángulo que la vista general, mucho más cerca. */
@@ -105,11 +106,14 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
   const view = useGame((s) => s.view)
   const infoBuilding = useGame((s) => s.infoBuilding)
   const focusPoint = useGame((s) => s.focusPoint)
+  const trip = useGame((s) => s.trip)
+  const tripStartMs = useGame((s) => s.tripStartMs)
   const { camera, size } = useThree()
   const goalPos = useRef(new THREE.Vector3())
   const goalTarget = useRef(new THREE.Vector3())
   const lastKey = useRef<string>('')
   const flying = useRef(false)
+  const boat = useMemo(() => ({ pos: new THREE.Vector3(), dir: new THREE.Vector3() }), [])
 
   useFrame((_, dt) => {
     const ctl = controls.current
@@ -117,22 +121,40 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     const aspect = size.width / size.height
     const portrait = aspect < 1
     const fov = (camera as THREE.PerspectiveCamera).fov
+    // En barca: la cámara va detrás y algo por encima, mirando por delante de la proa.
+    if (trip === 'going' || trip === 'returning') {
+      boatPose(trip, (performance.now() - tripStartMs) / 1000, boat)
+      goalTarget.current.set(boat.pos.x + boat.dir.x * 6, 1.0, boat.pos.z + boat.dir.z * 6)
+      goalPos.current.set(boat.pos.x - boat.dir.x * 12 + boat.dir.z * 4, 7.5, boat.pos.z - boat.dir.z * 12 - boat.dir.x * 4)
+      const a = 1 - Math.exp(-3.2 * dt)
+      camera.position.lerp(goalPos.current, a)
+      ctl.target.lerp(goalTarget.current, a)
+      ctl.enabled = false
+      lastKey.current = `trip:${trip}`
+      flying.current = true
+      ctl.update()
+      return
+    }
     // Qué edificio mira la cámara: el lugar de la vista, o el edificio de la ficha.
     const target: BuildingId | null = view === 'edificio' || view === 'negocio' ? infoBuilding : OVERVIEW_VIEWS.has(view) ? null : (view as BuildingId)
     const focus = view === 'isla' ? focusPoint : null
-    const key = `${view}:${target ?? ''}:${focus ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
+    const there = trip === 'there'
+    const panelOpen = there && view !== 'isla'
+    const key = `${there ? 'liebre' : view}:${there ? (panelOpen ? 'panel' : '') : target ?? ''}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
-      const pose = focus
-        ? focusPose(focus[0], focus[1], fov, aspect)
-        : target
-          ? cameraPoseFor(BUILDING_BY_ID[target], positions[target], fov, aspect, portrait ? 0.5 : 0)
-          : islandPose(fov, aspect, portrait)
+      const pose = there
+        ? liebreIslandPose(fov, aspect, portrait, panelOpen && portrait ? 0.5 : 0)
+        : focus
+          ? focusPose(focus[0], focus[1], fov, aspect)
+          : target
+            ? cameraPoseFor(BUILDING_BY_ID[target], positions[target], fov, aspect, portrait ? 0.5 : 0)
+            : islandPose(fov, aspect, portrait)
       goalPos.current.set(...pose.position)
       goalTarget.current.set(...pose.target)
     }
-    const free = OVERVIEW_VIEWS.has(view)
+    const free = OVERVIEW_VIEWS.has(view) || there
     ctl.enabled = free && !flying.current
     if (flying.current || !free) {
       const a = 1 - Math.exp(-4 * dt)
@@ -334,6 +356,10 @@ function Scene() {
       <Pier position={[PIER.x, 0, PIER.z]} rotation={PIER.rotation} length={PIER.length} />
       <MerchantBoat position={[PIER.x + 1.9, 0.04, PIER.z + 3.2]} rotation={PIER.rotation + 0.2} onTap={() => setView('tienda')} />
       <Rowboat position={[PIER.x - 1.2, 0.02, PIER.z + 2.6]} rotation={-0.35} />
+
+      {/* ===== LA ISLA DE LA LIEBRE (a lo lejos) Y SU BARCA ===== */}
+      <LiebreIsland palette={palette} night={night} />
+      <LiebreBoat />
 
       <Vegetation terrain={terrain} palette={palette} />
       <Ambient terrain={terrain} routes={routes} doers={doers} />

@@ -43,13 +43,20 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
     out.push({ id: 'cupon', icon: '🏛️', title: lastCoupon.kind === 'cupon' ? 'Ha llegado un cupón' : 'El Ayuntamiento te ha devuelto un bono', detail: `+${formatCents(lastCoupon.amountCents)} en el cofre. ${lastCoupon.label}.`, view: 'ayuntamiento', tone: 'blue' })
   }
   game.ledger
-    .filter((e) => (e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'noticia') && e.month === game.processedMonth)
+    .filter((e) => (e.kind === 'dividendo' || e.kind === 'tormenta' || (e.kind === 'noticia' && !e.label.startsWith('La Liebre no puede'))) && e.month === game.processedMonth)
     .forEach((e, i) => {
       if (e.kind === 'tormenta' && e.label.startsWith('LA TORMENTA')) out.push({ id: `crash-${e.month}`, icon: '⛈️', title: '¡La Tormenta!', detail: 'Todos los precios han caído a la vez. Los negocios siguen ganando. No vendas: los precios vuelven.', view: 'mercado', tone: 'red' })
       else if (e.kind === 'tormenta') out.push({ id: `tormenta-${e.month}-${i}`, icon: '⛈️', title: e.label.startsWith('Mala cosecha') ? 'Mala cosecha en la Granja' : 'Tormenta en el Puerto', detail: `${e.label} Si tienes acciones, aguanta.`, view: 'mercado', tone: 'red' })
       else if (e.kind === 'noticia') out.push({ id: `noticia-${e.month}-${i}`, icon: '📰', title: 'Noticias de la isla', detail: e.label, view: 'mercado', tone: 'blue' })
       else out.push({ id: `div-${e.label}`, icon: '🎁', title: 'Ha llegado un dividendo', detail: `+${formatCents(e.amountCents)} en el cofre. ${e.label}.`, view: 'mercado', tone: 'purple' })
     })
+  const loanBack = game.ledger.filter((e) => e.kind === 'devolucion').slice(-1)[0]
+  if (loanBack && loanBack.month === game.processedMonth) {
+    out.push({ id: 'devolucion', icon: '🐰', title: 'La Liebre te ha devuelto el préstamo', detail: `+${formatCents(loanBack.amountCents)} en el cofre. Prestaste 5 y vuelven 6: eso es el interés.`, view: 'cofre', tone: 'green' })
+  }
+  if (game.liebreLoan?.late && game.ledger.some((e) => e.kind === 'noticia' && e.month === game.processedMonth && e.label.startsWith('La Liebre no puede'))) {
+    out.push({ id: 'retraso', icon: '🐰', title: 'La Liebre se retrasa', detail: 'No puede devolverte el préstamo todavía. Prestar a alguien poco fiable tiene este riesgo; por eso cobras más que en el banco.', view: 'liebre', tone: 'orange' })
+  }
   if (game.diary.length > seen.seenDiary) {
     out.push({ id: 'diario', icon: '📖', title: 'Doña Tortuga ha escrito en su diario', detail: `Cierre del año ${game.diary[game.diary.length - 1].year}. Léelo en el faro.`, view: 'faro', tone: 'blue' })
   }

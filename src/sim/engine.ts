@@ -10,8 +10,12 @@ import {
   HUERTO_UPGRADE_COST_CENTS,
   HUERTO_UPGRADED_FOOD_MONTHS,
   HUNGER_DEATH_MONTHS,
-  INFLATION_WHEEL_BPS,
   LESSONS,
+  LIEBRE_LOAN_CENTS,
+  LIEBRE_LOAN_LATE_CHANCE,
+  LIEBRE_LOAN_LATE_MONTHS,
+  LIEBRE_LOAN_REPAY_CENTS,
+  LIEBRE_VISIT_WORLD,
   MONTHS_PER_YEAR,
   PAGA_CENTS,
   RETENTION_BPS,
@@ -23,6 +27,9 @@ import {
 import { calendarOf, describeMonth, monthAt } from './calendar'
 import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
+import { inflatePrice, inflationForYear } from './inflation'
+import { liebreAt, type LiebreCtx } from './liebre'
+export { inflatePrice, inflationForYear } from './inflation'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
 import { missionsFor } from './missions'
 import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, CRASH_AFTER_MONTHS, discoveryThisYear, fundNavAt, isHotYear, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS, type MarketCtx } from './market'
@@ -80,7 +87,19 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     crashSurvived: false,
     fundUnits: 0,
     fundCostCents: 0,
+    worldOpened: [0],
+    liebreVisits: 0,
+    liebreLastVisitMonth: -1,
+    liebreLoan: null,
+    liebreLoansRepaid: 0,
+    liebreLoansLate: 0,
+    netWorthHistory: [],
   }
+}
+
+/** Contexto de la Liebre: el del mercado más los meses en que se abrió cada nivel. */
+export function liebreCtx(state: GameState): LiebreCtx {
+  return { ...marketCtx(state), worldOpened: state.worldOpened ?? [0] }
 }
 
 /** Contexto que necesita el mercado: semilla y mes de La Tormenta. */
@@ -101,6 +120,7 @@ export function migrate(state: GameState): GameState {
     state.declarations === undefined ||
     state.holdings === undefined ||
     state.fundUnits === undefined ||
+    state.worldOpened === undefined ||
     (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
@@ -137,6 +157,21 @@ function clone(state: GameState): GameState {
   c.crashSurvived ??= false
   c.fundUnits ??= 0
   c.fundCostCents ??= 0
+  // Partidas anteriores a la Liebre: no sabemos cuándo abrieron cada nivel; damos por abiertos desde el principio.
+  if (!c.worldOpened) {
+    c.worldOpened = [0]
+    for (let w = 2; w <= c.world; w++) c.worldOpened.push(0)
+  }
+  c.liebreVisits ??= 0
+  c.liebreLastVisitMonth ??= -1
+  c.liebreLoan ??= null
+  c.liebreLoansRepaid ??= 0
+  c.liebreLoansLate ??= 0
+  // Partidas anteriores: la historia de patrimonio empieza en el mes actual (la pizarra la dibuja desde ahí).
+  if (!c.netWorthHistory) {
+    c.netWorthHistory = []
+    for (let m = 0; m <= c.processedMonth; m++) c.netWorthHistory.push(m === c.processedMonth ? netWorth(c, m) : -1)
+  }
   // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
   if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true
   // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
@@ -151,29 +186,10 @@ function log(state: GameState, ev: LedgerEvent) {
   if (state.ledger.length > LEDGER_MAX) state.ledger.splice(0, state.ledger.length - LEDGER_MAX)
 }
 
-/**
- * Inflación sorteada para un año de isla (determinista por semilla): una de las casillas de la ruleta.
- * El jugador "gira" la ruleta en pantalla, pero el resultado ya está decidido, así la partida es reproducible.
- */
-export function inflationForYear(seed: number, yearIndex: number): number {
-  const rng = rngFor(seed, yearIndex, 11)
-  return INFLATION_WHEEL_BPS[randInt(rng, 0, INFLATION_WHEEL_BPS.length - 1)]
-}
-
 /** Recompensa de la tarea diaria de un mes (determinista). */
 export function taskRewardForMonth(seed: number, month: number): number {
   const rng = rngFor(seed, month, 23)
   return randInt(rng, TASK_MIN_CENTS / 100, TASK_MAX_CENTS / 100) * 100
-}
-
-/**
- * Sube un precio con la inflación y lo deja "de tienda": los artículos de 10 o más euroLukys
- * se redondean a enteros (180 → 183) y los baratos a décimas (2 → 2,10) cuando toque.
- */
-export function inflatePrice(priceCents: number, inflationBps: number): number {
-  const exact = priceCents + (priceCents * inflationBps) / 10_000
-  const step = priceCents >= 10_00 ? 100 : 10
-  return Math.max(priceCents, roundCents(exact / step) * step)
 }
 
 /**
@@ -335,6 +351,30 @@ function processMonth(state: GameState, month: number) {
   }
   state.bonds = state.bonds.filter((b) => month < b.maturityMonth)
 
+  // 4b. El préstamo de la Liebre: devuelve 6 por 5… casi siempre a tiempo.
+  if (state.liebreLoan && month >= state.liebreLoan.dueMonth) {
+    const loan = state.liebreLoan
+    const lateRoll = rngFor(state.seed, loan.lentMonth, 808)()
+    if (!loan.late && lateRoll < LIEBRE_LOAN_LATE_CHANCE) {
+      loan.late = true
+      loan.dueMonth = month + LIEBRE_LOAN_LATE_MONTHS
+      state.liebreLoansLate += 1
+      log(state, { kind: 'noticia', month, amountCents: 0, label: `La Liebre no puede devolverte los ${formatCents(loan.repayCents)} todavía: "¡Te los doy en dos meses, prometido!"` })
+    } else {
+      const interest = loan.repayCents - loan.amountCents
+      const { net, retained } = earnTaxable(state, interest)
+      state.huchaCents += loan.amountCents + net
+      state.liebreLoansRepaid += 1
+      state.liebreLoan = null
+      log(state, {
+        kind: 'devolucion',
+        month,
+        amountCents: loan.amountCents + net,
+        label: `La Liebre te devuelve el préstamo${loan.late ? ' (con retraso)' : ''}${retained > 0 ? ` · Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })}` : ''}`,
+      })
+    }
+  }
+
   // 5a. La Tormenta: un mes, todo cae a la vez. Se apunta lo que se tenía para la misión de aguantar.
   if (state.crashMonth !== null && month === state.crashMonth) {
     log(state, { kind: 'tormenta', month, amountCents: 0, label: 'LA TORMENTA: todos los precios de la isla caen de golpe. Los negocios siguen ganando; los precios se recuperan con el tiempo.' })
@@ -456,6 +496,10 @@ function processMonth(state: GameState, month: number) {
   }
 
   state.processedMonth = month
+  // Patrimonio al cierre del mes, para la pizarra "Tú y la Liebre" (una entrada por mes desde el 0).
+  state.netWorthHistory ??= []
+  while (state.netWorthHistory.length < month) state.netWorthHistory.push(state.netWorthHistory[state.netWorthHistory.length - 1] ?? 0)
+  state.netWorthHistory[month] = netWorth(state, month)
 }
 
 /**
@@ -511,11 +555,20 @@ export function advanceTo(input: GameState, nowMs: number): GameState {
   return state
 }
 
+/** Apunta el mes en que se abre el nivel actual (la Liebre cambia de reglas con el nivel del jugador). */
+function noteWorldOpened(state: GameState) {
+  state.worldOpened ??= [0]
+  while (state.worldOpened.length < state.world) state.worldOpened.push(Math.max(0, state.processedMonth))
+}
+
 /** Si están hechas todas las misiones del nivel actual (a partir del 2), se abre el siguiente. */
 export function progressWorld(state: GameState) {
   if (state.world >= 2 && state.world < 4) {
     const b = missionsFor(state)
-    if (b.completed >= b.total) state.world += 1
+    if (b.completed >= b.total) {
+      state.world += 1
+      noteWorldOpened(state)
+    }
   }
   // Al abrir el Nivel 4 queda fijado el mes de La Tormenta: única por partida.
   if (state.world >= 4 && state.crashMonth === null) state.crashMonth = state.processedMonth + CRASH_AFTER_MONTHS
@@ -599,11 +652,42 @@ export function buy(input: GameState, nowMs: number, itemId: string): ActionResu
  */
 function openWorld2(state: GameState) {
   state.world = 2
+  noteWorldOpened(state)
   state.taxesUnlocked = true
   if (!state.bankUnlocked) {
     state.bankUnlocked = true
     log(state, { kind: 'banco-abierto', month: state.processedMonth, amountCents: 0, label: 'Abre el Banco de la Isla (llegaste al Nivel 2)' })
   }
+}
+
+/** Visitar la isla de la Liebre (desde el Nivel 2). Solo cuenta la visita: no cuesta nada. */
+export function visitLiebre(input: GameState, nowMs: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.world < LIEBRE_VISIT_WORLD) return { ok: false, reason: 'La barca de la Liebre llega en el Nivel 2.' }
+  const month = currentMonth(state, nowMs)
+  state.liebreVisits += 1
+  state.liebreLastVisitMonth = month
+  return done(state)
+}
+
+/** ¿Puede pedirte un préstamo la Liebre este mes? Solo si pasa hambre y no te debe nada. */
+export function liebreCanBorrow(state: GameState, month: number): boolean {
+  if (state.world < LIEBRE_VISIT_WORLD || state.liebreLoan) return false
+  const l = liebreAt(liebreCtx(state), month)
+  return l.hungryNow || l.foodMonths === 0
+}
+
+/** Prestar 5 eL a la Liebre: promete devolver 6 el mes que viene. */
+export function lendToLiebre(input: GameState, nowMs: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  const month = currentMonth(state, nowMs)
+  if (state.liebreLoan) return { ok: false, reason: 'La Liebre ya te debe un préstamo.' }
+  if (!liebreCanBorrow(state, month)) return { ok: false, reason: 'Hoy la Liebre no necesita nada.' }
+  if (state.huchaCents < LIEBRE_LOAN_CENTS) return { ok: false, reason: `Te faltan ${formatCents(LIEBRE_LOAN_CENTS - state.huchaCents)} euroLukys en el cofre.` }
+  state.huchaCents -= LIEBRE_LOAN_CENTS
+  state.liebreLoan = { lentMonth: month, dueMonth: month + 1, amountCents: LIEBRE_LOAN_CENTS, repayCents: LIEBRE_LOAN_REPAY_CENTS, late: false }
+  log(state, { kind: 'prestamo', month, amountCents: -LIEBRE_LOAN_CENTS, label: `Prestas ${formatCents(LIEBRE_LOAN_CENTS)} a la Liebre: te devolverá ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}` })
+  return done(state)
 }
 
 export function buildHuerto(input: GameState, nowMs: number): ActionResult {

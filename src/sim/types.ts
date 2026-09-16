@@ -50,6 +50,8 @@ export type LedgerKind =
   | 'acciones-venta'
   | 'fondo-compra'
   | 'fondo-venta'
+  | 'prestamo'
+  | 'devolucion'
 
 export interface LedgerEvent {
   kind: LedgerKind
@@ -205,4 +207,27 @@ export interface GameState {
   /** Participaciones del Fondo Isla (pueden ser fracciones) y lo pagado por ellas. */
   fundUnits: number
   fundCostCents: number
+
+  // ───── La isla de la Liebre ─────
+  /** Mes en que se abrió cada nivel: [0] = Nivel 1 (siempre 0), [1] = Nivel 2… Alimenta la simulación de la Liebre. */
+  worldOpened: number[]
+  /** Visitas a la isla de la Liebre y mes de la última (-1 = nunca). */
+  liebreVisits: number
+  liebreLastVisitMonth: number
+  /** Préstamo vivo a la Liebre (null si ninguno). */
+  liebreLoan: LiebreLoan | null
+  /** Préstamos devueltos y cuántos se retrasaron. */
+  liebreLoansRepaid: number
+  liebreLoansLate: number
+  /** Patrimonio al cierre de cada mes (índice = mes). -1 = desconocido (partidas antiguas). */
+  netWorthHistory: number[]
+}
+
+export interface LiebreLoan {
+  lentMonth: number
+  /** Mes en que promete devolverlo (puede retrasarse una vez). */
+  dueMonth: number
+  amountCents: number
+  repayCents: number
+  late: boolean
 }

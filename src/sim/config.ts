@@ -86,6 +86,17 @@ export const SHOP_ITEMS: ShopItemDef[] = [
 /** El objeto cuya compra desbloquea el Nivel 2. */
 export const WORLD2_UNLOCK_ITEM = 'bici'
 
+/* ───────────────────────── La Liebre ───────────────────────── */
+
+/** El préstamo de la Liebre: pide 5 eL cuando pasa hambre y promete devolver 6 al mes siguiente. */
+export const LIEBRE_LOAN_CENTS = 5_00
+export const LIEBRE_LOAN_REPAY_CENTS = 6_00
+/** Una de cada cinco veces se retrasa dos meses. */
+export const LIEBRE_LOAN_LATE_CHANCE = 0.2
+export const LIEBRE_LOAN_LATE_MONTHS = 2
+/** El nivel desde el que se puede visitar su isla. */
+export const LIEBRE_VISIT_WORLD = 2
+
 /* ───────────────────────── Nivel 2: bonos del Ayuntamiento ───────────────────────── */
 
 export interface BondOffer {
