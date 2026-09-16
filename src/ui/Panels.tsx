@@ -10,6 +10,7 @@ import {
   fundNavSeries,
   fundValue,
   marketAt,
+  refugeFear,
   marketCtx,
   SHARES_PER_BUSINESS,
   stocksValue,
@@ -1307,11 +1308,15 @@ function NegocioPanel() {
     setCustom('')
   }
   const q = b.lastQuarter
+  const unit = b.def.unit ?? 'acción'
+  const units = unit === 'acción' ? 'acciones' : `${unit}s`
+  const gold = !!b.def.refuge
+  const fear = gold ? refugeFear(marketCtx(game), b.def, month) : 0
   return (
     <Sheet title={def.name} tone="purple">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="g-label">Precio por acción</div>
+          <div className="g-label">Precio por {unit}</div>
           <div className="font-display font-extrabold text-ink text-3xl leading-none flex items-center gap-1.5 mt-1">
             <CoinIcon size={22} />
             {formatCents(b.priceCents, { alwaysDecimals: true })}
@@ -1324,41 +1329,68 @@ function NegocioPanel() {
       </div>
       <p className="text-ink-l font-semibold text-[13.5px] leading-snug mt-2 mb-0">{b.def.character}</p>
 
-      <SectionTitle>Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}</SectionTitle>
-      {q.storm && b.def.storm && <p className="m-0 mb-2 text-[13px] font-bold text-red-d">⛈️ {b.def.storm.label}</p>}
-      {b.def.cycle && q.cyclePhase !== undefined && (
-        <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">
-          🎢 Ciclo de obras: {q.cyclePhase > 0.5 ? 'en lo alto' : q.cyclePhase < -0.5 ? 'en lo bajo' : q.cyclePhase > 0 ? 'subiendo' : 'bajando'} ({Math.round((q.cyclePhase + 1) * 50)} % del camino).
-        </p>
-      )}
-      {b.def.fashion && q.hot !== undefined && <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">{q.hot ? '🔥 Este año está de moda.' : '🥶 Este año nadie se acuerda de sus juguetes.'}</p>}
-      {b.def.discovery && (q.discoveries ?? 0) > 0 && <p className="m-0 mb-2 text-[13px] font-bold text-green-d">🌠 Descubrimientos: {q.discoveries}. Su beneficio se multiplicó por {Math.pow(b.def.discovery.mul, q.discoveries!)}.</p>}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="g-inset p-2.5 text-center">
-          <div className="g-label !text-[10px]">Ventas / acción</div>
-          <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.salesCents, { alwaysDecimals: true })}</div>
-        </div>
-        <div className="g-inset p-2.5 text-center">
-          <div className="g-label !text-[10px]">Beneficio / acción</div>
-          <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.epsCents, { alwaysDecimals: true })}</div>
-        </div>
-        <div className="g-inset p-2.5 text-center">
-          <div className="g-label !text-[10px]">Dividendo / acción</div>
-          <div className={`font-display font-extrabold text-[17px] tabular-nums ${q.dividendCents > 0 ? 'text-green-d' : 'text-ink-3'}`}>
-            {q.dividendCents > 0 ? formatCents(q.dividendCents, { alwaysDecimals: true }) : '—'}
+      {gold ? (
+        <>
+          <SectionTitle>Qué hace el oro</SectionTitle>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Beneficio</div>
+              <div className="font-display font-extrabold text-ink-3 text-[17px]">—</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Dividendo</div>
+              <div className="font-display font-extrabold text-ink-3 text-[17px]">—</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Miedo</div>
+              <div className={`font-display font-extrabold text-[17px] ${fear > 0 ? 'text-orange-d' : 'text-ink-3'}`}>{fear > 0 ? `+${formatPct(Math.round(fear * 10_000))}` : 'calma'}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
-        {b.yieldBps > 0 ? `A este precio, el dividendo esperado es un ${formatPct(b.yieldBps)} al año. ` : 'Este negocio no reparte dividendo: reinvierte para crecer. '}
-        {b.monthsToResults === 0 ? 'Hoy se han publicado las cuentas.' : `Próximas cuentas en ${b.monthsToResults} ${b.monthsToResults === 1 ? 'día' : 'días'}.`}
-      </p>
+          <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+            {fear > 0
+              ? 'Hay miedo en la isla y el oro lleva una prima. Cuando la calma vuelva, la prima se irá deshaciendo.'
+              : 'Sin cuentas ni dividendos: el oro solo sube despacio con los precios… y de golpe cuando llega una tormenta.'}
+          </p>
+        </>
+      ) : (
+        <>
+          <SectionTitle>Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}</SectionTitle>
+          {q.storm && b.def.storm && <p className="m-0 mb-2 text-[13px] font-bold text-red-d">⛈️ {b.def.storm.label}</p>}
+          {b.def.cycle && q.cyclePhase !== undefined && (
+            <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">
+              🎢 Ciclo: {q.cyclePhase > 0.5 ? 'en lo alto' : q.cyclePhase < -0.5 ? 'en lo bajo' : q.cyclePhase > 0 ? 'subiendo' : 'bajando'} ({Math.round((q.cyclePhase + 1) * 50)} % del camino).
+            </p>
+          )}
+          {b.def.fashion && q.hot !== undefined && <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">{q.hot ? '🔥 Este año está de moda.' : '🥶 Este año nadie se acuerda de sus juguetes.'}</p>}
+          {b.def.discovery && (q.discoveries ?? 0) > 0 && <p className="m-0 mb-2 text-[13px] font-bold text-green-d">🌠 Descubrimientos: {q.discoveries}. Su beneficio se multiplicó por {Math.pow(b.def.discovery.mul, q.discoveries!)}.</p>}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Ventas / acción</div>
+              <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.salesCents, { alwaysDecimals: true })}</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Beneficio / acción</div>
+              <div className="font-display font-extrabold text-ink text-[17px] tabular-nums">{formatCents(q.epsCents, { alwaysDecimals: true })}</div>
+            </div>
+            <div className="g-inset p-2.5 text-center">
+              <div className="g-label !text-[10px]">Dividendo / acción</div>
+              <div className={`font-display font-extrabold text-[17px] tabular-nums ${q.dividendCents > 0 ? 'text-green-d' : 'text-ink-3'}`}>
+                {q.dividendCents > 0 ? formatCents(q.dividendCents, { alwaysDecimals: true }) : '—'}
+              </div>
+            </div>
+          </div>
+          <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
+            {b.yieldBps > 0 ? `A este precio, el dividendo esperado es un ${formatPct(b.yieldBps)} al año. ` : 'Este negocio no reparte dividendo: reinvierte para crecer. '}
+            {b.monthsToResults === 0 ? 'Hoy se han publicado las cuentas.' : `Próximas cuentas en ${b.monthsToResults} ${b.monthsToResults === 1 ? 'día' : 'días'}.`}
+          </p>
+        </>
+      )}
 
-      <SectionTitle>Tus acciones</SectionTitle>
+      <SectionTitle>{gold ? 'Tus lingotes' : 'Tus acciones'}</SectionTitle>
       <div className="g-inset p-3.5 flex items-center justify-between gap-3">
         <div>
           <div className="font-display font-extrabold text-ink text-[16px]">
-            {holding.shares} de {SHARES_PER_BUSINESS} · {holding.shares} % {holding.shares > 0 ? 'tuyo' : ''}
+            {holding.shares} de {SHARES_PER_BUSINESS} {gold ? units : ''}· {holding.shares} % {holding.shares > 0 ? 'tuyo' : ''}
           </div>
           {holding.shares > 0 && (
             <div className="text-[12px] font-semibold text-ink-l">
@@ -1386,18 +1418,18 @@ function NegocioPanel() {
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 mt-2 items-center">
         <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
-          <input inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Nº de acciones" className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+          <input inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={`Nº de ${units}`} className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
         </div>
         <button type="button" disabled={!customOk} onClick={() => act(parsed)} className={`g-btn g-btn--sm ${mode === 'comprar' ? 'g-btn--purple' : 'g-btn--orange'}`}>
           {mode === 'comprar' ? 'Comprar' : 'Vender'}
         </button>
         <button type="button" disabled={limit <= 0} onClick={() => act(limit)} className="g-btn g-btn--cream g-btn--sm">
-          {mode === 'comprar' ? 'Máx' : 'Todas'}
+          {mode === 'comprar' ? 'Máx' : gold ? 'Todos' : 'Todas'}
         </button>
       </div>
       <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
         {mode === 'comprar'
-          ? `${limit > 0 ? `Puedes comprar hasta ${limit}.` : 'No te llega para ninguna.'} Cada operación cuesta ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })} de comisión.`
+          ? `${limit > 0 ? `Puedes comprar hasta ${limit}.` : gold ? 'No te llega para ninguno.' : 'No te llega para ninguna.'} Cada operación cuesta ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })} de comisión.`
           : `Vendes al precio de hoy. Si ganas respecto a tu precio medio, Hacienda se lleva el 19 % de la ganancia; si pierdes, la pérdida resta de tus ganancias del año.`}
       </p>
       <div className="mt-3">

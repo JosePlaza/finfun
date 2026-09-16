@@ -25,7 +25,7 @@ import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
 import { missionsFor } from './missions'
-import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, CRASH_AFTER_MONTHS, cyclePhase, discoveryThisYear, fundNavAt, isHotYear, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS, type MarketCtx } from './market'
+import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, CRASH_AFTER_MONTHS, discoveryThisYear, fundNavAt, isHotYear, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS, type MarketCtx } from './market'
 
 const LEDGER_MAX = 80
 
@@ -340,6 +340,16 @@ function processMonth(state: GameState, month: number) {
     log(state, { kind: 'tormenta', month, amountCents: 0, label: 'LA TORMENTA: todos los precios de la isla caen de golpe. Los negocios siguen ganando; los precios se recuperan con el tiempo.' })
     const shares = Object.values(state.holdings).reduce((a, h) => a + h.shares, 0)
     state.crashWatch = { shares, fundUnits: state.fundUnits }
+    for (const def of BUSINESSES) {
+      if (def.refuge && def.world <= state.world) log(state, { kind: 'noticia', month, amountCents: 0, label: `Con el miedo, todos buscan refugio: el oro de la ${def.name} sube mientras lo demás cae.` })
+    }
+  }
+  // El miedo se pasa: el oro vuelve a su precio de siempre.
+  if (state.crashMonth !== null) {
+    for (const def of BUSINESSES) {
+      if (def.refuge && def.world <= state.world && month === state.crashMonth + def.refuge.fadeMonths)
+        log(state, { kind: 'noticia', month, amountCents: 0, label: 'El miedo se ha ido: el oro vuelve a su precio de siempre. El refugio protege en la tormenta, no hace rico a nadie.' })
+    }
   }
   if (state.crashWatch && state.crashMonth !== null && month === state.crashMonth + 3) {
     const shares = Object.values(state.holdings).reduce((a, h) => a + h.shares, 0)
@@ -364,19 +374,13 @@ function processMonth(state: GameState, month: number) {
     }
   }
 
-  // 5c. Cuentas trimestrales de los negocios: dividendos al cofre y noticias (tormentas, ciclo de obras).
+  // 5c. Cuentas trimestrales de los negocios: dividendos al cofre y noticias (tormentas).
   if (state.world >= 3 && isResultsMonth(month)) {
     const q = Math.floor(month / 3)
     const ctx = marketCtx(state)
     for (const def of BUSINESSES) {
       if (def.world > state.world) continue
       const quarter = quarterFor(ctx, def, q)
-      if (def.cycle) {
-        const now = cyclePhase(def, q)
-        const before = cyclePhase(def, q - 1)
-        if (now >= 0.95 && before < 0.95) log(state, { kind: 'noticia', month, amountCents: 0, label: 'La isla está de obras por todas partes: la Cantera trabaja a tope. El ciclo está en lo alto.' })
-        if (now <= -0.95 && before > -0.95) log(state, { kind: 'noticia', month, amountCents: 0, label: 'Parón en las obras de la isla: la Cantera casi no vende piedra. El ciclo está en lo bajo.' })
-      }
       const holding = state.holdings[def.id]
       if (quarter.storm && def.storm) {
         log(state, { kind: 'tormenta', month, amountCents: 0, label: def.storm.label })

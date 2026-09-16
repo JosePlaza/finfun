@@ -691,17 +691,20 @@ export function GenericBuilding(props: Props) {
           <GableRoof w={2.2} d={1.9} h={0.8} color={C.metal} dark="#3a3633" position={[-1.6, 1.8, 0.6]} />
           <Gable w={2.2} h={0.8} color={C.woodLight} position={[-1.6, 1.8, 1.43]} />
           <Door position={[-1.6, 0, 1.6]} w={0.8} h={1.3} arch={false} />
-          <Sign text="CANTERA" position={[-1.6, 1.75, 1.62]} w={1.4} />
-          {/* pila de bloques de piedra y rocas */}
-          {[[1.0, 0, 0.8, 0.5], [1.7, 0, 0.3, 0.55], [1.3, 0.5, 0.55, 0.45], [2.2, 0, 1.2, 0.4]].map(([x, y, z, s], i) => (
-            <Box key={i} size={[s, s * 0.7, s]} position={[x, y + (s * 0.7) / 2, z]} rotation={[0, i * 0.4, 0]} color={C.rockLight} flat />
+          <Sign text="ORO" position={[-1.6, 1.75, 1.62]} w={1.4} />
+          {/* pila de lingotes de oro y rocas con vetas */}
+          {[[1.0, 0, 0.8, 0], [1.7, 0, 0.3, 0.4], [1.3, 0.24, 0.55, 0.2], [2.2, 0, 1.2, 0.8], [1.35, 0.48, 0.55, 0.3]].map(([x, y, z, r], i) => (
+            <Box key={i} size={[0.55, 0.24, 0.3]} position={[x, y + 0.12, z]} rotation={[0, r, 0]} color={C.gold} flat />
           ))}
           <Rock position={[1.4, 0, -1.4]} size={1.3} seed={91} color={C.rock} />
+          <Box size={[0.5, 0.12, 0.12]} position={[1.35, 0.7, -0.85]} rotation={[0, 0.3, 0.4]} color={C.gold} flat />
+          <Box size={[0.35, 0.1, 0.1]} position={[2.5, 0.45, -0.25]} rotation={[0, -0.5, 0.2]} color={C.goldDark} flat />
           <Rock position={[2.6, 0, -0.6]} size={0.9} seed={92} color={C.rockDark} />
           <Rock position={[0.2, 0, -1.8]} size={0.8} seed={93} color={C.rockLight} />
           {/* carretilla */}
           <group position={[-0.2, 0, 1.9]} rotation={[0, 0.5, 0]}>
             <Box size={[0.6, 0.3, 0.9]} position={[0, 0.45, 0]} color={C.woodLight} />
+            <Box size={[0.4, 0.14, 0.24]} position={[0, 0.67, 0]} rotation={[0, 0.3, 0]} color={C.gold} flat />
             <mesh position={[0, 0.25, 0.3]} rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[0.2, 0.2, 0.08, 10]} />
               <Mat color={C.metal} />

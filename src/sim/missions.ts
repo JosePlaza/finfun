@@ -94,7 +94,7 @@ function world4Board(state: GameState): MissionBoard {
     m('fondo', 'Mete 100 en el Fondo Isla', 'Un trocito de todos los negocios a la vez, y los dividendos se reinvierten solos.', 'fondo', '🏠', fundValue(state, m0) > 0 ? Math.min(100_00, (state.fundCostCents ?? 0)) : 0, 100_00),
     m('aguantar', 'Aguanta La Tormenta sin vender', 'Cuando todo caiga a la vez, no vendas nada hasta tres meses después. Los precios vuelven.', 'mercado', '⛈️', state.crashSurvived ? 1 : 0, 1),
     m('independencia', 'Amplía el huerto', 'Tres meses de comida por trimestre: la despensa se llena sola. Independencia financiera.', 'huerto', '🏝️', state.huertoUpgradedMonth !== null ? 1 : 0, 1),
-    m('lecciones-4', 'Lee todas las lecciones', 'La escuela tiene lecciones nuevas sobre la cesta, los ciclos, el fondo y La Tormenta.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
+    m('lecciones-4', 'Lee todas las lecciones', 'La escuela tiene lecciones nuevas sobre la cesta, las modas y el oro, el fondo y La Tormenta.', 'escuela', '🏫', (state.lessonsRead ?? []).length, LESSONS.length),
     m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos, acciones y fondo juntos.', 'cofre', '💰', total, 3000_00),
   ]
   return board(4, 'La Tormenta', missions, 'Isla completa: modo libre con récords')

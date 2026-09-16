@@ -50,7 +50,7 @@ Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar a
 
 Misiones N2: 50 en el banco · primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
 
-Diseño pendiente N2: **visitar la isla de la Liebre** (vecina desde el inicio), que gasta todo cada mes: su patrimonio se ve al lado del tuyo en el diario.
+Diseño pendiente N2: **visitar la isla de la Liebre** — ver la sección al final.
 
 ---
 
@@ -87,7 +87,7 @@ Se abren seis negocios más (todos en `src/sim/market.ts`, con el mismo motor) y
 de abrir el nivel llega **La Tormenta**, única por partida: un mes en que todos los precios caen un 30 % (la Posada un 40 %),
 con pantalla de noticia urgente y consejo de Doña Tortuga. Los negocios siguen ganando (salvo la Posada ese trimestre), los
 dividendos siguen llegando y los precios vuelven solos hacia su valor justo en 6–9 meses. Aguantar tres meses sin vender
-nada (acciones ni fondo) cumple la misión. Decisiones: Cantera con ciclo predecible (no ligado a las obras del jugador),
+nada (acciones ni fondo) cumple la misión. Decisiones: Cantera = oro, activo refugio (sustituye al ciclo de obras),
 Fondo de acumulación, Tormenta única, descubrimiento del Observatorio permanente, Hacienda al 19 % plano (sin tramos).
 
 | Negocio | Dividendo | Comportamiento | Enseña |
@@ -95,17 +95,55 @@ Fondo de acumulación, Tormenta única, descubrimiento del Observatorio permanen
 | **Molino** (energía) | Trimestral siempre, ≈5 %/año a 40 eL | ±2 %/mes, crecimiento 0,5 %/año | El refugio: aburrido a propósito. |
 | **Posada del Puerto** | Un solo dividendo, grande, en septiembre | Temporada 0,5·1,0·2,0·0,5; en La Tormenta cae un 40 % y ese trimestre casi no gana | Cíclico y estacional a la vez. |
 | **Granja** | Un dividendo anual en diciembre (cosecha) | Otoño 1,6×; un otoño de cada cuatro plaga/sequía: beneficio 0, sin dividendo, −20 % | Riesgo natural, un solo golpe al año. |
-| **Cantera** | Trimestral solo si el beneficio llega al 80 % del normal | Ciclo de obras de 3 años (±50 %), predecible; noticias en el pico y en el valle | Aprender a leer el ciclo. |
+| **Cantera de Oro** | Ninguno | Se compran **lingotes** (100), no acciones. Sin cuentas: el oro no gana ni reparte. Su precio sube al ritmo de la inflación media (≈3 %/año, ±4 %/mes) y el mes de La Tormenta **sube un 20 %** mientras todo lo demás cae; esa prima de miedo se deshace en 9 meses. Noticias al subir y al volver a la calma. | El activo refugio: protege en la tormenta, no hace rico. Un poco amortigua la cartera; mucho es una cartera que no crece. |
 | **Taller de juguetes** | Trimestral los años de moda | Cada año se sortea de moda (×1,6) u olvidado (×0,6); ±8 %/mes | Modas: perseguirlas llega tarde. |
 | **Observatorio** | Ninguno | Beneficio mínimo; cada año 1/8 de **descubrimiento**: ×3 para siempre y salto del precio | Alto riesgo: un trocito pequeño de la cartera. |
-| **Casa del Fondo Isla** | Acumulación: los dividendos se reinvierten dentro | Participaciones (sin tope) a partir de 10 eL; sigue la media de los 10 negocios; comisión 0,3 %/año; sin comisión por operación; tributa solo al sacar | Diversificar sin pensar; la cesta de huevos. |
+| **Casa del Fondo Isla** | Acumulación: los dividendos se reinvierten dentro | Participaciones (sin tope) a partir de 10 eL; sigue la media de los 9 negocios (sin el oro); comisión 0,3 %/año; sin comisión por operación; tributa solo al sacar | Diversificar sin pensar; la cesta de huevos. |
 
-Escuela N4: cuatro lecciones nuevas (la cesta de huevos, ciclos y modas, qué es un fondo, cuando todo cae) más la de
+Escuela N4: cuatro lecciones nuevas (la cesta de huevos, modas y refugios, qué es un fondo, cuando todo cae) más la de
 independencia financiera.
 
 Misiones N4: acciones de 5 negocios distintos · 100 en el Fondo Isla · aguantar La Tormenta sin vender · ampliar el huerto · leer
 todas las lecciones · 3000 de patrimonio → **Isla completa** (modo libre con récords; pendiente de diseño, junto con la
 visita a la isla de la Liebre).
+
+---
+
+## La isla de la Liebre (visita) [diseño]
+
+La Liebre es la vecina desde el primer día: recibe **la misma paga**, vive **la misma inflación** y ve **el mismo mercado**
+que el jugador, pero decide distinto. Su isla es el "¿y si…?" hecho lugar: el grupo de control que se puede visitar.
+
+**Cómo se llega.** Desde el Nivel 2 aparece en el muelle la barca de la Liebre con un cartel "Visitar". Al tocarla la
+cámara sigue a la barca por el mar (3 s) y llega a una isla más pequeña, con su propia orografía y paleta un punto más
+chillona. Un botón fijo "Volver a casa" deshace el viaje. La visita no consume nada ni cambia el tiempo: es mirar.
+
+**Qué hace la Liebre (simulación pura, `src/sim/liebre.ts`).** Su historia se calcula mes a mes a partir de la semilla y del
+mes actual, sin estado guardado (`liebreAt(seed, month)`), como el mercado. Reglas fijas y legibles para el niño:
+
+| Nivel del jugador | Regla de la Liebre | Lo que se ve en su isla |
+| --- | --- | --- |
+| 1–2 | Gasta la paga **entera cada mes** en el capricho más caro que le llega; compra la cesta pequeña solo cuando la despensa está vacía, así que uno de cada tres meses pasa hambre (pierde corazones, nunca muere: Doña Tortuga le lleva sopa). No abre cuenta en el banco ni compra bonos. | Casa desbordada de cosas (patinete, consola, cometas por el suelo), cofre de la cueva con telarañas y **0 eL**, solar del huerto siempre "en obras". |
+| 3 | Descubre el Mercado y compra **lo que más subió el mes pasado** (persigue la moda) y vende **lo que bajó más de un 10 %**. Comisiones y ventas con pérdida todos los meses. | Cartel del Mercado con sus operaciones del mes; una pizarra "compró caro, vendió barato". |
+| 4 | En **La Tormenta vende todo** el primer día. Después, cuando los precios ya han vuelto, compra otra vez. | La barca vacía en la playa; su pizarra con la venta del mes de la Tormenta en rojo. |
+
+**El tablero "Tú y la Liebre".** En el centro de su isla, una pizarra grande con dos columnas y una gráfica de patrimonio mes a
+mes desde el primer día: ambos empezaron con lo mismo. Debajo, tres frases de Doña Tortuga que cambian con el nivel
+("La Liebre ha cobrado lo mismo que tú: {paga × meses}. Tú tienes {X}; ella {Y} y {N} cosas."). Es la única pantalla del
+juego que compara: nunca se burla de la Liebre, explica qué decisión marcó la diferencia.
+
+**Ganchos opcionales (a decidir).**
+- **El préstamo de la Liebre.** Los meses que pasa hambre, al visitarla pide 5 eL y promete devolver 6 el mes que viene.
+  Enseña prestar con interés y el riesgo de impago: la Liebre devuelve casi siempre, pero una de cada cinco veces tarda
+  dos meses más. Sería la única deuda del juego (la contraria del bono: ahora prestas tú a alguien menos fiable que el
+  Ayuntamiento, y por eso cobras más).
+- **La misión.** N2: "Visita a la Liebre" (abre la barca). N3: "Ten el doble de patrimonio que la Liebre". N4: tras La
+  Tormenta, "Vuelve a la isla de la Liebre" para ver qué hizo ella (y leer la lección "Cuando todo cae" con su ejemplo).
+- **El diario.** El cierre de año del Faro añade una línea con su patrimonio junto al tuyo (ya previsto en el concepto).
+
+**Técnica.** Vista `liebre` con su propia `Canvas` scene (`src/scene/LiebreIsland.tsx`: terreno pequeño reutilizando
+`Landscape`, casa/cueva/muelle del kit, props de `SHOP_ITEMS` que ella haya comprado apilados en su jardín, la Liebre
+haciendo algo); simulación `liebreAt` con tests; panel `LiebrePanel` (pizarra) y, si se aprueba, `lendToLiebre` en el motor.
 
 ---
 

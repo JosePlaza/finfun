@@ -87,7 +87,7 @@ rocas de costa y bellotas se apoyan sobre esa función, así que mover una colin
 | 1 · La Isla | Casa, Banco, Tienda, Cueva del cofre, Faro (Doña Tortuga) |
 | 2 · El Ayuntamiento | Ayuntamiento (bonos), Hacienda (Don Búho), Escuela (carnés) |
 | 3 · El Mercado | Mercado de acciones, Panadería, Heladería, Puerto pesquero, Astillero |
-| 4 · La Tormenta | Molino, Posada, Granja, Cantera, Taller de juguetes, Observatorio, Casa del Fondo Isla |
+| 4 · La Tormenta | Molino, Posada, Granja, Cantera de Oro, Taller de juguetes, Observatorio, Casa del Fondo Isla |
 
 ## Navegación e interfaz
 
@@ -132,7 +132,7 @@ La operativa completa de los 21 edificios, nivel a nivel, está en [`docs/operat
 - Banco: abre al cerrar el primer año (o antes, al llegar al Nivel 2); paga un 2,5 % anual repartido por meses.
 - Nivel 2: el Ayuntamiento emite bonos (6 meses · 3 %, 12 meses · 4 %, 24 meses · 5 %; cupón trimestral, principal al vencer); Hacienda retiene el 19 % de intereses y cupones, en cada cobro o con una declaración anual según elija el jugador; la escuela tiene seis lecciones.
 - Nivel 3: Mercado de acciones (`src/sim/market.ts`): 100 acciones por negocio, precio mensual que sigue al beneficio trimestral (cuentas en marzo/junio/septiembre/diciembre), dividendos al cofre vía Hacienda, comisión 0,50 por operación, ganancia por precio medio al vender (19 % si hay ganancia; las pérdidas compensan). Panadería estable, Heladería estacional, Puerto con tormentas, Astillero sin dividendo. Propiedad visible en el cartel del edificio.
-- Nivel 4: seis negocios más con carácter propio (Molino refugio, Posada turística, Granja con cosecha y plagas, Cantera cíclica de 3 años, Taller de modas, Observatorio con descubrimientos ×3), la Casa del Fondo Isla (fondo de acumulación con participaciones, 0,3 %/año) y La Tormenta: única por partida, seis meses después de abrir el nivel, −30 % general (−40 % la Posada), con pantalla de noticia y misión de aguantar tres meses sin vender.
+- Nivel 4: seis negocios más con carácter propio (Molino refugio, Posada turística, Granja con cosecha y plagas, Cantera de Oro como activo refugio (lingotes sin dividendo que siguen la inflación y suben un 20 % en La Tormenta), Taller de modas, Observatorio con descubrimientos ×3), la Casa del Fondo Isla (fondo de acumulación con participaciones, 0,3 %/año) y La Tormenta: única por partida, seis meses después de abrir el nivel, −30 % general (−40 % la Posada), con pantalla de noticia y misión de aguantar tres meses sin vender.
 - Todo el dinero se guarda en céntimos enteros; la simulación es idempotente: estar días sin entrar produce exactamente lo mismo que entrar cada día sin tocar nada. Los campos nuevos del estado tienen valores por defecto en `clone()` para que las partidas guardadas antiguas sigan funcionando.
 
 ## Siguientes fases

@@ -39,6 +39,13 @@ export interface BusinessDef {
   storm?: { chance: number; dropBps: number; label: string; quarters?: number[] }
   /** Ciclo económico predecible: el beneficio oscila ±amp a lo largo de `years` años. */
   cycle?: { years: number; amp: number }
+  /**
+   * Activo refugio (oro): no gana ni reparte; su precio sigue la inflación y sube cuando hay miedo.
+   * `crashJumpBps` = subida el mes de La Tormenta, que se va desvaneciendo en `fadeMonths` meses.
+   */
+  refuge?: { crashJumpBps: number; fadeMonths: number }
+  /** Nombre de la unidad que se compra ("acción" por defecto; "lingote" en el oro). */
+  unit?: string
   /** Modas: cada año se sortea si está de moda (×hot) u olvidado (×cold). */
   fashion?: { hot: number; cold: number }
   /** Descubrimiento: cada año, probabilidad de multiplicar el beneficio ×mul para siempre. */
@@ -103,9 +110,9 @@ export const BUSINESSES: BusinessDef[] = [
     character: 'Todo el año depende de la cosecha de otoño. Un otoño de cada cuatro sale mal.',
   },
   {
-    id: 'cantera', name: 'Cantera', icon: '⛏️', basePriceCents: 24_00, epsQuarterCents: 32, payoutBps: 8000, dividendQuarters: [0, 1, 2, 3], minEpsRatioForDividend: 0.8,
-    driftBpsYear: 150, volBps: 500, season: 'flat', cycle: { years: 3, amp: 0.5 }, world: 4,
-    character: 'Sigue el ciclo de obras de la isla: tres años de subida y bajada. En la parte baja no reparte. Aprende a leer en qué punto estás.',
+    id: 'cantera', name: 'Cantera de Oro', icon: '🪙', basePriceCents: 30_00, epsQuarterCents: 0, payoutBps: 0, dividendQuarters: [],
+    driftBpsYear: 300, volBps: 400, season: 'flat', refuge: { crashJumpBps: 2000, fadeMonths: 9 }, unit: 'lingote', world: 4,
+    character: 'Lingotes de oro. No ganan ni reparten nada: valen lo que la gente quiera pagar. Suben despacio, al ritmo de los precios, y de golpe cuando todos tienen miedo. Un refugio para las tormentas, no para hacerse rico.',
   },
   {
     id: 'taller', name: 'Taller de juguetes', icon: '🧸', basePriceCents: 16_00, epsQuarterCents: 20, payoutBps: 7000, dividendQuarters: [0, 1, 2, 3], minEpsRatioForDividend: 0.9,
@@ -214,6 +221,8 @@ export function quarterFor(ctx: MarketCtx, def: BusinessDef, q: number): Quarter
   const quarterOfYear = ((q % 4) + 4) % 4
   const yearIndex = Math.floor(q / 4)
   const year = yearIndex + 1
+  // El oro no tiene cuentas: no gana, no vende, no reparte.
+  if (def.refuge) return { q, year, quarterOfYear, epsCents: 0, salesCents: 0, dividendCents: 0, storm: false }
   const growth = Math.pow(1 + def.driftBpsYear / 10_000, q / 4)
   const noise = 1 + (rng() * 2 - 1) * 0.15
   const stormRoll = rng()
@@ -239,6 +248,7 @@ export function quarterFor(ctx: MarketCtx, def: BusinessDef, q: number): Quarter
 
 /** Valor "justo" de la acción según los beneficios: mezcla del último trimestre publicado anualizado y del último año. */
 function fairPrice(ctx: MarketCtx, def: BusinessDef, q: number): number {
+  if (def.refuge || def.epsQuarterCents <= 0) return def.basePriceCents
   const pe = def.basePriceCents / (4 * def.epsQuarterCents)
   if (q < 0) return def.basePriceCents
   const cur = quarterFor(ctx, def, q).epsCents
@@ -248,6 +258,26 @@ function fairPrice(ctx: MarketCtx, def: BusinessDef, q: number): number {
 }
 
 const cache = new Map<string, number[]>()
+
+/** Prima de miedo del oro en el mes `m`: máxima el mes de La Tormenta, se desvanece en `fadeMonths`. */
+export function refugeFear(ctx: MarketCtx, def: BusinessDef, m: number): number {
+  if (!def.refuge || ctx.crashMonth === null || m < ctx.crashMonth) return 0
+  return (def.refuge.crashJumpBps / 10_000) * Math.max(0, 1 - (m - ctx.crashMonth) / def.refuge.fadeMonths)
+}
+
+/**
+ * Precio del oro: sigue un valor que sube al ritmo de la inflación media (driftBpsYear), con poco ruido,
+ * y el mes de La Tormenta salta hacia arriba (todo el mundo busca refugio); después la prima se va deshaciendo.
+ */
+function refugePrice(ctx: MarketCtx, def: BusinessDef, m: number, prev: number, noise: number): number {
+  const fair = def.basePriceCents * Math.pow(1 + def.driftBpsYear / 10_000, m / MONTHS_PER_YEAR)
+  const target = fair * (1 + refugeFear(ctx, def, m))
+  const crash = ctx.crashMonth !== null && m === ctx.crashMonth
+  let next = prev + (target - prev) * (crash ? 1 : 0.25) + prev * noise
+  const cap = crash ? 0.3 : MAX_MONTHLY_MOVE_BPS / 10_000
+  next = Math.max(prev * (1 - cap), Math.min(prev * (1 + cap), next))
+  return Math.max(1_00, roundCents(next))
+}
 
 /** Precio por acción de cada mes desde el 0 hasta `month` (incluido). Cacheado por contexto y negocio. */
 export function priceSeries(ctx: MarketCtx, def: BusinessDef, month: number): number[] {
@@ -262,6 +292,10 @@ export function priceSeries(ctx: MarketCtx, def: BusinessDef, month: number): nu
     const q = Math.floor(m / 3)
     const rng = rngFor(ctx.seed, m * 7 + hash(def.id), 202)
     const noise = (rng() * 2 - 1) * (def.volBps / 10_000)
+    if (def.refuge) {
+      s.push(refugePrice(ctx, def, m, prev, noise))
+      continue
+    }
     const results = RESULT_MONTHS.includes(m % MONTHS_PER_YEAR)
     // Hasta que se publican las cuentas, el mercado solo conoce el trimestre anterior.
     const fair = fairPrice(ctx, def, results ? q : q - 1)
@@ -324,8 +358,11 @@ export const FUND_FEE_BPS_YEAR = 30
 
 const fundCache = new Map<string, number[]>()
 
+/** Negocios que lleva el fondo: todos menos el oro (es un fondo de negocios, no de metales). */
+export const FUND_BUSINESSES = BUSINESSES.filter((b) => !b.refuge)
+
 /**
- * Valor liquidativo de la participación mes a mes. El fondo tiene un trocito igual de todos los negocios:
+ * Valor liquidativo de la participación mes a mes. El fondo tiene un trocito igual de todos los negocios (sin el oro):
  * sigue la media de sus variaciones de precio y, como es de acumulación, los dividendos que cobran sus
  * negocios no salen del fondo: se reinvierten y suben la participación. Cada mes descuenta su comisión.
  */
@@ -338,7 +375,7 @@ export function fundNavSeries(ctx: MarketCtx, month: number): number[] {
   }
   for (let m = s.length; m <= month; m++) {
     let sum = 0
-    for (const def of BUSINESSES) {
+    for (const def of FUND_BUSINESSES) {
       const series = priceSeries(ctx, def, m)
       let r = series[m] / series[m - 1]
       if (RESULT_MONTHS.includes(m % MONTHS_PER_YEAR)) {
@@ -347,7 +384,7 @@ export function fundNavSeries(ctx: MarketCtx, month: number): number[] {
       }
       sum += r
     }
-    const avg = sum / BUSINESSES.length
+    const avg = sum / FUND_BUSINESSES.length
     const fee = 1 - FUND_FEE_BPS_YEAR / 10_000 / MONTHS_PER_YEAR
     s.push(Math.max(1, Math.round(s[m - 1] * avg * fee * 100) / 100))
   }

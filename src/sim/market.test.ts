@@ -130,10 +130,9 @@ describe('mercado: comprar y vender', () => {
 })
 
 describe('Nivel 4: negocios nuevos, La Tormenta y el Fondo Isla', () => {
-  it('la granja solo reparte en otoño y a veces pierde la cosecha; el molino siempre; la cantera no en el valle', () => {
+  it('la granja solo reparte en otoño y a veces pierde la cosecha; el molino siempre', () => {
     const granja = BUSINESS_BY_ID.granja
     const molino = BUSINESS_BY_ID.molino
-    const cantera = BUSINESS_BY_ID.cantera
     let bad = 0
     for (let q = 0; q < 80; q++) {
       const g = quarterFor(ctx(11), granja, q)
@@ -143,10 +142,26 @@ describe('Nivel 4: negocios nuevos, La Tormenta y el Fondo Isla', () => {
         expect(g.quarterOfYear).toBe(3)
       }
       expect(quarterFor(ctx(11), molino, q).dividendCents).toBeGreaterThan(0)
-      const c = quarterFor(ctx(11), cantera, q)
-      if ((c.cyclePhase ?? 0) < -0.6) expect(c.dividendCents).toBe(0)
     }
     expect(bad).toBeGreaterThan(1)
+  })
+  it('el oro de la cantera no gana ni reparte, sigue la inflación y sube en La Tormenta', () => {
+    const oro = BUSINESS_BY_ID.cantera
+    for (let q = 0; q < 40; q++) {
+      const c = quarterFor(ctx(11), oro, q)
+      expect(c.epsCents).toBe(0)
+      expect(c.dividendCents).toBe(0)
+    }
+    // Sin tormenta: en 10 años sube al ritmo de la inflación media (≈3 %/año), sin sustos.
+    const calm = priceSeries(ctx(11, null), oro, 120)
+    expect(calm[120] / calm[0]).toBeGreaterThan(1.2)
+    expect(calm[120] / calm[0]).toBeLessThan(1.5)
+    for (let m = 1; m <= 120; m++) expect(Math.abs(calm[m] / calm[m - 1] - 1)).toBeLessThan(0.09)
+    // Con Tormenta en el mes 40: ese mes sube (≥ +12 %) y un año después la prima se ha deshecho.
+    const storm = priceSeries(ctx(11, 40), oro, 52)
+    expect(storm[40] / storm[39]).toBeGreaterThan(1.12)
+    expect(storm[52] / calm[52]).toBeLessThan(1.06)
+    expect(storm[52] / calm[52]).toBeGreaterThan(0.94)
   })
   it('el observatorio acaba descubriendo algo en alguna semilla y su beneficio se multiplica', () => {
     const obs = BUSINESS_BY_ID.observatorio
@@ -165,14 +180,15 @@ describe('Nivel 4: negocios nuevos, La Tormenta y el Fondo Isla', () => {
   it('La Tormenta hunde todos los precios ese mes y la posada más; después se recuperan', () => {
     const c = ctx(5, 40)
     let recovery = 0
-    for (const def of BUSINESSES) {
+    const hit = BUSINESSES.filter((b) => !b.refuge)
+    for (const def of hit) {
       const s = priceSeries(c, def, 52)
       const drop = s[40] / s[39] - 1
       expect(drop).toBeLessThanOrEqual(def.id === 'posada' ? -0.39 : -0.29)
       recovery += s[52] / s[40]
     }
     // Un año después, de media, la isla ha recuperado buena parte de la caída.
-    expect(recovery / BUSINESSES.length).toBeGreaterThan(1.15)
+    expect(recovery / hit.length).toBeGreaterThan(1.15)
     // Sin Tormenta fijada, ese mes es normal.
     const s0 = priceSeries(ctx(5, null), BUSINESS_BY_ID.molino, 41)
     expect(Math.abs(s0[40] / s0[39] - 1)).toBeLessThan(0.09)
