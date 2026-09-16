@@ -103,11 +103,15 @@ interface Store {
   /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
   stormSeen: boolean
   dismissStorm: () => void
-  /** Ajustes (persistidos): música de fondo y su volumen (0..1). */
+  /** Ajustes (persistidos): música de fondo y efectos de sonido, con sus volúmenes (0..1). */
   musicOn: boolean
   musicVolume: number
+  sfxOn: boolean
+  sfxVolume: number
   setMusicOn: (on: boolean) => void
   setMusicVolume: (v: number) => void
+  setSfxOn: (on: boolean) => void
+  setSfxVolume: (v: number) => void
   /** El viaje a la isla de la Liebre (no se guarda). */
   trip: Trip
   /** Momento (ms de reloj de pantalla) en que empezó el viaje en curso. */
@@ -207,8 +211,12 @@ export const useGame = create<Store>()(
         dismissStorm: () => set({ stormSeen: true }),
         musicOn: true,
         musicVolume: 0.6,
+        sfxOn: true,
+        sfxVolume: 0.8,
         setMusicOn: (on) => set({ musicOn: on }),
         setMusicVolume: (v) => set({ musicVolume: Math.min(1, Math.max(0, v)) }),
+        setSfxOn: (on) => set({ sfxOn: on }),
+        setSfxVolume: (v) => set({ sfxVolume: Math.min(1, Math.max(0, v)) }),
         trip: 'home',
         tripStartMs: 0,
         travelToLiebre: () => {
@@ -477,7 +485,7 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume }),
+      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
     },
   ),
 )

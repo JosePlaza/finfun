@@ -48,6 +48,7 @@ import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
 import { BUILDING_BY_ID, BUILDINGS, WORLD_NAMES, type BuildingId } from '../scene/registry'
 import { pendingEvents } from './events'
+import { playEventSfx } from './Music'
 
 type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'sky'
 
@@ -1758,32 +1759,46 @@ function LiebrePanel() {
 
 /* ───────────────────────── Ajustes ───────────────────────── */
 
-function AjustesPanel() {
-  const musicOn = useGame((s) => s.musicOn)
-  const volume = useGame((s) => s.musicVolume)
-  const setMusicOn = useGame((s) => s.setMusicOn)
-  const setMusicVolume = useGame((s) => s.setMusicVolume)
+/** Una fila de Ajustes: interruptor y, si está activo, deslizador de volumen. */
+function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolume, label, onTest }: {
+  icon: string
+  title: string
+  onText: string
+  offText: string
+  on: boolean
+  volume: number
+  setOn: (on: boolean) => void
+  setVolume: (v: number) => void
+  label: string
+  onTest?: () => void
+}) {
   const pct = Math.round(volume * 100)
   return (
-    <Sheet title="Ajustes" tone="blue">
-      <SectionTitle>Sonido</SectionTitle>
-      <div className="g-inset p-3.5 flex items-center justify-between gap-3">
+    <div className="g-inset p-3.5">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="g-icon g-icon--blue shrink-0" aria-hidden="true">
-            🎵
+            {icon}
           </span>
           <div className="min-w-0">
-            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Música</div>
-            <div className="text-[12px] font-semibold text-ink-l leading-snug">{musicOn ? 'Sonando en la isla' : 'En silencio'}</div>
+            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{title}</div>
+            <div className="text-[12px] font-semibold text-ink-l leading-snug">{on ? onText : offText}</div>
           </div>
         </div>
-        <button type="button" role="switch" aria-checked={musicOn} aria-label="Música" className="g-switch" onClick={() => setMusicOn(!musicOn)} />
+        <button type="button" role="switch" aria-checked={on} aria-label={title} className="g-switch" onClick={() => setOn(!on)} />
       </div>
-      {musicOn && (
-        <div className="g-inset p-3.5 mt-2">
+      {on && (
+        <div className="mt-3 pt-3 border-t-2 border-cream">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Volumen</div>
-            <div className="font-display font-extrabold text-ink-l text-[14px] tabular-nums">{pct} %</div>
+            <div className="font-display font-extrabold text-ink text-[14px] leading-tight">Volumen</div>
+            <div className="flex items-center gap-2">
+              {onTest && (
+                <button type="button" onClick={onTest} className="g-btn g-btn--cream g-btn--sm !min-h-0 !h-8 !px-3 !text-[12px]">
+                  Probar
+                </button>
+              )}
+              <div className="font-display font-extrabold text-ink-l text-[14px] tabular-nums w-11 text-right">{pct} %</div>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="text-lg leading-none">🔈</span>
@@ -1793,15 +1808,46 @@ function AjustesPanel() {
               max={100}
               step={5}
               value={pct}
-              aria-label="Volumen de la música"
+              aria-label={label}
               className="g-slider flex-1"
               style={{ ['--pct' as string]: `${pct}%` }}
-              onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
+              onChange={(e) => setVolume(Number(e.target.value) / 100)}
             />
             <span aria-hidden="true" className="text-lg leading-none">🔊</span>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function AjustesPanel() {
+  const musicOn = useGame((s) => s.musicOn)
+  const musicVolume = useGame((s) => s.musicVolume)
+  const setMusicOn = useGame((s) => s.setMusicOn)
+  const setMusicVolume = useGame((s) => s.setMusicVolume)
+  const sfxOn = useGame((s) => s.sfxOn)
+  const sfxVolume = useGame((s) => s.sfxVolume)
+  const setSfxOn = useGame((s) => s.setSfxOn)
+  const setSfxVolume = useGame((s) => s.setSfxVolume)
+  return (
+    <Sheet title="Ajustes" tone="blue">
+      <SectionTitle>Sonido</SectionTitle>
+      <div className="grid gap-2">
+        <SoundSetting icon="🎵" title="Música" onText="Sonando en la isla" offText="En silencio" on={musicOn} volume={musicVolume} setOn={setMusicOn} setVolume={setMusicVolume} label="Volumen de la música" />
+        <SoundSetting
+          icon="🔔"
+          title="Efectos de sonido"
+          onText="Suena un aviso con cada evento nuevo"
+          offText="Sin avisos"
+          on={sfxOn}
+          volume={sfxVolume}
+          setOn={setSfxOn}
+          setVolume={setSfxVolume}
+          label="Volumen de los efectos"
+          onTest={() => playEventSfx(true)}
+        />
+      </div>
       <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes se guardan en este dispositivo.</p>
     </Sheet>
   )

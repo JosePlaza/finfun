@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
 import { TopBar } from './ui/Hud'
-import { Music } from './ui/Music'
+import { EventSounds, Music } from './ui/Music'
 import { NameIsland } from './ui/NameIsland'
 import { Panels } from './ui/Panels'
 import { Toast } from './ui/Toast'
@@ -45,6 +45,7 @@ export default function App() {
       <div className="relative h-full w-full overflow-hidden">
         <Island />
         <Music />
+        <EventSounds />
         <TopBar />
         <Panels />
         <Toast />
