@@ -1,4 +1,4 @@
-import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, TASK_ACORNS } from '../sim'
+import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, fundValue, TASK_ACORNS } from '../sim'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
@@ -23,7 +23,7 @@ export function TopBar() {
   const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions }
   const month = currentMonth(game, nowMs)
   const cal = calendarOf(month)
-  const total = game.huchaCents + game.bankCents + bondsTotal(game) + stocksValue(game, month)
+  const total = game.huchaCents + game.bankCents + bondsTotal(game) + stocksValue(game, month) + fundValue(game, month)
   const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
   const events = pendingEvents(game, acornsLeft, seen)
   const onIsland = view === 'isla'
