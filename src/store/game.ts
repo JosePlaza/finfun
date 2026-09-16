@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import {
   advanceTo,
   buildHuerto as simBuildHuerto,
+  upgradeHuerto as simUpgradeHuerto,
   buy as simBuy,
   buyBond as simBuyBond,
   buyShares as simBuyShares,
@@ -100,6 +101,7 @@ interface Store {
   hintAcorn: () => void
   revealAcorns: () => void
   buildHuerto: () => void
+  upgradeHuerto: () => void
   buyBond: (offerId: string, cents: number) => void
   buyShares: (businessId: string, shares: number) => void
   sellShares: (businessId: string, shares: number) => void
@@ -305,6 +307,19 @@ export const useGame = create<Store>()(
           const r = simBuildHuerto(g, now())
           apply(r)
           if (r.ok) get().celebrate({ icon: '🌾', title: '¡Huerto construido!', text: 'Cada tres meses dará una cesta grande de comida, para siempre. Tu primera inversión que se come.', tone: 'green' })
+        },
+        upgradeHuerto: () => {
+          const g = get().game
+          if (!g) return
+          const r = simUpgradeHuerto(g, now())
+          apply(r)
+          if (r.ok)
+            get().celebrate({
+              icon: '🏝️',
+              title: '¡Independencia financiera!',
+              text: 'Tu huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola, para siempre. Tus inversiones ya pagan lo que necesitas para vivir. A partir de aquí, todo lo demás es libertad.',
+              tone: 'green',
+            })
         },
         buyBond: (offerId, cents) => {
           const g = get().game

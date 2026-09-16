@@ -25,6 +25,8 @@ interface Props {
   built?: boolean
   /** Acciones del jugador en este negocio (de 100): se muestra "Tuyo: N %" en el cartel. */
   ownedPct?: number
+  /** Huerto ampliado: invernadero, colmenas y otra vaca. */
+  upgraded?: boolean
   onTap: () => void
 }
 
@@ -345,7 +347,7 @@ function Silo({ position, h = 2.8 }: { position: V3; h?: number }) {
 /* ───────────────────────── Recetas ───────────────────────── */
 
 export function GenericBuilding(props: Props) {
-  const { def, position, palette, night, unlocked, built = true, ownedPct, onTap } = props
+  const { def, position, palette, night, unlocked, built = true, ownedPct, upgraded = false, onTap } = props
   if (!unlocked) return <ConstructionSite def={def} position={position} onTap={onTap} />
   if (def.costCents && !built) return <ForSaleLot def={def} position={position} palette={palette} onTap={onTap} />
   const r = def.rotation
@@ -393,6 +395,34 @@ export function GenericBuilding(props: Props) {
           <Box size={[0.6, 0.06, 0.22]} position={[-2.2, 0.28, 1.4]} color="#7fc8ea" />
           <Sack position={[-0.6, 0, -1.6]} />
           <Flowers position={[2.4, 0, -1.4]} seed={31} />
+          {upgraded && (
+            <>
+              {/* invernadero de cristal */}
+              <group position={[2.6, 0, -1.6]}>
+                <Box size={[1.8, 0.9, 1.2]} position={[0, 0.45, 0]} color={C.white} />
+                <mesh position={[0, 0.5, 0]}>
+                  <boxGeometry args={[1.7, 0.85, 1.1]} />
+                  <meshStandardMaterial color="#bfe9f5" transparent opacity={0.55} />
+                </mesh>
+                <GableRoof w={1.8} d={1.2} h={0.5} color="#bfe9f5" dark="#9fd3e6" position={[0, 0.9, 0]} />
+                {[-0.5, 0, 0.5].map((x) => (
+                  <mesh key={x} position={[x, 0.25, 0]}>
+                    <dodecahedronGeometry args={[0.13, 0]} />
+                    <Mat color={C.roofRed} flat />
+                  </mesh>
+                ))}
+              </group>
+              {/* colmenas */}
+              {[-2.9, -2.5].map((x, i) => (
+                <group key={i} position={[x, 0, -1.7 + i * 0.5]}>
+                  <Box size={[0.32, 0.4, 0.32]} position={[0, 0.2, 0]} color={C.flowerYellow} />
+                  <Box size={[0.38, 0.06, 0.38]} position={[0, 0.43, 0]} color={C.woodDark} />
+                </group>
+              ))}
+              {/* segunda vaca */}
+              <Cow position={[-0.9, 0, -0.9]} rotation={1.9} />
+            </>
+          )}
         </>,
         [7.5, 4, 6.5],
       )

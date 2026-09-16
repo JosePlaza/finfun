@@ -39,6 +39,9 @@ export const HUNGER_DEATH_MONTHS = 6
 export const HUERTO_COST_CENTS = 1000_00
 export const HUERTO_EVERY_MONTHS = 3
 export const HUERTO_FOOD_MONTHS = 2
+/** Mejora del huerto: 1500 euroLukys y pasa a dar 3 meses de comida cada trimestre = la despensa se llena sola. */
+export const HUERTO_UPGRADE_COST_CENTS = 1500_00
+export const HUERTO_UPGRADED_FOOD_MONTHS = 3
 
 export type ItemKind = 'consumible' | 'objeto' | 'comida'
 
@@ -124,5 +127,6 @@ export const LESSONS: Lesson[] = [
   { id: 'riesgo', title: 'Riesgo y recompensa', icon: '⚖️', body: 'Lo que puede dar más también puede dar menos. El banco y los bonos son seguros y dan poco. Las acciones (Nivel 3) dan más… algunos años. Nunca pongas en lo arriesgado el dinero que necesitas pronto.' },
   { id: 'accion', title: 'Qué es una acción', icon: '📈', body: 'Una acción es un trocito de un negocio. Si la Panadería tiene 100 acciones y tú tienes 10, el 10 % de la Panadería es tuyo: una parte de lo que gana es para ti. El precio de la acción sube y baja según lo que gana el negocio… y según lo nerviosa que esté la gente.' },
   { id: 'dividendo', title: 'El dividendo no está prometido', icon: '🎁', body: 'El cupón de un bono estaba prometido. El dividendo de una acción, no: depende de cómo le haya ido al negocio ese trimestre. Si hay tormenta en el Puerto, ese trimestre no hay dividendo. A cambio, cuando el negocio va bien, el dividendo crece.' },
+  { id: 'independencia', title: 'Independencia financiera', icon: '🏝️', body: 'Cuando lo que producen tus inversiones paga lo que necesitas para vivir, eres libre: trabajas si quieres, no porque te haga falta. En la isla, el huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola. Eso es la independencia financiera, en pequeño.' },
   { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
 ]

@@ -322,6 +322,7 @@ function Scene() {
                 night={night}
                 unlocked={unlocked}
                 built={def.id === 'huerto' ? game.huertoBuiltMonth !== null : true}
+                upgraded={def.id === 'huerto' && game.huertoUpgradedMonth !== null}
                 ownedPct={game.holdings?.[def.id]?.shares}
                 onTap={() => tapBuilding(def.id)}
               />

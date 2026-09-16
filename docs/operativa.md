@@ -34,7 +34,7 @@ plusvalías). El jugador elige el modo en Hacienda.
 | **Banco de la Isla** [hecho] | Abre al cerrar el año 1, o antes si se llega al Nivel 2. Cuenta remunerada 2,5 % anual pagado por meses. Meter/sacar sin límite. | Interés simple → compuesto. Liquidez. |
 | **Tienda** [hecho] | Comida (cestas) y deseos (helado 2, cometa 25, balón 40, bici 180, telescopio 450). Precios con inflación y precio viejo tachado. IVA informativo. | Necesidad vs deseo; inflación en los precios. |
 | **Faro (Doña Tortuga)** [hecho] | Diario de cierre de año con el "¿y si…?" contrafactual. Ayuda. | Coste de oportunidad. |
-| **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. |
+| **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. **Ampliación (1500 eL)**: invernadero, colmenas y otra vaca; pasa a 3 meses de comida por trimestre, justo lo que se come: la despensa se llena sola y el juego lo celebra como **independencia financiera**. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. Cuando lo que producen tus inversiones cubre lo que necesitas, eres libre. |
 
 Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · comida para 3 meses · **la bici abre el Nivel 2**. Todas se pueden hacer desde el primer día: el banco no abre hasta cerrar el año, así que su misión va en el Nivel 2.
 

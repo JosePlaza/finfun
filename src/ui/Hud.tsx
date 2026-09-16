@@ -33,7 +33,7 @@ export function TopBar() {
       <div className="flex items-start justify-between gap-2">
         {/* Nombre de la isla y fecha */}
         <div className="pointer-events-auto g-pill !cursor-default !px-4 !py-1.5 flex-col !items-start !gap-0">
-          <div className="g-title text-[16px] leading-tight truncate max-w-[34vw]">{game.islandName}</div>
+          <div className="g-title text-[16px] leading-tight truncate max-w-[30vw]">{game.islandName}</div>
           <div className="text-[12px] font-bold text-ink-l leading-tight font-sans">
             {SEASON_EMOJI[cal.season]} Año {cal.year} · {MONTH_NAMES[cal.monthOfYear - 1]}
           </div>
@@ -45,7 +45,7 @@ export function TopBar() {
           {/* Patrimonio */}
           <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
             {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
-            <Amount cents={Math.floor(total / 100) * 100} size="lg" className="text-ink" />
+            <Amount cents={Math.floor(total / 100) * 100} size="md" className="text-ink" />
             <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">▸</span>
           </button>
         </div>

@@ -90,6 +90,7 @@ function world4Board(state: GameState): MissionBoard {
   const missions: Mission[] = [
     m('cinco', 'Acciones de 5 negocios distintos', 'No pongas todos los huevos en la misma cesta.', 'mercado', '🧺', Object.keys(state.holdings ?? {}).length, 5),
     m('cartera', 'Cartera de 1000 en acciones', 'Valor a precio de hoy de todas tus acciones.', 'mercado', '📈', stocksValue(state, state.processedMonth), 1000_00),
+    m('independencia', 'Amplía el huerto', 'Tres meses de comida por trimestre: la despensa se llena sola. Independencia financiera.', 'huerto', '🏝️', state.huertoUpgradedMonth !== null ? 1 : 0, 1),
     m('patrimonio3000', 'Llega a 3000 de patrimonio', 'Cofre, banco, bonos y acciones juntos.', 'cofre', '💰', state.huchaCents + state.bankCents + bondsTotal(state) + stocksValue(state, state.processedMonth), 3000_00),
   ]
   return board(4, 'La Tormenta', missions, 'Isla completa (próximamente)')

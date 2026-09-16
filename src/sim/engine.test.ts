@@ -17,6 +17,7 @@ import {
   inflatePrice,
   monthlyInterest,
   spinInflation,
+  upgradeHuerto,
   withdraw,
 } from './engine'
 import { HUERTO_COST_CENTS, INFLATION_WHEEL_BPS } from './config'
@@ -256,6 +257,15 @@ describe('comida y vida', () => {
     expect(g.foodMonths).toBe(food - 2)
     g = advanceTo(g, at(43))
     expect(g.foodMonths).toBe(food - 3 + 2)
+    // Ampliado: 3 meses cada trimestre, la despensa ya no baja.
+    expect(upgradeHuerto(g, at(43)).ok).toBe(false) // sin dinero
+    g = structuredClone(g)
+    g.huchaCents = 1500_00
+    g = must(upgradeHuerto(g, at(43)))
+    expect(g.huertoUpgradedMonth).toBe(43)
+    const f2 = g.foodMonths
+    g = advanceTo(g, at(46))
+    expect(g.foodMonths).toBe(f2 - 3 + 3)
   })
 })
 

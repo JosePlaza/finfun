@@ -7,6 +7,8 @@ import {
   HUERTO_COST_CENTS,
   HUERTO_EVERY_MONTHS,
   HUERTO_FOOD_MONTHS,
+  HUERTO_UPGRADE_COST_CENTS,
+  HUERTO_UPGRADED_FOOD_MONTHS,
   HUNGER_DEATH_MONTHS,
   INFLATION_WHEEL_BPS,
   LESSONS,
@@ -56,6 +58,7 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     dead: false,
     deathMonth: null,
     huertoBuiltMonth: null,
+    huertoUpgradedMonth: null,
     pendingYearEnds: [],
     bonds: [],
     bondsBought: 0,
@@ -101,6 +104,7 @@ function clone(state: GameState): GameState {
   c.dead ??= false
   c.deathMonth ??= null
   c.huertoBuiltMonth ??= null
+  c.huertoUpgradedMonth ??= null
   c.pendingYearEnds ??= []
   c.bonds ??= []
   c.bondsBought ??= 0
@@ -239,7 +243,18 @@ function processMonth(state: GameState, month: number) {
   state.mailboxCents += PAGA_CENTS
   log(state, { kind: 'paga', month, amountCents: PAGA_CENTS, label: `Paga de ${describeMonth(month)}` })
 
-  // 2. Comida: cada mes se come una ración de la despensa (el primer mes no cuenta).
+  // 2. Primero la cosecha: el huerto da comida cada tres meses: 2 meses, o 3 si está ampliado (la despensa se llena sola).
+  if (state.huertoBuiltMonth !== null) {
+    const since = month - state.huertoBuiltMonth
+    if (since > 0 && since % HUERTO_EVERY_MONTHS === 0) {
+      const upgraded = state.huertoUpgradedMonth !== null
+      const food = upgraded ? HUERTO_UPGRADED_FOOD_MONTHS : HUERTO_FOOD_MONTHS
+      state.foodMonths += food
+      log(state, { kind: 'huerto', month, amountCents: 0, label: upgraded ? `El huerto ampliado llena la despensa (+${food} meses de comida)` : `El huerto da una cesta grande (+${food} meses de comida)` })
+    }
+  }
+
+  // 3. Comida: cada mes se come una ración de la despensa (el primer mes no cuenta).
   if (month > 0) {
     if (state.foodMonths > 0) {
       state.foodMonths -= 1
@@ -253,15 +268,6 @@ function processMonth(state: GameState, month: number) {
         state.processedMonth = month
         return
       }
-    }
-  }
-
-  // 3. El huerto da una cesta grande cada tres meses.
-  if (state.huertoBuiltMonth !== null) {
-    const since = month - state.huertoBuiltMonth
-    if (since > 0 && since % HUERTO_EVERY_MONTHS === 0) {
-      state.foodMonths += HUERTO_FOOD_MONTHS
-      log(state, { kind: 'huerto', month, amountCents: 0, label: `El huerto da una cesta grande (+${HUERTO_FOOD_MONTHS} meses de comida)` })
     }
   }
 
@@ -544,6 +550,19 @@ export function buildHuerto(input: GameState, nowMs: number): ActionResult {
   state.yearSpentCents += HUERTO_COST_CENTS
   state.huertoBuiltMonth = month
   log(state, { kind: 'huerto', month, amountCents: -HUERTO_COST_CENTS, label: 'Construyes el huerto con animales' })
+  return done(state)
+}
+
+export function upgradeHuerto(input: GameState, nowMs: number): ActionResult {
+  const state = clone(advanceTo(input, nowMs))
+  if (state.huertoBuiltMonth === null) return { ok: false, reason: 'Primero hay que construir el huerto.' }
+  if (state.huertoUpgradedMonth !== null) return { ok: false, reason: 'El huerto ya está ampliado.' }
+  if (state.huchaCents < HUERTO_UPGRADE_COST_CENTS) return { ok: false, reason: `Te faltan ${formatCents(HUERTO_UPGRADE_COST_CENTS - state.huchaCents)} euroLukys.` }
+  const month = currentMonth(state, nowMs)
+  state.huchaCents -= HUERTO_UPGRADE_COST_CENTS
+  state.yearSpentCents += HUERTO_UPGRADE_COST_CENTS
+  state.huertoUpgradedMonth = month
+  log(state, { kind: 'huerto', month, amountCents: -HUERTO_UPGRADE_COST_CENTS, label: 'Amplías el huerto: la despensa se llenará sola' })
   return done(state)
 }
 

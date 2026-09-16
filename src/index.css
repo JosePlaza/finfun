@@ -612,7 +612,7 @@ textarea {
 }
 
 /* Corazones de salud */
-.g-hearts { gap: 1px !important; padding-left: 10px !important; padding-right: 10px !important; }
+.g-hearts { gap: 0 !important; padding-left: 8px !important; padding-right: 8px !important; }
 .g-heart {
   font-size: 17px;
   line-height: 1;

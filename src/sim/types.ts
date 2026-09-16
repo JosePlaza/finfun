@@ -158,6 +158,8 @@ export interface GameState {
   deathMonth: number | null
   /** Mes en que se construyó el huerto (null = sin construir). Da una cesta grande cada 3 meses. */
   huertoBuiltMonth: number | null
+  /** Mes en que se amplió el huerto (null = sin ampliar). Ampliado da 3 meses de comida cada trimestre. */
+  huertoUpgradedMonth: number | null
 
   // ───── Cierre de año: la ruleta la gira el jugador ─────
   pendingYearEnds: PendingYearEnd[]

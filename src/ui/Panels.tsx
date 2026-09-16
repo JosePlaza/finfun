@@ -18,6 +18,8 @@ import {
   HUERTO_COST_CENTS,
   HUERTO_EVERY_MONTHS,
   HUERTO_FOOD_MONTHS,
+  HUERTO_UPGRADE_COST_CENTS,
+  HUERTO_UPGRADED_FOOD_MONTHS,
   HUNGER_DEATH_MONTHS,
   LESSONS,
   missionsFor,
@@ -778,6 +780,7 @@ function HuertoPanel() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
   const buildHuerto = useGame((s) => s.buildHuerto)
+  const upgradeHuerto = useGame((s) => s.upgradeHuerto)
   const setView = useGame((s) => s.setView)
   const built = game.huertoBuiltMonth !== null
   const can = game.huchaCents >= HUERTO_COST_CENTS
@@ -823,8 +826,20 @@ function HuertoPanel() {
   const since = month - game.huertoBuiltMonth!
   const nextIn = HUERTO_EVERY_MONTHS - (since % HUERTO_EVERY_MONTHS)
   const baskets = Math.floor(since / HUERTO_EVERY_MONTHS)
+  const upgraded = game.huertoUpgradedMonth !== null
+  const canUpgrade = game.huchaCents >= HUERTO_UPGRADE_COST_CENTS
   return (
-    <Sheet title="Tu huerto" tone="green">
+    <Sheet title={upgraded ? 'Tu huerto ampliado' : 'Tu huerto'} tone="green">
+      {upgraded && (
+        <div className="g-inset p-3.5 mb-3 flex items-center gap-3 !bg-green-l/30">
+          <span className="g-icon g-icon--green shrink-0" aria-hidden="true">
+            🏝️
+          </span>
+          <div className="text-[13.5px] font-bold text-ink leading-snug">
+            Independencia financiera: el huerto da {HUERTO_UPGRADED_FOOD_MONTHS} meses de comida cada {HUERTO_EVERY_MONTHS}. La despensa se llena sola.
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <div className="g-inset p-3.5">
           <div className="g-label">Próxima cesta</div>
@@ -840,10 +855,34 @@ function HuertoPanel() {
       </div>
       <div className="mt-4">
         <Tortuga>
-          La vaca, el cerdo y las gallinas trabajan mientras tú duermes. Cada {HUERTO_EVERY_MONTHS} meses llenan una cesta grande y la dejan en tu despensa. Ya has ahorrado{' '}
+          La vaca, el cerdo y las gallinas trabajan mientras tú duermes. Cada {HUERTO_EVERY_MONTHS} meses dejan {upgraded ? HUERTO_UPGRADED_FOOD_MONTHS : HUERTO_FOOD_MONTHS} meses de comida en tu despensa. Ya has ahorrado{' '}
           {formatCents(baskets * (game.shop.find((i) => i.id === 'cesta-grande')?.priceCents ?? 9_50))} en comida.
         </Tortuga>
       </div>
+      {!upgraded && (
+        <>
+          <SectionTitle>Ampliar el huerto</SectionTitle>
+          <div className="g-card">
+            <div className="g-card__head">
+              <span className="g-icon g-icon--green" aria-hidden="true">
+                🐝
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Invernadero, colmenas y otra vaca</div>
+                <div className="text-[12.5px] font-semibold text-ink-l leading-snug">
+                  Cuesta {formatCents(HUERTO_UPGRADE_COST_CENTS)}. Pasa de {HUERTO_FOOD_MONTHS} a {HUERTO_UPGRADED_FOOD_MONTHS} meses de comida por trimestre: exactamente lo que comes. No volverás a
+                  comprar cestas.
+                </div>
+              </div>
+            </div>
+            <div className="g-card__foot">
+              <button type="button" onClick={upgradeHuerto} disabled={!canUpgrade} className="g-btn g-btn--green g-btn--sm">
+                {canUpgrade ? 'Ampliar' : `Te faltan ${formatCents(HUERTO_UPGRADE_COST_CENTS - game.huchaCents)}`}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </Sheet>
   )
 }
