@@ -56,6 +56,7 @@ export type View =
   | 'eventos'
   | 'patrimonio'
   | 'liebre'
+  | 'ajustes'
 
 /** Dónde está el jugador: en su isla, cruzando el mar, en la isla de la Liebre o volviendo. */
 export type Trip = 'home' | 'going' | 'there' | 'returning'
@@ -102,6 +103,11 @@ interface Store {
   /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
   stormSeen: boolean
   dismissStorm: () => void
+  /** Ajustes (persistidos): música de fondo y su volumen (0..1). */
+  musicOn: boolean
+  musicVolume: number
+  setMusicOn: (on: boolean) => void
+  setMusicVolume: (v: number) => void
   /** El viaje a la isla de la Liebre (no se guarda). */
   trip: Trip
   /** Momento (ms de reloj de pantalla) en que empezó el viaje en curso. */
@@ -199,6 +205,10 @@ export const useGame = create<Store>()(
         focusPoint: null,
         stormSeen: false,
         dismissStorm: () => set({ stormSeen: true }),
+        musicOn: true,
+        musicVolume: 0.6,
+        setMusicOn: (on) => set({ musicOn: on }),
+        setMusicVolume: (v) => set({ musicVolume: Math.min(1, Math.max(0, v)) }),
         trip: 'home',
         tripStartMs: 0,
         travelToLiebre: () => {
@@ -467,7 +477,7 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen }),
+      partialize: (s) => ({ game: s.game, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, musicOn: s.musicOn, musicVolume: s.musicVolume }),
     },
   ),
 )

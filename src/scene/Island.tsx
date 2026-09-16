@@ -93,7 +93,7 @@ function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number
  * La cámara vuela suavemente hacia el lugar activo. En la vista de isla el jugador puede girar
  * y acercarse; al entrar en un lugar la cámara se coloca de frente y los controles se apagan.
  */
-const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio', 'liebre'])
+const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio', 'liebre', 'ajustes'])
 
 function CameraRig({ controls, positions, terrain }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3>; terrain: Terrain }) {
   /** Vista cercana de un punto del suelo (pista de bellota): mismo ángulo que la vista general, mucho más cerca. */

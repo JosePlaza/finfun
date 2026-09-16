@@ -1756,6 +1756,57 @@ function LiebrePanel() {
   )
 }
 
+/* ───────────────────────── Ajustes ───────────────────────── */
+
+function AjustesPanel() {
+  const musicOn = useGame((s) => s.musicOn)
+  const volume = useGame((s) => s.musicVolume)
+  const setMusicOn = useGame((s) => s.setMusicOn)
+  const setMusicVolume = useGame((s) => s.setMusicVolume)
+  const pct = Math.round(volume * 100)
+  return (
+    <Sheet title="Ajustes" tone="blue">
+      <SectionTitle>Sonido</SectionTitle>
+      <div className="g-inset p-3.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="g-icon g-icon--blue shrink-0" aria-hidden="true">
+            🎵
+          </span>
+          <div className="min-w-0">
+            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Música</div>
+            <div className="text-[12px] font-semibold text-ink-l leading-snug">{musicOn ? 'Sonando en la isla' : 'En silencio'}</div>
+          </div>
+        </div>
+        <button type="button" role="switch" aria-checked={musicOn} aria-label="Música" className="g-switch" onClick={() => setMusicOn(!musicOn)} />
+      </div>
+      {musicOn && (
+        <div className="g-inset p-3.5 mt-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Volumen</div>
+            <div className="font-display font-extrabold text-ink-l text-[14px] tabular-nums">{pct} %</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="text-lg leading-none">🔈</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={pct}
+              aria-label="Volumen de la música"
+              className="g-slider flex-1"
+              style={{ ['--pct' as string]: `${pct}%` }}
+              onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
+            />
+            <span aria-hidden="true" className="text-lg leading-none">🔊</span>
+          </div>
+        </div>
+      )}
+      <p className="text-[12px] font-bold text-ink-3 mt-3 mb-0">Los ajustes se guardan en este dispositivo.</p>
+    </Sheet>
+  )
+}
+
 export function Panels() {
   const view = useGame((s) => s.view)
   switch (view) {
@@ -1793,6 +1844,8 @@ export function Panels() {
       return <PatrimonioPanel />
     case 'liebre':
       return <LiebrePanel />
+    case 'ajustes':
+      return <AjustesPanel />
     default:
       return null
   }

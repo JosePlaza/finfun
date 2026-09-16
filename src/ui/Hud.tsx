@@ -78,6 +78,9 @@ export function TopBar() {
             <span className="g-hud-btn__icon" aria-hidden="true">🔔</span>
             {events.length > 0 && <span className="g-badge">{events.length}</span>}
           </button>
+          <button type="button" onClick={() => setView('ajustes')} className="pointer-events-auto g-hud-btn g-hud-btn--blue" aria-label="Ajustes" title="Ajustes">
+            <span className="g-hud-btn__icon" aria-hidden="true">⚙️</span>
+          </button>
         </div>
       )}
     </div>
