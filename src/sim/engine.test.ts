@@ -23,6 +23,8 @@ import {
   lendToLiebre,
   liebreCanBorrow,
   liebreCtx,
+  migrate,
+  netWorth,
 } from './engine'
 import { liebreAt } from './liebre'
 import { HUERTO_COST_CENTS, INFLATION_WHEEL_BPS } from './config'
@@ -332,6 +334,23 @@ describe('La isla de la Liebre', () => {
     expect(s.worldOpened[1]).toBe(11)
     expect(s.netWorthHistory.length).toBe(12)
     expect(s.netWorthHistory[11]).toBeGreaterThan(0)
+  })
+  it('una partida antigua reconstruye su historia de patrimonio con los cierres de año', () => {
+    const s = careful(26)
+    const old = structuredClone(s) as Partial<GameState>
+    delete old.netWorthHistory
+    const fixed = migrate(old as GameState)
+    expect(fixed.netWorthHistory.length).toBe(27)
+    expect(fixed.netWorthHistory.every((v) => v >= 0)).toBe(true)
+    // El cierre del año 1 coincide con lo que dice el diario, y hoy con el patrimonio real.
+    const d1 = fixed.diary.find((d) => d.year === 1)!
+    expect(fixed.netWorthHistory[11]).toBe(d1.huchaCents + d1.bankCents)
+    expect(fixed.netWorthHistory[26]).toBe(netWorth(fixed, 26))
+    // Una historia con huecos (-1) también se rellena.
+    const holes = structuredClone(s)
+    holes.netWorthHistory = holes.netWorthHistory.map((v, i) => (i === 26 ? v : -1))
+    const filled = migrate(holes)
+    expect(filled.netWorthHistory.every((v) => v >= 0)).toBe(true)
   })
   it('la visita solo se puede hacer desde el Nivel 2 y cuenta para la misión', () => {
     expect(visitLiebre(fresh(), at(0)).ok).toBe(false)

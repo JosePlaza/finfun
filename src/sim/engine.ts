@@ -121,6 +121,8 @@ export function migrate(state: GameState): GameState {
     state.holdings === undefined ||
     state.fundUnits === undefined ||
     state.worldOpened === undefined ||
+    state.netWorthHistory === undefined ||
+    state.netWorthHistory.some((v) => v < 0) ||
     (state.world >= 2 && !state.bankUnlocked) ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
@@ -167,10 +169,28 @@ function clone(state: GameState): GameState {
   c.liebreLoan ??= null
   c.liebreLoansRepaid ??= 0
   c.liebreLoansLate ??= 0
-  // Partidas anteriores: la historia de patrimonio empieza en el mes actual (la pizarra la dibuja desde ahí).
-  if (!c.netWorthHistory) {
+  // Partidas anteriores: reconstruimos la historia de patrimonio con lo que sabemos (cierres de año del diario y
+  // el valor de hoy), uniendo los puntos en línea recta. Desde ahora se guarda mes a mes.
+  if (!c.netWorthHistory || c.netWorthHistory.some((v) => v < 0)) {
+    const known = c.netWorthHistory ?? []
+    const anchors: [number, number][] = [[0, known[0] >= 0 ? known[0] : 0]]
+    known.forEach((v, m) => {
+      if (m > 0 && v >= 0) anchors.push([m, v])
+    })
+    for (const d of c.diary ?? []) anchors.push([d.year * MONTHS_PER_YEAR - 1, d.huchaCents + d.bankCents + (d.stocksValueCents ?? 0)])
+    for (const p of c.pendingYearEnds ?? []) anchors.push([p.month, p.huchaCents + p.bankCents + (p.stocksValueCents ?? 0)])
+    const last = Math.max(0, c.processedMonth)
+    anchors.push([last, netWorth(c, last)])
+    anchors.sort((a, b) => a[0] - b[0])
     c.netWorthHistory = []
-    for (let m = 0; m <= c.processedMonth; m++) c.netWorthHistory.push(m === c.processedMonth ? netWorth(c, m) : -1)
+    for (let m = 0; m <= last; m++) {
+      let i = 0
+      while (i < anchors.length - 1 && anchors[i + 1][0] < m) i++
+      const [m0, v0] = anchors[i]
+      const [m1, v1] = anchors[Math.min(i + 1, anchors.length - 1)]
+      const t = m1 > m0 ? (m - m0) / (m1 - m0) : 1
+      c.netWorthHistory.push(Math.round(v0 + (v1 - v0) * Math.min(1, Math.max(0, t))))
+    }
   }
   // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
   if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true

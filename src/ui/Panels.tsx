@@ -1568,8 +1568,10 @@ function TwoLines({ mine, hers }: { mine: number[]; hers: number[] }) {
   const all = [...mine.filter((v) => v >= 0), ...hers]
   const max = Math.max(1, ...all)
   const pt = (i: number, v: number) => `${(i / (n - 1)) * (W - 8) + 4},${H - 6 - (Math.max(0, v) / max) * (H - 14)}`
-  const minePts = mine.map((v, i) => (v >= 0 ? pt(i, v) : null)).filter(Boolean).join(' ')
+  const mineKnown = mine.map((v, i) => (v >= 0 ? pt(i, v) : null)).filter(Boolean) as string[]
+  const minePts = mineKnown.join(' ')
   const hersPts = hers.map((v, i) => pt(i, v)).join(' ')
+  const single = mineKnown.length === 1 ? mineKnown[0].split(',').map(Number) : null
   return (
     <div className="g-inset p-3">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block" role="img" aria-label="Patrimonio tuyo y de la Liebre mes a mes">
@@ -1577,7 +1579,8 @@ function TwoLines({ mine, hers }: { mine: number[]; hers: number[] }) {
           <line key={k} x1="4" x2={W - 4} y1={H - 6 - k * (H - 14)} y2={H - 6 - k * (H - 14)} stroke="rgba(60,50,40,0.12)" strokeWidth="1" />
         ))}
         <polyline points={hersPts} fill="none" stroke="#f2951c" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="7 5" />
-        {minePts && <polyline points={minePts} fill="none" stroke="#5fa11e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />}
+        {mineKnown.length > 1 && <polyline points={minePts} fill="none" stroke="#5fa11e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />}
+        {single && <circle cx={single[0]} cy={single[1]} r="5" fill="#5fa11e" stroke="#fff" strokeWidth="2" />}
       </svg>
       <div className="flex items-center justify-between text-[11px] font-extrabold mt-1">
         <span className="text-green-d">— Tú</span>
