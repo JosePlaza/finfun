@@ -1,7 +1,7 @@
 # Finfun · Operativa de cada edificio
 
 Qué hace el jugador en cada lugar de la isla, qué enseña y con qué números. Los niveles se abren completando las misiones
-del anterior (`src/sim/missions.ts`). Las cifras están en euroLukys (eL); un día real es un mes de isla.
+del anterior (`src/sim/missions.ts`). Las cifras están en euroLukys (eL); un día real es un mes de isla (el mes cambia a medianoche, hora local).
 
 Estado de implementación: **[hecho]** funciona en el juego · **[diseño]** definido aquí, pendiente de código.
 

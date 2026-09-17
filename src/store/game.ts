@@ -29,6 +29,7 @@ import {
   lendToLiebre as simLendToLiebre,
   LIEBRE_VISIT_WORLD,
   TASK_ACORNS,
+  SHOP_ITEMS,
   missionsFor,
   withdraw as simWithdraw,
   type ActionResult,
@@ -37,6 +38,7 @@ import {
 } from '../sim'
 import type { BuildingId } from '../scene/registry'
 import { dayAcornSpots } from '../scene/acorns'
+import { playCoinSfx } from '../ui/Music'
 import { currentAccount, deleteRemote, hasSupabase, loadRemote, onAuthChange, saveRemote, serverNow, signIn as sbSignIn, signOut as sbSignOut, signUp as sbSignUp, syncClock, type Account } from '../lib/supabase'
 import { netWorth } from '../sim'
 
@@ -415,7 +417,9 @@ export const useGame = create<Store>()(
         collect: () => {
           const g = get().game
           if (!g) return
-          apply(collectMailbox(g, now()))
+          const r = collectMailbox(g, now())
+          if (r.ok) playCoinSfx('moneda')
+          apply(r)
         },
         deposit: (cents) => {
           const g = get().game
@@ -430,7 +434,14 @@ export const useGame = create<Store>()(
         buy: (itemId) => {
           const g = get().game
           if (!g) return
-          apply(simBuy(g, now(), itemId))
+          const def = SHOP_ITEMS.find((i) => i.id === itemId)
+          const price = g.shop.find((i) => i.id === itemId)?.priceCents ?? def?.basePriceCents ?? 0
+          const r = simBuy(g, now(), itemId)
+          if (r.ok) {
+            playCoinSfx('compra')
+            const extra = def?.kind === 'comida' ? ` · +${def.foodMonths ?? 1} ${def.foodMonths === 1 ? 'mes' : 'meses'} de comida` : ''
+            apply(r, `${def?.icon ?? '🛍️'} ${def?.name ?? 'Compra'} · −${formatCents(price, { alwaysDecimals: true })}${extra}`)
+          } else apply(r)
         },
         pickAcorn: (index) => {
           const g = get().game

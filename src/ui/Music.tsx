@@ -182,6 +182,35 @@ export function playEventSfx(force = false) {
 }
 
 /**
+ * Tintineo de monedas sintetizado (comprar, recoger la paga): dos notas cortas y brillantes por la ganancia de
+ * efectos. No necesita fichero, así que suena al instante.
+ */
+export function playCoinSfx(kind: 'compra' | 'moneda' = 'compra') {
+  const { sfxOn, sfxVolume } = useGame.getState()
+  if (!sfxOn) return
+  const e = getEngine()
+  if (!e) return
+  void resumeEngine().then(() => {
+    setGain(e.sfx, sfxVolume)
+    const t0 = e.ctx.currentTime + 0.01
+    const notes = kind === 'compra' ? [[1046.5, 0], [1568, 0.09]] : [[1318.5, 0], [1760, 0.07], [2093, 0.14]]
+    for (const [freq, at] of notes) {
+      const osc = e.ctx.createOscillator()
+      const env = e.ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(freq, t0 + at)
+      env.gain.setValueAtTime(0.0001, t0 + at)
+      env.gain.exponentialRampToValueAtTime(0.5, t0 + at + 0.012)
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.28)
+      osc.connect(env)
+      env.connect(e.sfx)
+      osc.start(t0 + at)
+      osc.stop(t0 + at + 0.3)
+    }
+  })
+}
+
+/**
  * Vigila los eventos pendientes: cuando aparece uno que no estaba (paga en el buzón, dividendo, ruleta…),
  * suena el aviso. Los que ya había al abrir el juego no suenan.
  */

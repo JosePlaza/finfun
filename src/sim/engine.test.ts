@@ -60,11 +60,16 @@ function careful(untilMonth: number, from: GameState = fresh(), spin = true): Ga
 }
 
 describe('calendario', () => {
-  it('un día real es un mes de isla', () => {
+  it('un día natural es un mes de isla: el mes cambia a medianoche (hora local), no 24 h después de crear la isla', () => {
     expect(monthAt(EPOCH, EPOCH)).toBe(0)
-    expect(monthAt(at(0, MONTH_MS - 1), EPOCH)).toBe(0)
     expect(monthAt(at(1), EPOCH)).toBe(1)
     expect(monthAt(at(25, 1000), EPOCH)).toBe(25)
+    // Isla creada a las 21:00 (hora local): a las 9:00 del día siguiente ya es el mes 1, aunque hayan pasado 12 h.
+    const evening = new Date(2026, 8, 13, 21, 0, 0).getTime()
+    const nextMorning = new Date(2026, 8, 14, 9, 0, 0).getTime()
+    expect(monthAt(nextMorning, evening)).toBe(1)
+    // Y a las 23:59 del mismo día sigue siendo el mes 0.
+    expect(monthAt(new Date(2026, 8, 13, 23, 59, 0).getTime(), evening)).toBe(0)
   })
   it('nunca devuelve meses negativos', () => {
     expect(monthAt(EPOCH - 5000, EPOCH)).toBe(0)
@@ -78,9 +83,11 @@ describe('calendario', () => {
     expect(calendarOf(12)).toMatchObject({ year: 2, monthOfYear: 1, season: 'invierno' }) // enero del año 2
     expect(MONTH_NAMES[calendarOf(11).monthOfYear - 1]).toBe('diciembre')
   })
-  it('cuenta atrás hasta el siguiente mes', () => {
-    expect(msUntilNextMonth(EPOCH, EPOCH)).toBe(MONTH_MS)
-    expect(msUntilNextMonth(at(3, 1000), EPOCH)).toBe(MONTH_MS - 1000)
+  it('cuenta atrás hasta el siguiente mes: la próxima medianoche local', () => {
+    const t = new Date(2026, 8, 13, 22, 0, 0).getTime()
+    expect(msUntilNextMonth(t, EPOCH)).toBe(2 * 60 * 60 * 1000)
+    const midnight = new Date(2026, 8, 14, 0, 0, 0).getTime()
+    expect(msUntilNextMonth(midnight, EPOCH)).toBe(MONTH_MS)
   })
 })
 
