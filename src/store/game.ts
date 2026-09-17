@@ -38,7 +38,7 @@ import {
 } from '../sim'
 import type { BuildingId } from '../scene/registry'
 import { dayAcornSpots } from '../scene/acorns'
-import { playCoinSfx } from '../ui/Music'
+import { playAcornSfx, playCoinSfx } from '../ui/Music'
 import { currentAccount, deleteRemote, hasSupabase, loadRemote, onAuthChange, saveRemote, serverNow, signIn as sbSignIn, signOut as sbSignOut, signUp as sbSignUp, syncClock, type Account } from '../lib/supabase'
 import { netWorth } from '../sim'
 
@@ -452,11 +452,12 @@ export const useGame = create<Store>()(
           if (found.includes(index)) return
           const next = [...found, index]
           set({ acornsFound: next })
+          playAcornSfx()
           if (next.length >= TASK_ACORNS) {
             const r = completeTask(g, t)
             if (r.ok) {
               const reward = r.state.huchaCents - g.huchaCents
-              apply(r)
+              apply(r, `🌰 ¡Encontraste una bellota! · ${TASK_ACORNS} de ${TASK_ACORNS} · +${formatCents(reward)} eL`)
               get().celebrate({
                 icon: '🌰',
                 title: '¡Las cinco bellotas!',
@@ -465,7 +466,7 @@ export const useGame = create<Store>()(
               })
             }
           } else {
-            get().showToast(`Bellota ${next.length} de ${TASK_ACORNS}`)
+            get().showToast(`🌰 ¡Encontraste una bellota! · ${next.length} de ${TASK_ACORNS}`)
           }
           if (get().acornHint === index) set({ acornHint: null, focusPoint: null })
         },

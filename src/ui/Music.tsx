@@ -210,6 +210,59 @@ export function playCoinSfx(kind: 'compra' | 'moneda' = 'compra') {
   })
 }
 
+/** Ráfaga corta de ruido filtrado (el "pop"). */
+function popNoise(e: Engine, at: number, dur: number, gain: number, freq: number, q: number) {
+  const len = Math.ceil(e.ctx.sampleRate * dur)
+  const buf = e.ctx.createBuffer(1, len, e.ctx.sampleRate)
+  const d = buf.getChannelData(0)
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len)
+  const src = e.ctx.createBufferSource()
+  src.buffer = buf
+  const f = e.ctx.createBiquadFilter()
+  f.type = 'bandpass'
+  f.frequency.value = freq
+  f.Q.value = q
+  const g = e.ctx.createGain()
+  g.gain.setValueAtTime(gain, at)
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  src.connect(f)
+  f.connect(g)
+  g.connect(e.sfx)
+  src.start(at)
+  src.stop(at + dur + 0.02)
+}
+
+function blip(e: Engine, opts: { type: OscillatorType; from: number; to?: number; at: number; dur: number; gain: number }) {
+  const o = e.ctx.createOscillator()
+  const g = e.ctx.createGain()
+  o.type = opts.type
+  o.frequency.setValueAtTime(opts.from, opts.at)
+  if (opts.to && opts.to !== opts.from) o.frequency.exponentialRampToValueAtTime(opts.to, opts.at + opts.dur)
+  g.gain.setValueAtTime(0.0001, opts.at)
+  g.gain.exponentialRampToValueAtTime(opts.gain, opts.at + 0.008)
+  g.gain.exponentialRampToValueAtTime(0.0001, opts.at + opts.dur)
+  o.connect(g)
+  g.connect(e.sfx)
+  o.start(opts.at)
+  o.stop(opts.at + opts.dur + 0.05)
+}
+
+/** "Pop mágico": encontrar una bellota. Un pop de corcho y un brillo ascendente de cuatro notas (do-mi-sol-do). */
+export function playAcornSfx() {
+  const { sfxOn, sfxVolume } = useGame.getState()
+  if (!sfxOn) return
+  const e = getEngine()
+  if (!e) return
+  void resumeEngine().then(() => {
+    setGain(e.sfx, sfxVolume)
+    const t = e.ctx.currentTime + 0.02
+    popNoise(e, t, 0.06, 0.7, 900, 0.8)
+    blip(e, { type: 'sine', from: 300, to: 620, at: t, dur: 0.07, gain: 0.35 })
+    const arp = [1046.5, 1318.5, 1568, 2093]
+    arp.forEach((f, i) => blip(e, { type: 'triangle', from: f, at: t + 0.09 + i * 0.04, dur: 0.16, gain: 0.22 }))
+  })
+}
+
 /**
  * Vigila los eventos pendientes: cuando aparece uno que no estaba (paga en el buzón, dividendo, ruleta…),
  * suena el aviso. Los que ya había al abrir el juego no suenan.
