@@ -217,13 +217,12 @@ describe('tienda y tareas', () => {
     expect(must(r).bankUnlocked).toBe(true)
     expect(deposit(must(r), at(6), 10_00).ok).toBe(true)
   })
-  it('la tarea diaria se hace una vez por mes de isla y paga 1–3 euroLukys', () => {
+  it('la tarea diaria se hace una vez por mes de isla y paga 2 euroLukys', () => {
     const s0 = advanceTo(fresh(), at(0))
     const r1 = completeTask(s0, at(0))
     expect(r1.ok).toBe(true)
     const s1 = must(r1)
-    expect(s1.huchaCents).toBeGreaterThanOrEqual(1_00)
-    expect(s1.huchaCents).toBeLessThanOrEqual(3_00)
+    expect(s1.huchaCents).toBe(2_00)
     expect(completeTask(s1, at(0, 1000)).ok).toBe(false)
     expect(completeTask(s1, at(1)).ok).toBe(true)
   })

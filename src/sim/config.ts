@@ -24,9 +24,9 @@ export const INFLATION_WHEEL_BPS = [150, 200, 250, 300, 350, 400]
 /** Retención de Hacienda sobre rendimientos (19 %). Se activa en el Nivel 2. */
 export const RETENTION_BPS = 1900
 
-/** La tarea diaria (recoger bellotas) paga entre 1 y 3 euroLukys. */
-export const TASK_MIN_CENTS = 1_00
-export const TASK_MAX_CENTS = 3_00
+/** La tarea diaria (recoger las cinco bellotas) paga 2 euroLukys. */
+export const TASK_MIN_CENTS = 2_00
+export const TASK_MAX_CENTS = 2_00
 export const TASK_ACORNS = 5
 
 /** El banco se abre al cerrar el primer año de isla. */

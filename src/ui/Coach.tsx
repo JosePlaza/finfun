@@ -62,7 +62,7 @@ export function Coach() {
     // Aviso plegado, arriba, para que se vea qué toca hacer sin tapar el panel.
     return (
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 safe-top flex justify-center px-3">
-        <div className="coach-mini pointer-events-auto" style={{ marginTop: 'calc(env(safe-area-inset-top, 0px) + 72px)' }}>
+        <div className="coach-mini pointer-events-auto" style={{ marginTop: 'calc(env(safe-area-inset-top, 0px) + 164px)' }}>
           <span className="coach-mini__avatar" aria-hidden="true">
             🐢
           </span>
