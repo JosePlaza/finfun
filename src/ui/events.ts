@@ -31,9 +31,6 @@ export function pendingEvents(game: GameState, acornsLeft: number, seen: { seenD
   if (acornsLeft > 0) {
     out.push({ id: 'bellotas', icon: '🌰', title: 'Bellotas escondidas', detail: `Quedan ${acornsLeft} de ${TASK_ACORNS}. Recógelas y gana dinero. Pista: te señala una. Resolver: las enseña todas, sin premio.`, view: 'isla', tone: 'green' })
   }
-  if (game.bankUnlocked && !seen.seenBankOpen) {
-    out.push({ id: 'banco', icon: '🏦', title: '¡El banco ha abierto!', detail: 'Ya puedes llevar tu dinero y verlo crecer.', view: 'banco', tone: 'blue' })
-  }
   const lastHuerto = game.ledger.filter((e) => e.kind === 'huerto' && e.amountCents === 0).slice(-1)[0]
   if (lastHuerto && lastHuerto.month === game.processedMonth) {
     out.push({ id: 'huerto', icon: '🌾', title: 'El huerto ha dado una cesta', detail: 'Ya está en tu despensa: dos meses más de comida sin pagar nada.', view: 'huerto', tone: 'green' })

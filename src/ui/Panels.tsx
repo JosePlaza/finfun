@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
   BANK_RATE_BPS,
-  BANK_UNLOCK_MONTH,
   BOND_OFFERS,
   bondCoupon,
   bondsTotal,
@@ -318,7 +317,7 @@ function PatrimonioPanel() {
               <div className="flex-1 min-w-0">
                 <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{r.name}</div>
                 {locked ? (
-                  <div className="text-[12px] font-bold text-ink-3">{r.world === 1 ? 'Abre al terminar el año 1 (o al llegar al Nivel 2)' : `Se abre en el Nivel ${r.world}`}</div>
+                  <div className="text-[12px] font-bold text-ink-3">{`Se abre en el Nivel ${r.world}`}</div>
                 ) : (
                   <>
                     <div className="g-bar g-bar--sm g-bar--orange mt-1">
@@ -590,33 +589,10 @@ const QUICK = [5_00, 10_00, 20_00, 50_00]
 
 function BancoPanel() {
   const game = useGame((s) => s.game)!
-  const nowMs = useGame((s) => s.nowMs)
   const deposit = useGame((s) => s.deposit)
   const withdraw = useGame((s) => s.withdraw)
   const [mode, setMode] = useState<'meter' | 'sacar'>('meter')
   const [custom, setCustom] = useState('')
-
-  if (!game.bankUnlocked) {
-    const month = currentMonth(game, nowMs)
-    const daysLeft = Math.max(1, BANK_UNLOCK_MONTH - 1 - month)
-    return (
-      <Sheet title="Banco · en obras" tone="sky">
-        <div className="g-inset p-4 text-center">
-          <div className="text-4xl mb-1">🏗️</div>
-          <div className="g-title text-lg">En construcción</div>
-          <div className="text-ink-l font-bold text-sm mt-1">
-            Abre al terminar el año 1: {daysLeft <= 1 ? 'mañana' : `en ${daysLeft} días`}. También abre antes si llegas al Nivel 2 con la bici.
-          </div>
-        </div>
-        <div className="mt-4">
-          <Tortuga>
-            El banco guarda tu dinero como el cofre, pero cada mes te da un poquito más solo por tenerlo allí. Mientras tanto, ve ahorrando:
-            cuando abra, tendrás algo que llevar.
-          </Tortuga>
-        </div>
-      </Sheet>
-    )
-  }
 
   const source = mode === 'meter' ? game.huchaCents : game.bankCents
   const parsed = Math.round(parseFloat(custom.replace(',', '.')) * 100)

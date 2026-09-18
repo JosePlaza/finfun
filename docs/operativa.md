@@ -35,12 +35,12 @@ plusvalías). El jugador elige el modo en Hacienda.
 | --- | --- | --- |
 | **Casa** [hecho] | Recoger la paga (30 eL/mes, se acumula). Ver la despensa y "Mis cosas". | La paga es el ingreso; primero lo necesario. |
 | **Cueva del cofre** [hecho] | Ahorro sin interés. Movimientos. | Guardar es seguro pero no crece; la inflación lo erosiona. |
-| **Banco de la Isla** [hecho] | Abre al cerrar el año 1, o antes si se llega al Nivel 2. Cuenta remunerada 2,5 % anual pagado por meses. Meter/sacar sin límite. | Interés simple → compuesto. Liquidez. |
+| **Banco de la Isla** [hecho] | Abierto desde el primer día. Cuenta remunerada 2,5 % anual pagado por meses. Meter/sacar sin límite. | Interés simple → compuesto. Liquidez. |
 | **Tienda** [hecho] | Comida (cestas) y deseos (helado 2, cometa 25, balón 40, bici 180, telescopio 450). Precios con inflación y precio viejo tachado. IVA informativo. | Necesidad vs deseo; inflación en los precios. |
 | **Faro (Doña Tortuga)** [hecho] | Diario de cierre de año con el "¿y si…?" contrafactual. Ayuda. | Coste de oportunidad. |
 | **Huerto** [hecho] | Construcción que paga el jugador: **1000 eL**. Da una cesta grande (2 meses de comida) cada 3 meses, para siempre. **Ampliación (1500 eL)**: invernadero, colmenas y otra vaca; pasa a 3 meses de comida por trimestre, justo lo que se come: la despensa se llena sola y el juego lo celebra como **independencia financiera**. | Un activo real que produce: rentabilidad ≈ 3,8 %/año en comida, y sube con la inflación. Cuando lo que producen tus inversiones cubre lo que necesitas, eres libre. |
 
-Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 100 en el cofre · comida para 3 meses · **la bici abre el Nivel 2**. Todas se pueden hacer desde el primer día: el banco no abre hasta cerrar el año, así que su misión va en el Nivel 2.
+Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar algo · 50 en el banco · 100 entre cofre y banco · comida para 3 meses · **la bici abre el Nivel 2**. Todas se pueden hacer desde el primer día.
 
 ---
 
@@ -52,7 +52,7 @@ Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar a
 | **Hacienda (Don Búho)** [hecho] | Elegir cómo pagar el 19 %: **en cada cobro** (retención instantánea) o **una vez al año** (todo bruto, declaración al cerrar el año; si no hay dinero queda deuda que se cobra en cuanto lo hay). Historial de declaraciones. | Los impuestos existen y financian lo común; diferir el pago deja más dinero componiendo. |
 | **Escuela** [hecho] | Seis lecciones cortas (inflación, interés compuesto, bono, impuestos, riesgo, comida). Leer una da un carné. | Vocabulario y conceptos, con calma. |
 
-Misiones N2: 50 en el banco · primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
+Misiones N2: cobrar tres meses de interés · primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
 
 Diseño pendiente N2: **visitar la isla de la Liebre** — ver la sección al final.
 

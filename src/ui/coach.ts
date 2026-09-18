@@ -28,7 +28,7 @@ export const COACH_STEPS: CoachStep[] = [
     id: 'llegada',
     target: null,
     title: '¡Bienvenido a tu isla!',
-    text: 'Soy Doña Tortuga. Aquí vas a aprender a manejar tu dinero jugando, sin prisa: este juego se juega diez minutos al día, muchos días. Te enseño lo básico en cinco pasos.',
+    text: 'Soy Doña Tortuga. Aquí vas a aprender a manejar tu dinero jugando, sin prisa: este juego se juega diez minutos al día, muchos días. Te enseño lo básico en seis pasos.',
     next: 'Vamos',
   },
   {
@@ -51,9 +51,17 @@ export const COACH_STEPS: CoachStep[] = [
     id: 'cofre',
     target: 'cofre',
     title: 'Tu cofre',
-    text: 'Lo que no gastas se guarda en la cueva. Aquí está seguro… pero no crece. Más adelante aprenderás a hacer que tu dinero trabaje.',
+    text: 'Lo que no gastas se guarda en la cueva. Aquí está seguro… pero no crece. Al lado tienes un sitio donde sí crece.',
     action: 'Toca la cueva del cofre para verlo.',
     done: (_g, ui) => ui.visited.has('cofre'),
+  },
+  {
+    id: 'banco',
+    target: 'banco',
+    title: 'El banco',
+    text: 'El Banco de la Isla guarda tu dinero igual que el cofre, pero cada mes te da un poquito más solo por tenerlo allí: un 2,5 % al año. Es el dinero trabajando mientras tú duermes.',
+    action: 'Entra en el banco y mete algo de dinero.',
+    done: (g) => g.bankCents > 0,
   },
   {
     id: 'bellotas',

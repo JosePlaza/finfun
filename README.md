@@ -16,7 +16,7 @@ Sin configurar nada, el juego funciona en **modo local**: guarda la partida en e
 
 ### Modo de pruebas
 
-Con `npm run dev` (o añadiendo `?dev` a la URL en producción si `VITE_ALLOW_DEV=true`) aparece una barra que permite adelantar el reloj de la isla (+1, +3, +12 días) y borrar la partida. `?hour=22` fuerza la hora del día para ver la isla de noche (ventanas encendidas, haz del faro). Así se puede ver un año completo en un minuto: estaciones, inflación, apertura del banco y diario.
+Con `npm run dev` (o añadiendo `?dev` a la URL en producción si `VITE_ALLOW_DEV=true`) aparece una barra que permite adelantar el reloj de la isla (+1, +3, +12 días) y borrar la partida. `?hour=22` fuerza la hora del día para ver la isla de noche (ventanas encendidas, haz del faro). Así se puede ver un año completo en un minuto: estaciones, inflación y diario.
 
 ### Supabase + Vercel (para jugar de verdad)
 
@@ -96,7 +96,7 @@ panel; la ✕ roja devuelve la vista general, donde se puede girar (un dedo) y a
 Casa (la paga flota en un bocadillo sobre el tejado; dentro, "Mis cosas"), Cofre en la cueva (ahorro), Banco (cuenta remunerada), Tienda (catálogo con tarjetas; la barca mercante del muelle trae la mercancía) y Faro de Doña Tortuga (diario y ayuda).
 
 HUD (`src/ui/Hud.tsx`): arriba a la izquierda, el nombre de la isla y el año/mes; debajo, en vertical, los botones **Misiones** y **Eventos**
-(este último con un bullet rojo animado y el número de cosas pendientes: paga en el buzón, bellotas, banco recién abierto, diario nuevo,
+(este último con un bullet rojo animado y el número de cosas pendientes: paga en el buzón, bellotas, diario nuevo,
 misión completada, nivel nuevo — calculado en `src/ui/events.ts`). Arriba a la derecha, los **seis corazones** de salud (con comida en la despensa están todos; cada mes sin comer se apaga uno y los que quedan laten; al pulsarlos se va a la tienda) y el **patrimonio**: al pulsarlo se desglosa dónde está
 cada parte (cofre, banco, bonos, acciones, fondo; los que aún no existen aparecen bloqueados con el nivel en que abren).
 

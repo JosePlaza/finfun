@@ -29,8 +29,6 @@ export const TASK_MIN_CENTS = 2_00
 export const TASK_MAX_CENTS = 2_00
 export const TASK_ACORNS = 5
 
-/** El banco se abre al cerrar el primer año de isla. */
-export const BANK_UNLOCK_MONTH = 12
 
 /** Comida: meses de despensa que da cada cesta y comida con la que se empieza. */
 export const FOOD_START_MONTHS = 3
@@ -92,7 +90,7 @@ export const WORLD2_UNLOCK_ITEM = 'bici'
 /* ───────────────────────── Recorrido inicial ───────────────────────── */
 
 /** Número de pasos del recorrido con Doña Tortuga; `tutorialStep >= TUTORIAL_DONE` = terminado. */
-export const TUTORIAL_DONE = 7
+export const TUTORIAL_DONE = 8
 
 /* ───────────────────────── Compartir ───────────────────────── */
 

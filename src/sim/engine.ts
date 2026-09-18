@@ -1,6 +1,5 @@
 import {
   BANK_RATE_BPS,
-  BANK_UNLOCK_MONTH,
   BOND_COUPON_EVERY,
   BOND_OFFERS,
   FOOD_START_MONTHS,
@@ -49,7 +48,7 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     huchaCents: 0,
     mailboxCents: 0,
     bankCents: 0,
-    bankUnlocked: false,
+    bankUnlocked: true,
     taxesUnlocked: false,
     shop: SHOP_ITEMS.map((i) => ({ id: i.id, priceCents: i.basePriceCents, previousPriceCents: i.basePriceCents })),
     purchases: [],
@@ -132,7 +131,7 @@ export function migrate(state: GameState): GameState {
     state.netWorthHistory === undefined ||
     state.tutorialStep === undefined ||
     state.netWorthHistory.some((v) => v < 0) ||
-    (state.world >= 2 && !state.bankUnlocked) ||
+    !state.bankUnlocked ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
   return needs ? clone(state) : state
 }
@@ -212,8 +211,8 @@ function clone(state: GameState): GameState {
       c.netWorthHistory.push(Math.round(v0 + (v1 - v0) * Math.min(1, Math.max(0, t))))
     }
   }
-  // Regla añadida después: en el Nivel 2 el banco siempre está abierto.
-  if (c.world >= 2 && !c.bankUnlocked) c.bankUnlocked = true
+  // Regla añadida después: el banco está abierto desde el primer día.
+  if (!c.bankUnlocked) c.bankUnlocked = true
   // Las cestas de comida se añadieron a la tienda más tarde: las partidas viejas las reciben aquí.
   for (const def of SHOP_ITEMS) {
     if (!c.shop.some((i) => i.id === def.id)) c.shop.push({ id: def.id, priceCents: def.basePriceCents, previousPriceCents: def.basePriceCents })
@@ -546,11 +545,6 @@ function processMonth(state: GameState, month: number) {
     state.yearLossCents = 0
   }
 
-  if (!state.bankUnlocked && month + 1 >= BANK_UNLOCK_MONTH) {
-    state.bankUnlocked = true
-    log(state, { kind: 'banco-abierto', month, amountCents: 0, label: 'Abre el Banco de la Isla' })
-  }
-
   state.processedMonth = month
   // Patrimonio al cierre del mes, para la pizarra "Tú y la Liebre" (una entrada por mes desde el 0).
   state.netWorthHistory ??= []
@@ -702,18 +696,11 @@ export function buy(input: GameState, nowMs: number, itemId: string): ActionResu
   return done(state)
 }
 
-/**
- * El Nivel 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. Y si el banco aún
- * estaba en obras (abre al cerrar el primer año), abre también: en el Nivel 2 no puede haber bonos sin banco.
- */
+/** El Nivel 2 abre el Ayuntamiento y Hacienda: desde ahora los rendimientos tributan. */
 function openWorld2(state: GameState) {
   state.world = 2
   noteWorldOpened(state)
   state.taxesUnlocked = true
-  if (!state.bankUnlocked) {
-    state.bankUnlocked = true
-    log(state, { kind: 'banco-abierto', month: state.processedMonth, amountCents: 0, label: 'Abre el Banco de la Isla (llegaste al Nivel 2)' })
-  }
 }
 
 /** Activa o desactiva la cesta domiciliada (la isla compra sola la cesta pequeña cuando la despensa se vacía). */

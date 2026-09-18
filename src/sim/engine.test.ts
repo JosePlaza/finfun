@@ -160,13 +160,11 @@ describe('inflación', () => {
 })
 
 describe('banco', () => {
-  it('abre al cerrar el primer año', () => {
-    expect(careful(10).bankUnlocked).toBe(false)
-    expect(careful(11).bankUnlocked).toBe(true)
-  })
-  it('no admite depósitos antes de abrir', () => {
-    const r = deposit(advanceTo(fresh(), at(2)), at(2), 100)
-    expect(r.ok).toBe(false)
+  it('está abierto desde el primer día', () => {
+    expect(fresh().bankUnlocked).toBe(true)
+    let s = advanceTo(fresh(), at(0))
+    s = must(collectMailbox(s, at(0)))
+    expect(deposit(s, at(0), 10_00).ok).toBe(true)
   })
   it('paga un 2,5 % anual por meses y no crea dinero de la nada', () => {
     const { gross, net } = monthlyInterest(120_00, false)
@@ -207,15 +205,13 @@ describe('tienda y tareas', () => {
     expect(s.huchaCents).toBe(PAGA_CENTS - 25_00)
     expect(buy(s, at(0), 'cometa').ok).toBe(false) // ya la tiene
   })
-  it('comprar la bici abre el Nivel 2, y con él el banco aunque no haya terminado el año', () => {
+  it('comprar la bici abre el Nivel 2', () => {
     let s = advanceTo(fresh(), at(6))
     s = must(collectMailbox(s, at(6)))
-    expect(s.bankUnlocked).toBe(false)
     const r = buy(s, at(6), 'bici')
     expect(r.ok).toBe(true)
     expect(must(r).world).toBe(2)
-    expect(must(r).bankUnlocked).toBe(true)
-    expect(deposit(must(r), at(6), 10_00).ok).toBe(true)
+    expect(must(r).taxesUnlocked).toBe(true)
   })
   it('la tarea diaria se hace una vez por mes de isla y paga 2 euroLukys', () => {
     const s0 = advanceTo(fresh(), at(0))
@@ -268,7 +264,6 @@ describe('comida y vida', () => {
     expect(poor.hunger).toBe(2)
     // Con el dinero en el banco, la cesta se cobra del banco.
     let banked = createGame({ islandName: 'Isla Banco', seed: 7, epochMs: EPOCH })
-    banked.bankUnlocked = true
     banked = advanceTo(banked, at(0))
     banked = must(collectMailbox(banked, at(0)))
     banked = must(deposit(banked, at(0), PAGA_CENTS))

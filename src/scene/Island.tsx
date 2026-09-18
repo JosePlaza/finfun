@@ -337,7 +337,7 @@ function Scene() {
           case 'casa':
             return <House key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} mailboxCents={game.mailboxCents} onTap={() => setView('casa')} onMailbox={collect} />
           case 'banco':
-            return <Bank key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} unlocked={game.bankUnlocked} cents={game.bankCents} onTap={() => setView('banco')} />
+            return <Bank key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} unlocked cents={game.bankCents} onTap={() => setView('banco')} />
           case 'tienda':
             return <Shop key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} onTap={() => setView('tienda')} />
           case 'cofre':
