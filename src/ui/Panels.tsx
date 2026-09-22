@@ -50,7 +50,7 @@ import { useGame } from '../store/game'
 import { Amount, CoinIcon } from './Coin'
 import { BUILDING_BY_ID, BUILDINGS, WORLD_NAMES, type BuildingId } from '../scene/registry'
 import { pendingEvents } from './events'
-import { playEventSfx } from './Music'
+import { playAcornSfx, playEventSfx } from './Music'
 import { ShareQr } from './ShareQr'
 
 type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'sky'
@@ -1214,7 +1214,8 @@ function quizOrder(seed: number, lessonId: string): number[] {
 
 const QUIZ_LETTERS = ['A', 'B', 'C', 'D']
 
-function LessonQuiz({ lessonId, onClose }: { lessonId: string; onClose: () => void }) {
+/** `practice`: repaso de una lección ya aprendida; se responde igual pero no cambia nada en la partida. */
+function LessonQuiz({ lessonId, practice = false, onClose }: { lessonId: string; practice?: boolean; onClose: () => void }) {
   const game = useGame((s) => s.game)!
   const answerQuiz = useGame((s) => s.answerQuiz)
   const quiz = QUIZZES[lessonId]
@@ -1226,12 +1227,15 @@ function LessonQuiz({ lessonId, onClose }: { lessonId: string; onClose: () => vo
   const choose = (optionIndex: number) => {
     if (picked !== null) return
     setPicked(optionIndex)
-    setResult(answerQuiz(lessonId, optionIndex))
+    if (practice) {
+      setResult(optionIndex === 0)
+      if (optionIndex === 0) playAcornSfx()
+    } else setResult(answerQuiz(lessonId, optionIndex))
   }
 
   return (
     <div className="mt-3 g-inset p-3.5">
-      <div className="g-label mb-1.5">Ponte a prueba</div>
+      <div className="g-label mb-1.5">{practice ? 'Repaso' : 'Ponte a prueba'}</div>
       <p className="m-0 mb-3 font-display font-extrabold text-ink text-[15.5px] leading-snug">{quiz.question}</p>
       <div className="grid gap-2">
         {order.map((optionIndex, i) => {
@@ -1249,7 +1253,7 @@ function LessonQuiz({ lessonId, onClose }: { lessonId: string; onClose: () => vo
       </div>
       {result === true && (
         <div className="mt-3">
-          <Tortuga>¡Eso es! Lección aprendida. Ya tienes un carné más de inversor.</Tortuga>
+          <Tortuga>{practice ? '¡Eso es! Sigues teniéndolo claro.' : '¡Eso es! Lección aprendida. Ya tienes un carné más de inversor.'}</Tortuga>
           <button type="button" onClick={onClose} className="g-btn g-btn--sm g-btn--green mt-2.5">
             Seguir
           </button>
@@ -1257,7 +1261,10 @@ function LessonQuiz({ lessonId, onClose }: { lessonId: string; onClose: () => vo
       )}
       {result === false && (
         <div className="mt-3">
-          <Tortuga>Esa no era. {quiz.hint} Vuelve a leer la lección con calma y mañana lo intentas otra vez.</Tortuga>
+          <Tortuga>
+            Esa no era. {quiz.hint}{' '}
+            {practice ? 'Vuelve a leer la lección con calma; como ya la tenías aprendida, no pasa nada.' : 'Vuelve a leer la lección con calma y mañana lo intentas otra vez.'}
+          </Tortuga>
           <button type="button" onClick={onClose} className="g-btn g-btn--sm g-btn--cream mt-2.5">
             Entendido
           </button>
@@ -1314,7 +1321,7 @@ function EscuelaPanel() {
                 <>
                   <p className="m-0 mt-2 text-[14.5px] font-semibold leading-relaxed text-ink">{l.body}</p>
                   {quizFor === l.id ? (
-                    <LessonQuiz lessonId={l.id} onClose={() => setQuizFor(null)} />
+                    <LessonQuiz lessonId={l.id} practice={done} onClose={() => setQuizFor(null)} />
                   ) : status === 'disponible' ? (
                     <button type="button" onClick={() => setQuizFor(l.id)} className="g-btn g-btn--sm g-btn--orange mt-3 self-start">
                       Ponme a prueba
@@ -1322,7 +1329,12 @@ function EscuelaPanel() {
                   ) : status === 'manana' ? (
                     <div className="mt-3 text-[13px] font-extrabold text-ink-3">🐢 Hoy ya lo has intentado. Mañana, con la lección fresca, lo vuelves a probar.</div>
                   ) : (
-                    <div className="mt-3 text-[13px] font-extrabold text-green-d">🎓 Lección aprendida</div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-extrabold text-green-d">🎓 Lección aprendida</span>
+                      <button type="button" onClick={() => setQuizFor(l.id)} className="g-btn g-btn--sm g-btn--cream">
+                        Repasar
+                      </button>
+                    </div>
                   )}
                 </>
               )}
