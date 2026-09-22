@@ -8,7 +8,7 @@ import { mulberry32 } from '../sim/rng'
 import { isDevMode, useGame } from '../store/game'
 import { PALETTES, type SeasonPalette } from './palette'
 import { BUILDINGS, BUILDING_BY_ID, buildingPositions, cameraPoseFor, fitDistance, ISLAND_VIEW, islandPose, PIER, SITES, type BuildingDef, type BuildingId } from './registry'
-import { makeTerrain, scatter, type Terrain } from './terrain'
+import { ISLAND_RX, ISLAND_RZ, makeTerrain, scatter, type Terrain } from './terrain'
 import { acornSpotsFor, acornSpotsOn } from './acorns'
 import { CoastRocks, Ground, Path, Water } from './Landscape'
 import { Acorn, Beacon, Bush, Flowers, GrassTuft, Palm } from './kit/Nature'
@@ -129,6 +129,8 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
   const focusPoint = useGame((s) => s.focusPoint)
   const trip = useGame((s) => s.trip)
   const tripStartMs = useGame((s) => s.tripStartMs)
+  const recenterSeq = useGame((s) => s.recenterSeq)
+  const setCamOffCenter = useGame((s) => s.setCamOffCenter)
   const { camera, size } = useThree()
   const goalPos = useRef(new THREE.Vector3())
   const goalTarget = useRef(new THREE.Vector3())
@@ -165,7 +167,7 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     const panelOpen = there && view !== 'isla'
     // Los paneles generales (misiones, eventos, patrimonio, ajustes) no mueven la cámara: se queda donde la dejó el jugador.
     const scene = there ? 'liebre' : OVERVIEW_VIEWS.has(view) ? 'isla' : view
-    const key = `${scene}:${there ? (panelOpen ? 'panel' : '') : (target ?? '')}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
+    const key = `${scene}:${there ? (panelOpen ? 'panel' : '') : (target ?? '')}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}:${recenterSeq}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
@@ -192,6 +194,22 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     }
     ctl.enabled = free && !flying.current
     ctl.update()
+    // Desplazamiento libre (dos dedos / botón derecho): el punto que mira la cámara no puede salirse de la isla.
+    if (ctl.enabled && !there) {
+      const t = ctl.target
+      const rx = ISLAND_RX * 1.15
+      const rz = ISLAND_RZ * 1.15
+      const r = Math.hypot(t.x / rx, t.z / rz)
+      if (r > 1) {
+        const nx = t.x / r
+        const nz = t.z / r
+        camera.position.x += nx - t.x
+        camera.position.z += nz - t.z
+        t.x = nx
+        t.z = nz
+      }
+      setCamOffCenter(Math.hypot(t.x / ISLAND_RX, t.z / ISLAND_RZ) > 0.3)
+    } else if (!there && flying.current) setCamOffCenter(false)
     if (isDevMode)
       (window as unknown as { finfunCam: unknown }).finfunCam = {
         flying: flying.current,
@@ -444,7 +462,9 @@ function Scene() {
 
       <OrbitControls
         ref={controls}
-        enablePan={false}
+        enablePan
+        screenSpacePanning={false}
+        panSpeed={0.9}
         enableDamping
         dampingFactor={0.12}
         minDistance={10}

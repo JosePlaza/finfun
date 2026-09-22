@@ -135,6 +135,12 @@ interface Store {
   acornReveal: boolean
   /** Punto de la isla al que vuela la cámara (pista de bellota); null = vista general. */
   focusPoint: [number, number] | null
+  /** La cámara se ha desplazado lejos del centro de la isla (para ofrecer "Centrar"). */
+  camOffCenter: boolean
+  setCamOffCenter: (v: boolean) => void
+  /** Cada pulsación de "Centrar" sube este contador y la cámara vuelve a la vista general. */
+  recenterSeq: number
+  recenter: () => void
   /** ¿Se ha enseñado ya la pantalla de La Tormenta? (persistido) */
   stormSeen: boolean
   dismissStorm: () => void
@@ -369,6 +375,12 @@ export const useGame = create<Store>()(
           }
         },
         setFocusPoint: (p) => set({ focusPoint: p }),
+        camOffCenter: false,
+        setCamOffCenter: (v) => {
+          if (get().camOffCenter !== v) set({ camOffCenter: v })
+        },
+        recenterSeq: 0,
+        recenter: () => set((s) => ({ recenterSeq: s.recenterSeq + 1, focusPoint: null })),
         setAutoFood: (on) => {
           const g = get().game
           if (!g) return
