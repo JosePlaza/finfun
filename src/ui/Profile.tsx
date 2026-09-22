@@ -95,6 +95,44 @@ export function PerfilContent() {
       )}
 
       {game && <Insignias />}
+      {account && <Cuenta />}
+    </>
+  )
+}
+
+/* ───────────────────────── Cuenta ───────────────────────── */
+
+/** Correo de la cuenta y cerrar sesión, con una confirmación para que un toque sin querer no saque al niño del juego. */
+function Cuenta() {
+  const account = useGame((s) => s.account)!
+  const signOut = useGame((s) => s.signOut)
+  const [asking, setAsking] = useState(false)
+  return (
+    <>
+      <h3 className="m-0 mt-5 mb-2 font-display font-extrabold text-ink text-[19px] leading-tight">Cuenta</h3>
+      <div className="g-inset p-3.5">
+        <div className="text-[12px] font-extrabold text-ink-3 uppercase tracking-wide">Correo</div>
+        <div className="font-display font-extrabold text-ink text-[15px] leading-tight truncate">{account.email}</div>
+        {asking ? (
+          <div className="mt-3">
+            <p className="m-0 text-[13px] font-semibold text-ink-l leading-snug">
+              Tu isla queda guardada en la cuenta: al volver a entrar seguirás donde lo dejaste. ¿Cerrar sesión?
+            </p>
+            <div className="flex gap-2 mt-2.5">
+              <button type="button" onClick={() => void signOut()} className="g-btn g-btn--red g-btn--sm">
+                Sí, cerrar sesión
+              </button>
+              <button type="button" onClick={() => setAsking(false)} className="g-btn g-btn--cream g-btn--sm">
+                No
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAsking(true)} className="g-btn g-btn--cream g-btn--sm g-btn--block mt-3">
+            Cerrar sesión
+          </button>
+        )}
+      </div>
     </>
   )
 }
