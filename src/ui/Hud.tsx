@@ -9,7 +9,7 @@ const SEASON_EMOJI: Record<string, string> = { primavera: '🌸', verano: '☀�
 
 /**
  * HUD del juego. Arriba a la izquierda: la isla y la fecha, y debajo los botones de Misiones y Eventos
- * (con bullet rojo cuando hay algo pendiente). Arriba a la derecha: el patrimonio, que se desglosa al pulsar.
+ * (con bullet rojo cuando hay algo pendiente). Arriba a la derecha: la salud y el patrimonio (que se desglosa al pulsar). Debajo, dos botones a cada lado a la misma altura: Misiones y Eventos a la izquierda, Perfil y Ajustes a la derecha.
  * No hay menú inferior: por la isla se navega tocando los edificios.
  */
 export function TopBar() {
@@ -37,35 +37,76 @@ export function TopBar() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 safe-top px-3">
-      <div className="flex items-start justify-between gap-2">
+      {/* Rejilla de dos columnas: arriba las píldoras, debajo dos botones a cada lado, siempre a la misma altura. */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-3">
         {/* Nombre de la isla y fecha */}
-        <div className="pointer-events-auto g-pill !cursor-default !px-4 !py-1.5 flex-col !items-start !gap-0">
-          <div className="g-title text-[16px] leading-tight truncate max-w-[30vw]">{game.islandName}</div>
-          <div className="text-[12px] font-bold text-ink-l leading-tight font-sans">
+        <div className="pointer-events-auto g-pill !cursor-default !px-4 !py-1.5 flex-col !items-start !gap-0 justify-self-start max-w-full min-w-0 overflow-hidden">
+          <div className="g-title text-[16px] leading-tight truncate max-w-full">{game.islandName}</div>
+          <div className="text-[12px] font-bold text-ink-l leading-tight font-sans whitespace-nowrap">
             {SEASON_EMOJI[cal.season]} Año {cal.year} · {MONTH_NAMES[cal.monthOfYear - 1]}
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-3.5">
-          <div className="flex items-start gap-2">
-            {/* Salud: seis corazones; cada mes sin comer se apaga uno */}
-            <Hearts hunger={game.hunger} foodMonths={game.foodMonths} onTap={() => setView('tienda')} />
-            {/* Patrimonio */}
-            <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
-              {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
-              <Amount cents={Math.floor(total / 100) * 100} size="md" className="text-ink" />
-              <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">
-                ▸
-              </span>
-            </button>
-          </div>
-          {/* Perfil: el avatar del jugador */}
-          {onIsland && (
-            <button type="button" onClick={() => setView('perfil')} className="pointer-events-auto g-hud-btn g-hud-btn--green g-hud-btn--avatar" aria-label="Perfil" title="Perfil">
-              <AvatarHead id={avatar} size={52} />
-            </button>
-          )}
+        <div className="flex items-start gap-2 justify-self-end">
+          {/* Salud: seis corazones; cada mes sin comer se apaga uno */}
+          <Hearts hunger={game.hunger} foodMonths={game.foodMonths} onTap={() => setView('tienda')} />
+          {/* Patrimonio */}
+          <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
+            {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
+            <Amount cents={Math.floor(total / 100) * 100} size="md" className="text-ink" />
+            <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">
+              ▸
+            </span>
+          </button>
         </div>
+
+        {onIsland && (
+          <>
+            {/* Izquierda: Misiones y Eventos */}
+            <div className="flex flex-col items-start gap-3.5">
+              <button
+                type="button"
+                onClick={() => setView('misiones')}
+                className={`pointer-events-auto g-hud-btn g-hud-btn--purple ${coachHud === 'misiones' ? 'g-hud-btn--pulse' : ''}`}
+                aria-label="Misiones"
+                title="Misiones"
+              >
+                <span className="g-hud-btn__icon" aria-hidden="true">
+                  📜
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('eventos')}
+                className={`pointer-events-auto g-hud-btn g-hud-btn--orange ${coachHud === 'eventos' ? 'g-hud-btn--pulse' : ''}`}
+                aria-label="Eventos pendientes"
+                title="Eventos"
+              >
+                <span className="g-hud-btn__icon" aria-hidden="true">
+                  🔔
+                </span>
+                {events.length > 0 && <span className="g-badge">{events.length}</span>}
+              </button>
+            </div>
+            {/* Derecha: Perfil (el avatar del jugador) y Ajustes */}
+            <div className="flex flex-col items-end gap-3.5 justify-self-end">
+              <button
+                type="button"
+                onClick={() => setView('perfil')}
+                className="pointer-events-auto g-hud-btn g-hud-btn--green g-hud-btn--avatar"
+                aria-label="Perfil"
+                title="Perfil"
+              >
+                <AvatarHead id={avatar} size={52} />
+              </button>
+              <button type="button" onClick={() => setView('ajustes')} className="pointer-events-auto g-hud-btn g-hud-btn--blue" aria-label="Ajustes" title="Ajustes">
+                <span className="g-hud-btn__icon" aria-hidden="true">
+                  ⚙️
+                </span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* En la isla de la Liebre: cartel y botón de volver */}
@@ -80,40 +121,6 @@ export function TopBar() {
               Volver a casa
             </button>
           )}
-        </div>
-      )}
-
-      {/* Botones verticales: Misiones y Eventos */}
-      {onIsland && (
-        <div className="mt-3 flex flex-col items-start gap-3.5">
-          <button
-            type="button"
-            onClick={() => setView('misiones')}
-            className={`pointer-events-auto g-hud-btn g-hud-btn--purple ${coachHud === 'misiones' ? 'g-hud-btn--pulse' : ''}`}
-            aria-label="Misiones"
-            title="Misiones"
-          >
-            <span className="g-hud-btn__icon" aria-hidden="true">
-              📜
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('eventos')}
-            className={`pointer-events-auto g-hud-btn g-hud-btn--orange ${coachHud === 'eventos' ? 'g-hud-btn--pulse' : ''}`}
-            aria-label="Eventos pendientes"
-            title="Eventos"
-          >
-            <span className="g-hud-btn__icon" aria-hidden="true">
-              🔔
-            </span>
-            {events.length > 0 && <span className="g-badge">{events.length}</span>}
-          </button>
-          <button type="button" onClick={() => setView('ajustes')} className="pointer-events-auto g-hud-btn g-hud-btn--blue" aria-label="Ajustes" title="Ajustes">
-            <span className="g-hud-btn__icon" aria-hidden="true">
-              ⚙️
-            </span>
-          </button>
         </div>
       )}
     </div>
