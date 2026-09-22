@@ -24,7 +24,7 @@ import { GenericBuilding } from './buildings/Generic'
 import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
 import { forwardOf } from './registry'
 import { boatPose, LiebreBoat, LiebreIsland, liebreIslandPose } from './LiebreIsland'
-import { COACH_STEPS } from '../ui/coach'
+import { COACH_STEPS } from '../ui/coachSteps'
 
 type V3 = [number, number, number]
 

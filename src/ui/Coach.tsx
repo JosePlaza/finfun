@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TUTORIAL_DONE } from '../sim'
 import { BUILDING_BY_ID } from '../scene/registry'
 import { useGame } from '../store/game'
-import { COACH_STEPS } from './coach'
+import { COACH_STEPS } from './coachSteps'
 
 export function Coach() {
   const game = useGame((s) => s.game)

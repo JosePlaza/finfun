@@ -1,5 +1,5 @@
 import { bondsTotal, calendarOf, currentMonth, HUNGER_DEATH_MONTHS, MONTH_NAMES, stocksValue, fundValue, TASK_ACORNS, TUTORIAL_DONE } from '../sim'
-import { COACH_STEPS } from './coach'
+import { COACH_STEPS } from './coachSteps'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
