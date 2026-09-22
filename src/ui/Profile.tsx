@@ -103,7 +103,10 @@ export function PerfilContent() {
 
 const TIER_CLASS = ['', 'badge--bronce', 'badge--plata', 'badge--oro']
 
-/** Las insignias: medalla por familia con el nivel conseguido (bronce, plata, oro) y lo que falta para el siguiente. */
+/**
+ * Las insignias: medalla por familia con el nivel conseguido (bronce, plata, oro) y lo que falta para el
+ * siguiente. Las de una sola marca (sin niveles) se tienen o no, sin progreso.
+ */
 function Insignias() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
@@ -113,27 +116,38 @@ function Insignias() {
   const total = rows.reduce((n, r) => n + r.def.tiers.length, 0)
   return (
     <>
-      <div className="flex items-center justify-between mt-4 mb-2">
-        <span className="g-label">Insignias</span>
-        <span className="text-[12px] font-extrabold text-ink-3 tabular-nums">
+      <div className="flex items-baseline justify-between mt-5 mb-2">
+        <h3 className="m-0 font-display font-extrabold text-ink text-[19px] leading-tight">Insignias</h3>
+        <span className="text-[13px] font-extrabold text-ink-3 tabular-nums">
           {earned}/{total}
         </span>
       </div>
       <div className="badge-grid">
         {rows.map(({ def, st }) => {
+          const single = def.tiers.length === 1
+          const got = st.earned > 0
+          const medalClass = !got ? 'badge--off' : single ? 'badge--oro' : TIER_CLASS[st.earned]
           const pct = st.next !== null ? Math.min(100, Math.round((st.value / st.next) * 100)) : 100
           return (
-            <div key={def.id} className={`badge ${st.earned > 0 ? TIER_CLASS[st.earned] : 'badge--off'}`} title={`${def.name}: ${st.valueText} ${def.what}`}>
+            <div key={def.id} className={`badge ${medalClass}`} title={`${def.name}: ${st.valueText} ${def.what}`}>
               <div className="badge__medal" aria-hidden="true">
                 <span className="badge__icon">{def.icon}</span>
-                {st.earned > 0 && <span className="badge__tier">{TIER_NAMES[st.earned]}</span>}
+                {got && !single && <span className="badge__tier">{TIER_NAMES[st.earned]}</span>}
               </div>
               <div className="badge__name">{def.name}</div>
               <div className="badge__what">{def.what}</div>
-              <div className="badge__bar">
-                <i style={{ width: `${pct}%` }} />
+              <div className="badge__foot">
+                {single ? (
+                  <div className={`badge__state ${got ? 'badge__state--on' : ''}`}>{got ? 'Conseguida' : 'Pendiente'}</div>
+                ) : (
+                  <>
+                    <div className="badge__bar">
+                      <i style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="badge__count">{st.maxed ? 'Máximo' : `${st.valueText} / ${st.nextText}`}</div>
+                  </>
+                )}
               </div>
-              <div className="badge__count">{st.maxed ? `${st.valueText} · ¡Oro!` : `${st.valueText} / ${st.nextText}`}</div>
             </div>
           )
         })}

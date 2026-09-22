@@ -115,6 +115,10 @@ interface Store {
   ready: boolean
   /** Marcas de "ya visto" para los avisos de eventos. */
   seenDiary: number
+  /** Último mes de isla en que se abrió el Mercado (sus avisos se dan por vistos). */
+  seenMarketMonth: number
+  /** Pestaña con la que debe abrirse el Mercado la próxima vez (la pide un evento). */
+  mercadoTab: 'negocios' | 'cartera' | null
   seenBankOpen: boolean
   seenWorld: number
   seenMissions: number
@@ -309,6 +313,7 @@ export const useGame = create<Store>()(
             wheelOpen: false,
             wheelAutoShownFor: -1,
             seenDiary: 0,
+            seenMarketMonth: -1,
             seenBankOpen: false,
             seenWorld: 1,
             seenMissions: 0,
@@ -319,6 +324,8 @@ export const useGame = create<Store>()(
         devOffsetMs: 0,
         view: 'isla',
         toast: null,
+        seenMarketMonth: -1,
+        mercadoTab: null,
         acornsFound: [],
         acornsMonth: -1,
         ready: false,
@@ -650,6 +657,7 @@ export const useGame = create<Store>()(
             celebration: null,
             wheelOpen: false,
             seenDiary: 0,
+            seenMarketMonth: -1,
             seenBankOpen: false,
             seenWorld: 1,
             seenMissions: 0,
@@ -669,6 +677,7 @@ export const useGame = create<Store>()(
           const patch: Partial<Store> = { view }
           // Abrir el lugar correspondiente marca sus avisos como vistos.
           if (g && view === 'faro') patch.seenDiary = g.diary.length
+          if (g && view === 'mercado') patch.seenMarketMonth = g.processedMonth
           if (g && view === 'banco' && g.bankUnlocked) patch.seenBankOpen = true
           if (g && view === 'misiones') {
             patch.seenWorld = g.world
@@ -705,6 +714,7 @@ export const useGame = create<Store>()(
         saveOwner: s.saveOwner,
         devOffsetMs: s.devOffsetMs,
         seenDiary: s.seenDiary,
+        seenMarketMonth: s.seenMarketMonth,
         seenBankOpen: s.seenBankOpen,
         seenWorld: s.seenWorld,
         seenMissions: s.seenMissions,

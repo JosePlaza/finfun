@@ -1022,13 +1022,14 @@ textarea {
 /* Insignias */
 .badge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .badge {
-  --m: #b9ae9e;
-  --md: #8a8175;
+  --m: #cfd6dd;
+  --md: #8a94a0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 10px 8px 8px;
+  height: 196px;
+  padding: 10px 8px 10px;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 3px 0 var(--color-cream-d);
@@ -1037,10 +1038,11 @@ textarea {
 .badge--bronce { --m: #d9925a; --md: #9a5a2a; }
 .badge--plata { --m: #cfd6dd; --md: #8a94a0; }
 .badge--oro { --m: #f2c044; --md: #b8860b; }
-.badge--off { background: var(--color-cream); }
-.badge--off .badge__icon { filter: grayscale(1); opacity: 0.55; }
+.badge--off .badge__icon { filter: grayscale(1); opacity: 0.5; }
+.badge--off .badge__medal { background: radial-gradient(circle at 35% 30%, #fff, #e6dfd0 70%); box-shadow: 0 3px 0 var(--color-cream-d), inset 0 0 0 3px rgba(255, 255, 255, 0.6); }
 .badge__medal {
   position: relative;
+  flex: none;
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -1048,7 +1050,7 @@ textarea {
   place-items: center;
   background: radial-gradient(circle at 35% 30%, #fff, var(--m) 70%);
   box-shadow: 0 3px 0 var(--md), inset 0 0 0 3px rgba(255, 255, 255, 0.6);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .badge__icon { font-size: 26px; line-height: 1; }
 .badge__tier {
@@ -1067,8 +1069,52 @@ textarea {
   text-transform: uppercase;
   white-space: nowrap;
 }
-.badge__name { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; line-height: 1.15; color: var(--color-ink); margin-top: 4px; }
-.badge__what { font-size: 10.5px; font-weight: 700; color: var(--color-ink-3); line-height: 1.15; }
-.badge__bar { width: 100%; height: 7px; border-radius: 999px; background: var(--color-cream-d); overflow: hidden; margin-top: 6px; }
-.badge__bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--m), var(--md)); border-radius: 999px; }
-.badge__count { font-size: 11px; font-weight: 800; color: var(--color-ink-l); font-variant-numeric: tabular-nums; margin-top: 3px; }
+/* Nombre y descripción con altura fija (dos líneas cada uno): todas las cajas miden lo mismo. */
+.badge__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  line-height: 1.15;
+  color: var(--color-ink);
+  margin-top: 4px;
+  height: calc(2 * 1.15em);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.badge__what {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-ink-3);
+  line-height: 1.2;
+  height: calc(2 * 1.2em);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.badge__foot { margin-top: auto; width: 100%; display: flex; flex-direction: column; align-items: center; }
+/* La barra siempre del mismo color, sea bronce, plata u oro */
+.badge__bar { width: 100%; height: 7px; border-radius: 999px; background: var(--color-cream-d); overflow: hidden; }
+.badge__bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--color-green-l), var(--color-green)); border-radius: 999px; }
+.badge__count { font-size: 11px; font-weight: 800; color: var(--color-ink-l); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.badge__state { font-family: var(--font-display); font-weight: 800; font-size: 12px; color: var(--color-ink-3); padding: 3px 10px; border-radius: 999px; background: var(--color-cream); }
+.badge__state--on { color: #fff; background: var(--color-green); }
+
+/* Movimiento nuevo (estaba en Eventos) */
+.g-row--new { box-shadow: 0 3px 0 var(--color-cream-d), inset 0 0 0 3px var(--color-orange-l); }
+.g-new {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-orange);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}

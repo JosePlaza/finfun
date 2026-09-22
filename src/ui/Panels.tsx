@@ -258,7 +258,8 @@ function AutoFoodRow() {
   )
 }
 
-function Ledger({ events }: { events: LedgerEvent[] }) {
+/** Lista de movimientos. Los del mes `newMonth` (los que estaban en Eventos) se marcan como nuevos. */
+function Ledger({ events, newMonth }: { events: LedgerEvent[]; newMonth?: number }) {
   if (events.length === 0) return null
   return (
     <ul className="mt-2 grid gap-1.5">
@@ -267,11 +268,14 @@ function Ledger({ events }: { events: LedgerEvent[] }) {
         .reverse()
         .slice(0, 10)
         .map((e, i) => (
-          <li key={i} className="g-row !py-2 text-[14px] font-semibold">
+          <li key={i} className={`g-row !py-2 text-[14px] font-semibold ${newMonth !== undefined && e.month === newMonth ? 'g-row--new' : ''}`}>
             <span className="text-lg" aria-hidden="true">
               {KIND_ICON[e.kind]}
             </span>
-            <span className="flex-1 text-ink-l">{e.label}</span>
+            <span className="flex-1 text-ink-l">
+              {newMonth !== undefined && e.month === newMonth && <span className="g-new">Nuevo</span>}
+              {e.label}
+            </span>
             {e.kind === 'inflacion' ? (
               <span className="font-display font-extrabold text-ink tabular-nums">{formatPct(e.amountCents)}</span>
             ) : e.amountCents !== 0 ? (
@@ -395,7 +399,8 @@ function EventosPanel() {
   const seenBankOpen = useGame((s) => s.seenBankOpen)
   const seenWorld = useGame((s) => s.seenWorld)
   const seenMissions = useGame((s) => s.seenMissions)
-  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions }
+  const seenMarketMonth = useGame((s) => s.seenMarketMonth)
+  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth }
   const setView = useGame((s) => s.setView)
   const collect = useGame((s) => s.collect)
   const openWheel = useGame((s) => s.openWheel)
@@ -440,7 +445,14 @@ function EventosPanel() {
                     </button>
                   </>
                 ) : (
-                  <button type="button" onClick={() => setView(e.view)} className="g-btn g-btn--blue g-btn--sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (e.tab) useGame.setState({ mercadoTab: e.tab })
+                      setView(e.view)
+                    }}
+                    className="g-btn g-btn--blue g-btn--sm"
+                  >
                     Ir
                   </button>
                 )}
@@ -1427,7 +1439,12 @@ function MercadoPanel() {
   const game = useGame((s) => s.game)!
   const nowMs = useGame((s) => s.nowMs)
   const showBusiness = useGame((s) => s.showBusiness)
-  const [tab, setTab] = useState<'negocios' | 'cartera'>('negocios')
+  // Si viene de un evento (un dividendo), se abre en "Mi cartera", donde están los movimientos.
+  const [tab, setTab] = useState<'negocios' | 'cartera'>(() => {
+    const wanted = useGame.getState().mercadoTab
+    if (wanted) useGame.setState({ mercadoTab: null })
+    return wanted ?? 'negocios'
+  })
   const month = currentMonth(game, nowMs)
   const market = marketAt(marketCtx(game), month, game.world)
   const stocks = stocksValue(game, month)
@@ -1512,6 +1529,7 @@ function MercadoPanel() {
             events={game.ledger.filter(
               (e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'noticia' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta',
             )}
+            newMonth={game.processedMonth}
           />
         </>
       )}

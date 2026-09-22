@@ -47,14 +47,8 @@ export const BADGES: BadgeDef[] = [
   { id: 'liebre', name: 'Amigo de la Liebre', icon: '🐰', what: 'visitas a su isla', tiers: [1, 10, 30], value: (g) => g.liebreVisits },
   { id: 'vecino', name: 'Buen vecino', icon: '🤝', what: 'préstamos a la Liebre devueltos', tiers: [1, 5, 10], value: (g) => g.liebreLoansRepaid },
   { id: 'contribuyente', name: 'Contribuyente', icon: '🦉', what: 'declaraciones presentadas', tiers: [1, 3, 5], value: (g) => g.declarations.length },
-  {
-    id: 'huerto',
-    name: 'Independiente',
-    icon: '🥕',
-    what: 'huerto: construido y ampliado',
-    tiers: [1, 2],
-    value: (g) => (g.huertoUpgradedMonth !== null ? 2 : g.huertoBuiltMonth !== null ? 1 : 0),
-  },
+  // Una sola marca (sin niveles): se tiene o no se tiene.
+  { id: 'huerto', name: 'Independiente', icon: '🥕', what: 'huerto ampliado: la comida sale sola', tiers: [1], value: (g) => (g.huertoUpgradedMonth !== null ? 1 : 0) },
 ]
 
 export const BADGE_BY_ID: Record<string, BadgeDef> = Object.fromEntries(BADGES.map((b) => [b.id, b]))

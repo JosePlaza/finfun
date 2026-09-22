@@ -193,7 +193,17 @@ export function playCoinSfx(kind: 'compra' | 'moneda' = 'compra') {
   void resumeEngine().then(() => {
     setGain(e.sfx, sfxVolume)
     const t0 = e.ctx.currentTime + 0.01
-    const notes = kind === 'compra' ? [[1046.5, 0], [1568, 0.09]] : [[1318.5, 0], [1760, 0.07], [2093, 0.14]]
+    const notes =
+      kind === 'compra'
+        ? [
+            [1046.5, 0],
+            [1568, 0.09],
+          ]
+        : [
+            [1318.5, 0],
+            [1760, 0.07],
+            [2093, 0.14],
+          ]
     for (const [freq, at] of notes) {
       const osc = e.ctx.createOscillator()
       const env = e.ctx.createGain()
@@ -275,6 +285,7 @@ export function EventSounds() {
   const seenBankOpen = useGame((s) => s.seenBankOpen)
   const seenWorld = useGame((s) => s.seenWorld)
   const seenMissions = useGame((s) => s.seenMissions)
+  const seenMarketMonth = useGame((s) => s.seenMarketMonth)
   const known = useRef<Set<string> | null>(null)
 
   // Precarga el aviso en cuanto hay contexto (tras el primer gesto), para que no llegue tarde la primera vez.
@@ -291,7 +302,7 @@ export function EventSounds() {
     if (!game) return
     const month = currentMonth(game, nowMs)
     const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
-    const ids = pendingEvents(game, acornsLeft, { seenDiary, seenBankOpen, seenWorld, seenMissions }).map((e) => e.id)
+    const ids = pendingEvents(game, acornsLeft, { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth }).map((e) => e.id)
     if (!known.current) {
       known.current = new Set(ids)
       return
@@ -300,7 +311,7 @@ export function EventSounds() {
     known.current = new Set(ids)
     // Las bellotas cambian de número al recogerlas y la paga vuelve cada día: solo avisamos de lo realmente nuevo.
     if (fresh.length > 0) playEventSfx()
-  }, [game, nowMs, acornsFound, seenDiary, seenBankOpen, seenWorld, seenMissions])
+  }, [game, nowMs, acornsFound, seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth])
 
   return null
 }
