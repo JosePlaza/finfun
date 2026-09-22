@@ -697,8 +697,12 @@ export function progressWorld(state: GameState) {
   if (state.world >= 4 && state.crashMonth === null) state.crashMonth = state.processedMonth + CRASH_AFTER_MONTHS
 }
 
+/**
+ * Mes de isla actual. Nunca por detrás del último mes ya procesado: si la partida viene de otro dispositivo
+ * (o de la barra de pruebas) más avanzada que el reloj de este, se muestra donde está la partida.
+ */
 export function currentMonth(state: GameState, nowMs: number): number {
-  return monthAt(nowMs, state.epochMs)
+  return Math.max(monthAt(nowMs, state.epochMs), state.processedMonth)
 }
 
 // ---------- Acciones del jugador ----------

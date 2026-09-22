@@ -711,7 +711,13 @@ export const useGame = create<Store>()(
         },
 
         devAdvanceDays: (days) => {
-          set({ devOffsetMs: get().devOffsetMs + days * 24 * 60 * 60 * 1000 })
+          // Adelantar días retrasa la fecha de creación de la isla DENTRO de la partida: así el avance viaja con
+          // ella a la cuenta y a otros dispositivos (un desfase solo local dejaría la fecha atrás en el móvil).
+          const g = get().game
+          if (!g) return
+          const moved = { ...g, epochMs: g.epochMs - days * 24 * 60 * 60 * 1000 }
+          set({ game: moved })
+          scheduleRemoteSave(moved)
           get().tick()
         },
         devReset: () => {

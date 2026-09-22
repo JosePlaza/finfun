@@ -1,16 +1,17 @@
 import { useGame } from '../store/game'
+import { currentMonth } from '../sim'
 
 /** Barra de pruebas: solo en desarrollo o con ?dev en la URL. Permite adelantar el reloj de la isla. */
 export function DevBar() {
   const devAdvanceDays = useGame((s) => s.devAdvanceDays)
   const devReset = useGame((s) => s.devReset)
-  const offset = useGame((s) => s.devOffsetMs)
-  const days = Math.round(offset / 86_400_000)
+  const game = useGame((s) => s.game)
+  const nowMs = useGame((s) => s.nowMs)
+  const days = game ? currentMonth(game, nowMs) : 0
   return (
     <div className="absolute left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+14px)] z-40 opacity-80 flex items-center gap-1 bg-ink/80 text-white rounded-xl px-2 py-1 text-xs font-mono">
       <span className="opacity-70 mr-1">
-        dev {days >= 0 ? '+' : ''}
-        {days}d
+        dev · mes {days}
       </span>
       <button type="button" onClick={() => devAdvanceDays(1)} className="px-2 py-1 rounded bg-white/15 active:bg-white/30">
         +1 día
