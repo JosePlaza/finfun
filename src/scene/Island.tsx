@@ -22,6 +22,7 @@ import { Shop } from './buildings/Shop'
 import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
 import { GenericBuilding } from './buildings/Generic'
 import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
+import { avatarOr, type AvatarDef } from './avatars/catalog'
 import { forwardOf } from './registry'
 import { boatPose, LiebreBoat, LiebreIsland, liebreIslandPose } from './LiebreIsland'
 import { COACH_STEPS } from '../ui/coachSteps'
@@ -67,11 +68,30 @@ const STOP_ACTION: Partial<Record<BuildingId, Action>> = {
 
 /** Caminos: qué edificios están unidos. El trazado sigue el terreno y se curva un poco. */
 const ROADS: [BuildingId, BuildingId][] = [
-  ['casa', 'tienda'], ['tienda', 'banco'], ['banco', 'ayuntamiento'], ['ayuntamiento', 'faro'], ['ayuntamiento', 'escuela'],
-  ['escuela', 'casa'], ['casa', 'mercado'], ['mercado', 'panaderia'], ['panaderia', 'astillero'], ['astillero', 'puerto'],
-  ['puerto', 'cofre'], ['cofre', 'tienda'], ['tienda', 'heladeria'], ['banco', 'hacienda'], ['hacienda', 'molino'],
-  ['hacienda', 'taller'], ['taller', 'fondo'], ['fondo', 'heladeria'], ['faro', 'posada'], ['ayuntamiento', 'observatorio'],
-  ['observatorio', 'granja'], ['granja', 'mercado'], ['mercado', 'cantera'], ['casa', 'cofre'],
+  ['casa', 'tienda'],
+  ['tienda', 'banco'],
+  ['banco', 'ayuntamiento'],
+  ['ayuntamiento', 'faro'],
+  ['ayuntamiento', 'escuela'],
+  ['escuela', 'casa'],
+  ['casa', 'mercado'],
+  ['mercado', 'panaderia'],
+  ['panaderia', 'astillero'],
+  ['astillero', 'puerto'],
+  ['puerto', 'cofre'],
+  ['cofre', 'tienda'],
+  ['tienda', 'heladeria'],
+  ['banco', 'hacienda'],
+  ['hacienda', 'molino'],
+  ['hacienda', 'taller'],
+  ['taller', 'fondo'],
+  ['fondo', 'heladeria'],
+  ['faro', 'posada'],
+  ['ayuntamiento', 'observatorio'],
+  ['observatorio', 'granja'],
+  ['granja', 'mercado'],
+  ['mercado', 'cantera'],
+  ['casa', 'cofre'],
 ]
 
 function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number][] {
@@ -94,7 +114,7 @@ function roadPoints(a: BuildingId, b: BuildingId, seed: number): [number, number
  * La cámara vuela suavemente hacia el lugar activo. En la vista de isla el jugador puede girar
  * y acercarse; al entrar en un lugar la cámara se coloca de frente y los controles se apagan.
  */
-const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio', 'liebre', 'ajustes'])
+const OVERVIEW_VIEWS = new Set(['isla', 'misiones', 'eventos', 'patrimonio', 'liebre', 'ajustes', 'perfil'])
 
 function CameraRig({ controls, positions, terrain }: { controls: React.RefObject<OrbitControlsImpl | null>; positions: Record<BuildingId, V3>; terrain: Terrain }) {
   /** Vista cercana de un punto del suelo (pista de bellota): mismo ángulo que la vista general, mucho más cerca. */
@@ -145,7 +165,7 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     const panelOpen = there && view !== 'isla'
     // Los paneles generales (misiones, eventos, patrimonio, ajustes) no mueven la cámara: se queda donde la dejó el jugador.
     const scene = there ? 'liebre' : OVERVIEW_VIEWS.has(view) ? 'isla' : view
-    const key = `${scene}:${there ? (panelOpen ? 'panel' : '') : target ?? ''}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
+    const key = `${scene}:${there ? (panelOpen ? 'panel' : '') : (target ?? '')}:${focus && !there ? focus.join(',') : ''}:${portrait ? 'p' : 'l'}`
     if (key !== lastKey.current) {
       lastKey.current = key
       flying.current = true
@@ -172,7 +192,13 @@ function CameraRig({ controls, positions, terrain }: { controls: React.RefObject
     }
     ctl.enabled = free && !flying.current
     ctl.update()
-    if (isDevMode) (window as unknown as { finfunCam: unknown }).finfunCam = { flying: flying.current, enabled: ctl.enabled, dist: camera.position.distanceTo(goalPos.current), pos: camera.position.toArray() }
+    if (isDevMode)
+      (window as unknown as { finfunCam: unknown }).finfunCam = {
+        flying: flying.current,
+        enabled: ctl.enabled,
+        dist: camera.position.distanceTo(goalPos.current),
+        pos: camera.position.toArray(),
+      }
   })
   return null
 }
@@ -213,6 +239,7 @@ function Vegetation({ terrain, palette }: { terrain: Terrain; palette: SeasonPal
 
 function Scene() {
   const game = useGame((s) => s.game)!
+  const avatarId = useGame((s) => s.avatar)
   const nowMs = useGame((s) => s.nowMs)
   const acornsFound = useGame((s) => s.acornsFound)
   const acornHint = useGame((s) => s.acornHint)
@@ -259,11 +286,12 @@ function Scene() {
       return a
     }
     const walkers = 2 * game.world
-    const routes: { stops: Stop[]; look: Look; speed: number; offset: number }[] = []
+    // El primer paseante es el propio jugador, con su avatar; los demás son vecinos.
+    const routes: { stops: Stop[]; look: Look | AvatarDef; speed: number; offset: number }[] = []
     for (let i = 0; i < walkers; i++) {
       const picks = shuffled(open).slice(0, Math.min(open.length, 4 + (i % 3)))
       if (picks.length < 3) continue
-      routes.push({ stops: picks.map(stopFor), look: LOOKS[i % LOOKS.length], speed: 1.0 + (i % 3) * 0.15, offset: i * 7 })
+      routes.push({ stops: picks.map(stopFor), look: i === 0 ? avatarOr(avatarId) : LOOKS[i % LOOKS.length], speed: 1.0 + (i % 3) * 0.15, offset: i * 7 })
     }
     // La Liebre: siempre con prisa, entre la tienda, la casa y el cofre.
     const liebreStops = ['tienda', 'casa', 'cofre', 'banco'].map((id) => stopFor(BUILDING_BY_ID[id as BuildingId]))
@@ -287,7 +315,7 @@ function Scene() {
       doers.push({ position: [bx - 1.4, terrain.height(bx - 1.4, bz), bz], rotation: b.rotation + 0.4, look: LOOKS[2], action: 'wave', prop: 'none' })
     }
     return { routes, doers }
-  }, [terrain, game.world, huertoBuilt, game.bankUnlocked])
+  }, [terrain, game.world, huertoBuilt, game.bankUnlocked, avatarId])
 
   // Tocar un edificio abierto lleva a su panel; uno en obras (o sin panel todavía) muestra su ficha: qué se hará allí.
   const tapBuilding = (id: BuildingId) => {
@@ -335,7 +363,18 @@ function Scene() {
         const unlocked = game.world >= def.world
         switch (def.id) {
           case 'casa':
-            return <House key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} mailboxCents={game.mailboxCents} onTap={() => setView('casa')} onMailbox={collect} />
+            return (
+              <House
+                key={def.id}
+                position={pos}
+                rotation={def.rotation}
+                palette={palette}
+                night={night}
+                mailboxCents={game.mailboxCents}
+                onTap={() => setView('casa')}
+                onMailbox={collect}
+              />
+            )
           case 'banco':
             return <Bank key={def.id} position={pos} rotation={def.rotation} palette={palette} night={night} unlocked cents={game.bankCents} onTap={() => setView('banco')} />
           case 'tienda':
@@ -368,9 +407,7 @@ function Scene() {
       <Rowboat position={[PIER.x - 1.2, 0.02, PIER.z + 2.6]} rotation={-0.35} />
 
       {/* ===== RECORRIDO INICIAL: haz sobre el edificio del paso ===== */}
-      {game.tutorialStep < TUTORIAL_DONE && COACH_STEPS[game.tutorialStep]?.target && (
-        <Beacon position={positions[COACH_STEPS[game.tutorialStep].target as BuildingId]} />
-      )}
+      {game.tutorialStep < TUTORIAL_DONE && COACH_STEPS[game.tutorialStep]?.target && <Beacon position={positions[COACH_STEPS[game.tutorialStep].target as BuildingId]} />}
 
       {/* ===== LA ISLA DE LA LIEBRE (a lo lejos) Y SU BARCA ===== */}
       <LiebreIsland palette={palette} night={night} />

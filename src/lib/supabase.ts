@@ -24,6 +24,8 @@ export interface Account {
   id: string
   email: string
   username: string
+  /** Id del avatar elegido (catálogo de src/scene/avatars). */
+  avatar: string
 }
 
 /* ───────────────────────── Reloj ───────────────────────── */
@@ -83,11 +85,27 @@ export async function usernameAvailable(username: string): Promise<boolean> {
 
 async function loadProfile(userId: string, email: string): Promise<Account> {
   let username = ''
+  let avatar = ''
   if (supabase) {
-    const { data } = await supabase.from('profiles').select('username').eq('user_id', userId).maybeSingle()
+    const { data } = await supabase.from('profiles').select('username, avatar').eq('user_id', userId).maybeSingle()
     username = (data?.username as string | undefined) ?? ''
+    avatar = (data?.avatar as string | undefined) ?? ''
   }
-  return { id: userId, email, username: username || email.split('@')[0] }
+  return { id: userId, email, username: username || email.split('@')[0], avatar: avatar || 'gorra' }
+}
+
+/** Guarda el avatar elegido en el perfil de la cuenta. Devuelve false si no se pudo. */
+export async function saveAvatar(avatar: string): Promise<boolean> {
+  if (!supabase) return false
+  try {
+    const { data } = await supabase.auth.getSession()
+    const uid = data.session?.user?.id
+    if (!uid) return false
+    const { error } = await supabase.from('profiles').update({ avatar }).eq('user_id', uid)
+    return !error
+  } catch {
+    return false
+  }
 }
 
 /** La cuenta que ya tiene sesión abierta en este dispositivo, si la hay. */

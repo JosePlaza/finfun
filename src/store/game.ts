@@ -51,6 +51,7 @@ import {
   signIn as sbSignIn,
   signOut as sbSignOut,
   signUp as sbSignUp,
+  saveAvatar as sbSaveAvatar,
   syncClock,
   type Account,
 } from '../lib/supabase'
@@ -77,6 +78,7 @@ export type View =
   | 'patrimonio'
   | 'liebre'
   | 'ajustes'
+  | 'perfil'
 
 /** Dónde está el jugador: en su isla, cruzando el mar, en la isla de la Liebre o volviendo. */
 export type Trip = 'home' | 'going' | 'there' | 'returning'
@@ -140,6 +142,9 @@ interface Store {
   dismissRescue: () => void
   setFocusPoint: (p: [number, number] | null) => void
   /** Ajustes (persistidos): música de fondo y efectos de sonido, con sus volúmenes (0..1). */
+  /** Avatar elegido (id del catálogo). Se guarda en la cuenta si hay Supabase; si no, en este navegador. */
+  avatar: string
+  setAvatar: (id: string) => void
   musicOn: boolean
   musicVolume: number
   sfxOn: boolean
@@ -250,7 +255,7 @@ export const useGame = create<Store>()(
         else if (remote) game = remote
         else if (localUsable && local) game = local
         if (game) game = migrate(game)
-        set({ game, account, saveOwner: account.id, view: 'isla', trip: 'home' })
+        set({ game, account, saveOwner: account.id, view: 'isla', trip: 'home', avatar: account.avatar || get().avatar })
         // La partida local de antes de las cuentas (o más avanzada) pasa a la cuenta.
         if (game && (!remote || game !== remote)) flushRemoteSave(game)
         get().tick()
@@ -347,6 +352,11 @@ export const useGame = create<Store>()(
         },
         rescueSeen: -1,
         dismissRescue: () => set({ rescueSeen: get().game?.lastRescueMonth ?? -1 }),
+        avatar: 'gorra',
+        setAvatar: (id) => {
+          set({ avatar: id })
+          if (get().account) void sbSaveAvatar(id)
+        },
         musicOn: true,
         musicVolume: 0.6,
         sfxOn: true,
@@ -682,6 +692,7 @@ export const useGame = create<Store>()(
         seenMissions: s.seenMissions,
         stormSeen: s.stormSeen,
         rescueSeen: s.rescueSeen,
+        avatar: s.avatar,
         musicOn: s.musicOn,
         musicVolume: s.musicVolume,
         sfxOn: s.sfxOn,

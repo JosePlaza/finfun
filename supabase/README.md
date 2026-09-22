@@ -7,6 +7,7 @@ Los ficheros de `migrations/` se ejecutan **en orden**, una sola vez cada uno, e
 | --- | --- |
 | `0001_reloj_y_partidas.sql` | La RPC `server_now` (el reloj del juego es el del servidor) y la tabla `saves` (una partida por usuario, JSON completo) con sus políticas RLS. |
 | `0002_cuentas_perfiles_ranking.sql` | Tabla `profiles` (nombre de jugador **único**, sin distinguir mayúsculas; `is_adult`), disparador que crea el perfil al registrarse, RPC `username_available`, columnas de ranking en `saves` (`island_name`, `world`, `processed_month`, `net_worth_cents`) rellenadas por disparador, y la RPC `top_islands(n)` para clasificaciones futuras. |
+| `0003_avatar.sql` | Columna `avatar` en `profiles` (id del catálogo de avatares, por defecto `gorra`) y `top_islands` devuelve también el avatar. |
 
 ## Ajustes del panel de Supabase (una vez)
 
@@ -26,7 +27,7 @@ funciona en modo local (partida en el navegador, sin cuentas), útil para desarr
 ## Modelo
 
 - `auth.users` → una cuenta por adulto responsable (correo + contraseña).
-- `profiles` → `username` único, elegido al registrarse. Es el nombre que saldrá en los rankings.
+- `profiles` → `username` único, elegido al registrarse. Es el nombre que saldrá en los rankings. `avatar`: el personaje elegido en Perfil.
 - `saves` → la partida: `state` (JSON con todo) + columnas derivadas para ordenar y listar.
 - Con RLS, cada cuenta solo puede leer y escribir su propio perfil y su propia partida. El ranking se
   consulta a través de `top_islands`, que solo devuelve nombre, isla, nivel y patrimonio.

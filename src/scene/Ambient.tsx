@@ -9,6 +9,8 @@ import { mulberry32 } from '../sim/rng'
 import { C } from './palette'
 import { Mat } from './kit/Parts'
 import { ISLAND_RX, ISLAND_RZ, type Terrain } from './terrain'
+import { Avatar } from './avatars/Avatar'
+import type { AvatarDef } from './avatars/catalog'
 
 /* ───────────────────────── Nubes ───────────────────────── */
 
@@ -102,7 +104,16 @@ function Bird({ phase }: { phase: number }) {
 /** Bandada en V que da vueltas amplias sobre la isla. */
 export function Flock({ seed }: { seed: number }) {
   const group = useRef<THREE.Group>(null)
-  const offsets = useMemo(() => [[0, 0], [-0.9, -0.8], [0.9, -0.8], [-1.8, -1.6], [1.8, -1.6]], [])
+  const offsets = useMemo(
+    () => [
+      [0, 0],
+      [-0.9, -0.8],
+      [0.9, -0.8],
+      [-1.8, -1.6],
+      [1.8, -1.6],
+    ],
+    [],
+  )
   const r0 = 18 + (seed % 5)
   useFrame(({ clock }) => {
     if (!group.current) return
@@ -436,11 +447,29 @@ export interface Stop {
  * Un personaje que recorre en bucle una ruta de paradas: camina de una a otra pegado al terreno,
  * y en cada parada se detiene unos segundos haciendo algo (mirar, saludar, trabajar, cargar).
  */
-export function Walker({ stops, terrain, look, speed = 1.1, offset = 0 }: { stops: Stop[]; terrain: Terrain; look: Look; speed?: number; offset?: number }) {
+/** Un vecino (Look) o el avatar del jugador (AvatarDef): se distinguen porque el avatar tiene `id`. */
+export type Anyone = Look | AvatarDef
+const isAvatar = (l: Anyone): l is AvatarDef => 'id' in l
+
+/** Dibuja a quien sea con la animación que toque. */
+function Someone({ look, walking, action, prop }: { look: Anyone; walking: React.RefObject<number>; action: React.RefObject<Action>; prop?: Prop }) {
+  return isAvatar(look) ? <Avatar def={look} walking={walking} action={action} /> : <Character look={look} walking={walking} action={action} prop={prop} />
+}
+
+export function Walker({ stops, terrain, look, speed = 1.1, offset = 0 }: { stops: Stop[]; terrain: Terrain; look: Anyone; speed?: number; offset?: number }) {
   const group = useRef<THREE.Group>(null)
   const walking = useRef(1)
   const action = useRef<Action>('walk')
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(stops.map((s) => new THREE.Vector3(s.x, 0, s.z)), true, 'centripetal', 0.6), [stops])
+  const curve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3(
+        stops.map((s) => new THREE.Vector3(s.x, 0, s.z)),
+        true,
+        'centripetal',
+        0.6,
+      ),
+    [stops],
+  )
   const length = useMemo(() => curve.getLength(), [curve])
   const dist = useRef(offset)
   const lastStop = useRef(-1)
@@ -480,7 +509,7 @@ export function Walker({ stops, terrain, look, speed = 1.1, offset = 0 }: { stop
   })
   return (
     <group ref={group}>
-      <Character look={look} walking={walking} action={action} />
+      <Someone look={look} walking={walking} action={action} />
     </group>
   )
 }
@@ -497,7 +526,15 @@ export function Doer({ position, rotation = 0, look, action, prop = 'none' }: { 
 }
 
 /** Todo lo ambiental junto: cielo, mar y vecinos. */
-export function Ambient({ terrain, routes, doers }: { terrain: Terrain; routes: { stops: Stop[]; look: Look; speed: number; offset: number }[]; doers: { position: [number, number, number]; rotation: number; look: Look; action: Action; prop: Prop }[] }) {
+export function Ambient({
+  terrain,
+  routes,
+  doers,
+}: {
+  terrain: Terrain
+  routes: { stops: Stop[]; look: Anyone; speed: number; offset: number }[]
+  doers: { position: [number, number, number]; rotation: number; look: Look; action: Action; prop: Prop }[]
+}) {
   return (
     <group>
       <Clouds seed={terrain.seed} />

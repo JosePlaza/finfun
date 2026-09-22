@@ -3,6 +3,7 @@ import { COACH_STEPS } from './coachSteps'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
+import { avatarOr } from '../scene/avatars/catalog'
 
 const SEASON_EMOJI: Record<string, string> = { primavera: '🌸', verano: '☀️', otoño: '🍂', invierno: '❄️' }
 
@@ -18,6 +19,7 @@ export function TopBar() {
   const setView = useGame((s) => s.setView)
   const trip = useGame((s) => s.trip)
   const returnHome = useGame((s) => s.returnHome)
+  const avatar = useGame((s) => s.avatar)
   const coachHud = game.tutorialStep < TUTORIAL_DONE ? COACH_STEPS[game.tutorialStep]?.hud : undefined
   const acornsFound = useGame((s) => s.acornsFound)
   const seenDiary = useGame((s) => s.seenDiary)
@@ -43,15 +45,27 @@ export function TopBar() {
           </div>
         </div>
 
-        <div className="flex items-start gap-2">
-          {/* Salud: seis corazones; cada mes sin comer se apaga uno */}
-          <Hearts hunger={game.hunger} foodMonths={game.foodMonths} onTap={() => setView('tienda')} />
-          {/* Patrimonio */}
-          <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
-            {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
-            <Amount cents={Math.floor(total / 100) * 100} size="md" className="text-ink" />
-            <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">▸</span>
-          </button>
+        <div className="flex flex-col items-end gap-3.5">
+          <div className="flex items-start gap-2">
+            {/* Salud: seis corazones; cada mes sin comer se apaga uno */}
+            <Hearts hunger={game.hunger} foodMonths={game.foodMonths} onTap={() => setView('tienda')} />
+            {/* Patrimonio */}
+            <button type="button" onClick={() => setView(view === 'patrimonio' ? 'isla' : 'patrimonio')} className="pointer-events-auto g-pill">
+              {/* En la píldora, sin céntimos: el detalle está en el desglose. */}
+              <Amount cents={Math.floor(total / 100) * 100} size="md" className="text-ink" />
+              <span className="text-ink-3 text-lg leading-none -ml-1" aria-hidden="true">
+                ▸
+              </span>
+            </button>
+          </div>
+          {/* Perfil: el avatar del jugador */}
+          {onIsland && (
+            <button type="button" onClick={() => setView('perfil')} className="pointer-events-auto g-hud-btn g-hud-btn--green" aria-label="Perfil" title="Perfil">
+              <span className="g-hud-btn__icon" aria-hidden="true">
+                {avatarOr(avatar).emoji}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -73,15 +87,33 @@ export function TopBar() {
       {/* Botones verticales: Misiones y Eventos */}
       {onIsland && (
         <div className="mt-3 flex flex-col items-start gap-3.5">
-          <button type="button" onClick={() => setView('misiones')} className={`pointer-events-auto g-hud-btn g-hud-btn--purple ${coachHud === 'misiones' ? 'g-hud-btn--pulse' : ''}`} aria-label="Misiones" title="Misiones">
-            <span className="g-hud-btn__icon" aria-hidden="true">📜</span>
+          <button
+            type="button"
+            onClick={() => setView('misiones')}
+            className={`pointer-events-auto g-hud-btn g-hud-btn--purple ${coachHud === 'misiones' ? 'g-hud-btn--pulse' : ''}`}
+            aria-label="Misiones"
+            title="Misiones"
+          >
+            <span className="g-hud-btn__icon" aria-hidden="true">
+              📜
+            </span>
           </button>
-          <button type="button" onClick={() => setView('eventos')} className={`pointer-events-auto g-hud-btn g-hud-btn--orange ${coachHud === 'eventos' ? 'g-hud-btn--pulse' : ''}`} aria-label="Eventos pendientes" title="Eventos">
-            <span className="g-hud-btn__icon" aria-hidden="true">🔔</span>
+          <button
+            type="button"
+            onClick={() => setView('eventos')}
+            className={`pointer-events-auto g-hud-btn g-hud-btn--orange ${coachHud === 'eventos' ? 'g-hud-btn--pulse' : ''}`}
+            aria-label="Eventos pendientes"
+            title="Eventos"
+          >
+            <span className="g-hud-btn__icon" aria-hidden="true">
+              🔔
+            </span>
             {events.length > 0 && <span className="g-badge">{events.length}</span>}
           </button>
           <button type="button" onClick={() => setView('ajustes')} className="pointer-events-auto g-hud-btn g-hud-btn--blue" aria-label="Ajustes" title="Ajustes">
-            <span className="g-hud-btn__icon" aria-hidden="true">⚙️</span>
+            <span className="g-hud-btn__icon" aria-hidden="true">
+              ⚙️
+            </span>
           </button>
         </div>
       )}
@@ -93,7 +125,10 @@ export function TopBar() {
 function Hearts({ hunger, foodMonths, onTap }: { hunger: number; foodMonths: number; onTap: () => void }) {
   const alive = Math.max(0, HUNGER_DEATH_MONTHS - hunger)
   const warning = hunger > 0 || foodMonths === 0
-  const label = hunger > 0 ? `${alive} de ${HUNGER_DEATH_MONTHS} corazones: ${hunger} ${hunger === 1 ? 'mes' : 'meses'} sin comer` : `Salud completa. Comida para ${foodMonths} ${foodMonths === 1 ? 'mes' : 'meses'}`
+  const label =
+    hunger > 0
+      ? `${alive} de ${HUNGER_DEATH_MONTHS} corazones: ${hunger} ${hunger === 1 ? 'mes' : 'meses'} sin comer`
+      : `Salud completa. Comida para ${foodMonths} ${foodMonths === 1 ? 'mes' : 'meses'}`
   return (
     <button type="button" onClick={onTap} className={`pointer-events-auto g-pill g-hearts ${warning ? 'g-hearts--warn' : ''}`} aria-label={label} title={label}>
       {Array.from({ length: HUNGER_DEATH_MONTHS }, (_, i) => (
