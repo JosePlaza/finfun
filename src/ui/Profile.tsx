@@ -11,6 +11,8 @@ import { AVATARS, avatarOr } from '../scene/avatars/catalog'
 import { Avatar } from '../scene/avatars/Avatar'
 import type { Action } from '../scene/Ambient'
 import { playAcornSfx } from './Music'
+import { AvatarHead } from './AvatarHead'
+import { BADGES, badgeStatus, currentMonth, TIER_NAMES } from '../sim'
 
 function Turntable({ children }: { children: React.ReactNode }) {
   const g = useRef<THREE.Group>(null)
@@ -82,9 +84,7 @@ export function PerfilContent() {
               const on = a.id === avatar
               return (
                 <button key={a.id} type="button" onClick={() => choose(a.id)} className={`avatar-chip ${on ? 'avatar-chip--on' : ''}`} aria-pressed={on} title={a.name}>
-                  <span className="avatar-chip__icon" aria-hidden="true">
-                    {a.emoji}
-                  </span>
+                  <AvatarHead id={a.id} size={56} className="avatar-chip__icon" />
                   <span className="avatar-chip__name">{a.name}</span>
                 </button>
               )
@@ -93,6 +93,51 @@ export function PerfilContent() {
           <p className="m-0 mt-3 text-[12px] font-bold text-ink-3 leading-snug">Tu avatar pasea por la isla con los vecinos. Puedes cambiarlo cuando quieras.</p>
         </>
       )}
+
+      {game && <Insignias />}
+    </>
+  )
+}
+
+/* ───────────────────────── Insignias ───────────────────────── */
+
+const TIER_CLASS = ['', 'badge--bronce', 'badge--plata', 'badge--oro']
+
+/** Las insignias: medalla por familia con el nivel conseguido (bronce, plata, oro) y lo que falta para el siguiente. */
+function Insignias() {
+  const game = useGame((s) => s.game)!
+  const nowMs = useGame((s) => s.nowMs)
+  const month = currentMonth(game, nowMs)
+  const rows = BADGES.map((def) => ({ def, st: badgeStatus(def, game, month) }))
+  const earned = rows.reduce((n, r) => n + r.st.earned, 0)
+  const total = rows.reduce((n, r) => n + r.def.tiers.length, 0)
+  return (
+    <>
+      <div className="flex items-center justify-between mt-4 mb-2">
+        <span className="g-label">Insignias</span>
+        <span className="text-[12px] font-extrabold text-ink-3 tabular-nums">
+          {earned}/{total}
+        </span>
+      </div>
+      <div className="badge-grid">
+        {rows.map(({ def, st }) => {
+          const pct = st.next !== null ? Math.min(100, Math.round((st.value / st.next) * 100)) : 100
+          return (
+            <div key={def.id} className={`badge ${st.earned > 0 ? TIER_CLASS[st.earned] : 'badge--off'}`} title={`${def.name}: ${st.valueText} ${def.what}`}>
+              <div className="badge__medal" aria-hidden="true">
+                <span className="badge__icon">{def.icon}</span>
+                {st.earned > 0 && <span className="badge__tier">{TIER_NAMES[st.earned]}</span>}
+              </div>
+              <div className="badge__name">{def.name}</div>
+              <div className="badge__what">{def.what}</div>
+              <div className="badge__bar">
+                <i style={{ width: `${pct}%` }} />
+              </div>
+              <div className="badge__count">{st.maxed ? `${st.valueText} · ¡Oro!` : `${st.valueText} / ${st.nextText}`}</div>
+            </div>
+          )
+        })}
+      </div>
     </>
   )
 }

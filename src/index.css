@@ -1010,3 +1010,65 @@ textarea {
 }
 .avatar-chip--on { border-color: var(--color-green); background: var(--color-green-l); box-shadow: 0 3px 0 var(--color-green-d); }
 .avatar-chip--on .avatar-chip__name { color: var(--color-green-d); }
+
+/* Cabezas de avatar (imagen fija) */
+.avatar-head { display: block; border-radius: 12px; object-fit: contain; }
+.avatar-head--wait { display: block; border-radius: 50%; opacity: 0.6; transform: scale(0.6); }
+.g-hud-btn--avatar { padding: 0; overflow: hidden; }
+.g-hud-btn--avatar .avatar-head { border-radius: 14px; }
+.avatar-chip { padding: 4px 4px 6px; }
+.avatar-chip .avatar-chip__icon { width: 56px; height: 56px; }
+
+/* Insignias */
+.badge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.badge {
+  --m: #b9ae9e;
+  --md: #8a8175;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px 8px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--color-cream-d);
+  text-align: center;
+}
+.badge--bronce { --m: #d9925a; --md: #9a5a2a; }
+.badge--plata { --m: #cfd6dd; --md: #8a94a0; }
+.badge--oro { --m: #f2c044; --md: #b8860b; }
+.badge--off { background: var(--color-cream); }
+.badge--off .badge__icon { filter: grayscale(1); opacity: 0.55; }
+.badge__medal {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--m) 70%);
+  box-shadow: 0 3px 0 var(--md), inset 0 0 0 3px rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+.badge__icon { font-size: 26px; line-height: 1; }
+.badge__tier {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--md);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge__name { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; line-height: 1.15; color: var(--color-ink); margin-top: 4px; }
+.badge__what { font-size: 10.5px; font-weight: 700; color: var(--color-ink-3); line-height: 1.15; }
+.badge__bar { width: 100%; height: 7px; border-radius: 999px; background: var(--color-cream-d); overflow: hidden; margin-top: 6px; }
+.badge__bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--m), var(--md)); border-radius: 999px; }
+.badge__count { font-size: 11px; font-weight: 800; color: var(--color-ink-l); font-variant-numeric: tabular-nums; margin-top: 3px; }

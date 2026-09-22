@@ -22,6 +22,8 @@ import {
   migrate,
   answerQuiz as simAnswerQuiz,
   LESSONS,
+  BADGE_BY_ID,
+  TIER_NAMES,
   spinInflation as simSpinInflation,
   setTutorialStep as simSetTutorialStep,
   setAutoFood as simSetAutoFood,
@@ -218,6 +220,20 @@ export const useGame = create<Store>()(
     (set, get) => {
       const now = () => serverNow() + get().devOffsetMs
 
+      /** Avisa de las insignias nuevas (comparando la lista de antes y la de después). */
+      const announceBadges = (before: GameState | null, after: GameState) => {
+        const old = new Set(before?.badges ?? [])
+        const fresh = (after.badges ?? []).filter((id) => !old.has(id))
+        if (fresh.length === 0 || !before) return
+        const last = fresh[fresh.length - 1]
+        const [family, tier] = last.split('-')
+        const def = BADGE_BY_ID[family]
+        if (def) {
+          playAcornSfx()
+          get().showToast(`🏅 Insignia de ${TIER_NAMES[Number(tier)].toLowerCase()}: ${def.name}${fresh.length > 1 ? ` (+${fresh.length - 1})` : ''}`)
+        }
+      }
+
       const apply = (r: ActionResult, okText?: string) => {
         if (!r.ok) {
           get().showToast(r.reason)
@@ -227,6 +243,7 @@ export const useGame = create<Store>()(
         set({ game: r.state })
         scheduleRemoteSave(r.state)
         if (okText) get().showToast(okText)
+        else announceBadges(before, r.state)
         if (before && r.state.world > before.world) {
           get().celebrate({
             icon: '🎉',
@@ -433,6 +450,7 @@ export const useGame = create<Store>()(
           if (advanced !== g) {
             patch.game = advanced
             scheduleRemoteSave(advanced)
+            announceBadges(g0, advanced)
           }
           if (month !== get().acornsMonth) {
             patch.acornsFound = []

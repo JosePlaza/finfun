@@ -3,7 +3,7 @@ import { COACH_STEPS } from './coachSteps'
 import { useGame } from '../store/game'
 import { Amount } from './Coin'
 import { pendingEvents } from './events'
-import { avatarOr } from '../scene/avatars/catalog'
+import { AvatarHead } from './AvatarHead'
 
 const SEASON_EMOJI: Record<string, string> = { primavera: '🌸', verano: '☀️', otoño: '🍂', invierno: '❄️' }
 
@@ -60,10 +60,8 @@ export function TopBar() {
           </div>
           {/* Perfil: el avatar del jugador */}
           {onIsland && (
-            <button type="button" onClick={() => setView('perfil')} className="pointer-events-auto g-hud-btn g-hud-btn--green" aria-label="Perfil" title="Perfil">
-              <span className="g-hud-btn__icon" aria-hidden="true">
-                {avatarOr(avatar).emoji}
-              </span>
+            <button type="button" onClick={() => setView('perfil')} className="pointer-events-auto g-hud-btn g-hud-btn--green g-hud-btn--avatar" aria-label="Perfil" title="Perfil">
+              <AvatarHead id={avatar} size={52} />
             </button>
           )}
         </div>

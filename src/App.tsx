@@ -1,3 +1,4 @@
+import { AvatarHeadFactory } from './ui/AvatarHead'
 import { useEffect } from 'react'
 import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
@@ -35,11 +36,7 @@ export default function App() {
   }, [boot, tick])
 
   if (!ready) {
-    return (
-      <div className="h-full flex items-center justify-center text-ink-2 font-display text-xl">
-        Cargando la isla…
-      </div>
-    )
+    return <div className="h-full flex items-center justify-center text-ink-2 font-display text-xl">Cargando la isla…</div>
   }
 
   if (hasSupabase && !account) return <AuthScreen />
@@ -50,6 +47,7 @@ export default function App() {
       <div className="relative h-full w-full overflow-hidden">
         <Island />
         <Music />
+        <AvatarHeadFactory />
         <EventSounds />
         <TopBar />
         <Panels />

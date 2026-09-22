@@ -232,6 +232,11 @@ export interface GameState {
   netWorthHistory: number[]
   /** Paso del recorrido inicial con Doña Tortuga (0 = empieza; TUTORIAL_DONE = terminado o saltado). */
   tutorialStep: number
+  /** Días (meses de isla) distintos en que se ha abierto el juego, y el último visto. */
+  daysPlayed: number
+  lastSeenMonth: number
+  /** Insignias conseguidas, como "familia-nivel" (ver sim/badges.ts). */
+  badges: string[]
 }
 
 export interface LiebreLoan {

@@ -30,6 +30,7 @@ import { calendarOf, describeMonth, monthAt } from './calendar'
 import { applyBps, formatCents, roundCents } from './money'
 import { randInt, rngFor } from './rng'
 import { inflatePrice, inflationForYear } from './inflation'
+import { awardBadges, bindNetWorth } from './badges'
 import { liebreAt, type LiebreCtx } from './liebre'
 export { inflatePrice, inflationForYear } from './inflation'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
@@ -114,6 +115,9 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     liebreLoansLate: 0,
     netWorthHistory: [],
     tutorialStep: 0,
+    daysPlayed: 0,
+    lastSeenMonth: -1,
+    badges: [],
   }
 }
 
@@ -146,6 +150,7 @@ export function migrate(state: GameState): GameState {
     state.worldOpened === undefined ||
     state.netWorthHistory === undefined ||
     state.tutorialStep === undefined ||
+    state.badges === undefined ||
     state.netWorthHistory.some((v) => v < 0) ||
     !state.bankUnlocked ||
     SHOP_ITEMS.some((d) => !state.shop.some((i) => i.id === d.id))
@@ -205,6 +210,10 @@ function clone(state: GameState): GameState {
   c.liebreLoansLate ??= 0
   // Partidas anteriores al recorrido inicial: se da por hecho (ya saben jugar).
   c.tutorialStep ??= TUTORIAL_DONE
+  c.daysPlayed ??= Math.max(1, Math.min(c.processedMonth + 1, c.tasksCompleted + 1))
+  c.lastSeenMonth ??= c.processedMonth
+  c.badges ??= []
+  awardBadges(c, Math.max(0, c.processedMonth))
   // Partidas anteriores: reconstruimos la historia de patrimonio con lo que sabemos (cierres de año del diario y
   // el valor de hoy), uniendo los puntos en línea recta. Desde ahora se guarda mes a mes.
   if (!c.netWorthHistory || c.netWorthHistory.some((v) => v < 0)) {
@@ -656,10 +665,16 @@ export function spinInflation(input: GameState): ActionResult & { inflationBps?:
 /** Avanza la simulación hasta el instante dado. Idempotente: llamarla varias veces con la misma hora no cambia nada. */
 export function advanceTo(input: GameState, nowMs: number): GameState {
   const target = monthAt(nowMs, input.epochMs)
-  if (target <= input.processedMonth) return input
+  if (target <= input.processedMonth && target <= input.lastSeenMonth) return input
   const state = clone(input)
   for (let m = state.processedMonth + 1; m <= target; m++) processMonth(state, m)
+  // Un día más jugado: la primera vez que la partida ve este mes con el juego abierto.
+  if (target > state.lastSeenMonth) {
+    state.lastSeenMonth = target
+    state.daysPlayed += 1
+  }
   progressWorld(state)
+  awardBadges(state, target)
   return state
 }
 
@@ -692,6 +707,7 @@ export type ActionResult = { ok: true; state: GameState } | { ok: false; reason:
 
 function done(state: GameState): ActionResult {
   progressWorld(state)
+  awardBadges(state, Math.max(0, state.processedMonth))
   return { ok: true, state }
 }
 
@@ -1034,3 +1050,5 @@ export function completeTask(input: GameState, nowMs: number): ActionResult {
 export function netWorth(state: GameState, month = state.processedMonth): number {
   return state.huchaCents + state.mailboxCents + state.bankCents + bondsTotal(state) + stocksValue(state, month) + fundValue(state, month)
 }
+
+bindNetWorth((g, month) => netWorth(g, month))
