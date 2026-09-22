@@ -2,7 +2,7 @@ import { AvatarHeadFactory } from './ui/AvatarHead'
 import { useEffect } from 'react'
 import { Island } from './scene/Island'
 import { isDevMode, useGame } from './store/game'
-import { TopBar } from './ui/Hud'
+import { RecenterButton, TopBar } from './ui/Hud'
 import { AuthScreen } from './ui/Auth'
 import { Coach } from './ui/Coach'
 import { hasSupabase } from './lib/supabase'
@@ -50,6 +50,7 @@ export default function App() {
         <AvatarHeadFactory />
         <EventSounds />
         <TopBar />
+        <RecenterButton />
         <Panels />
         <Coach />
         <Toast />

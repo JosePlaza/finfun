@@ -20,8 +20,6 @@ export function TopBar() {
   const trip = useGame((s) => s.trip)
   const returnHome = useGame((s) => s.returnHome)
   const avatar = useGame((s) => s.avatar)
-  const camOffCenter = useGame((s) => s.camOffCenter)
-  const recenter = useGame((s) => s.recenter)
   const coachHud = game.tutorialStep < TUTORIAL_DONE ? COACH_STEPS[game.tutorialStep]?.hud : undefined
   const acornsFound = useGame((s) => s.acornsFound)
   const seenDiary = useGame((s) => s.seenDiary)
@@ -111,15 +109,6 @@ export function TopBar() {
         )}
       </div>
 
-      {/* La cámara se ha ido lejos del centro: un botón para volver a la vista general */}
-      {onIsland && camOffCenter && (
-        <div className="mt-3 flex justify-center">
-          <button type="button" onClick={recenter} className="pointer-events-auto g-btn g-btn--cream g-btn--sm">
-            ⌖ Centrar isla
-          </button>
-        </div>
-      )}
-
       {/* En la isla de la Liebre: cartel y botón de volver */}
       {trip !== 'home' && (
         <div className="mt-3 flex items-center justify-center gap-2">
@@ -134,6 +123,22 @@ export function TopBar() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/** La cámara se ha ido lejos del centro: botón en el pie de la pantalla, centrado, para volver a la vista general. */
+export function RecenterButton() {
+  const view = useGame((s) => s.view)
+  const trip = useGame((s) => s.trip)
+  const camOffCenter = useGame((s) => s.camOffCenter)
+  const recenter = useGame((s) => s.recenter)
+  if (!(view === 'isla' && trip === 'home' && camOffCenter)) return null
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-[max(14px,env(safe-area-inset-bottom))]">
+      <button type="button" onClick={recenter} className="pointer-events-auto g-btn g-btn--cream g-btn--sm">
+        ⌖ Centrar isla
+      </button>
     </div>
   )
 }
