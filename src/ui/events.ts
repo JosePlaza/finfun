@@ -1,5 +1,5 @@
 /** EVENTOS PENDIENTES: cosas que el jugador puede hacer ahora mismo. Se derivan del estado, no se guardan. */
-import { HUNGER_DEATH_MONTHS, missionsFor, TASK_ACORNS, formatCents, type GameState } from '../sim'
+import { HUNGER_DEATH_MONTHS, LIEBRE_LOAN_CENTS, LIEBRE_LOAN_REPAY_CENTS, liebreCanBorrow, missionsFor, TASK_ACORNS, formatCents, type GameState } from '../sim'
 import type { View } from '../store/game'
 
 export interface PendingEvent {
@@ -128,6 +128,17 @@ export function pendingEvents(
   const rescue = game.ledger.filter((e) => e.kind === 'rescate').slice(-1)[0]
   if (rescue && rescue.month === game.processedMonth) {
     out.push({ id: `rescate-${rescue.month}`, icon: '🍲', title: 'Doña Tortuga te ha rescatado', detail: rescue.label, view: 'tienda', tone: 'red' })
+  }
+  // La Liebre pasa hambre y no debe nada: pide un préstamo. "Ir" coge la barca hasta su isla, donde está el botón.
+  if (liebreCanBorrow(game, game.processedMonth)) {
+    out.push({
+      id: `liebre-pide-${game.processedMonth}`,
+      icon: '🐰',
+      title: 'La Liebre te pide un préstamo',
+      detail: `"¡No tengo para la cesta! ¿Me prestas ${formatCents(LIEBRE_LOAN_CENTS)}?" Promete devolver ${formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene. Ve a su isla en la barca para decidir.`,
+      view: 'liebre',
+      tone: 'orange',
+    })
   }
   const loanBack = game.ledger.filter((e) => e.kind === 'devolucion').slice(-1)[0]
   if (loanBack && loanBack.month === game.processedMonth) {

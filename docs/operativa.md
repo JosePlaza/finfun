@@ -139,7 +139,7 @@ columnas (tu patrimonio y cosas compradas · el suyo, sus cosas y sus caprichos)
 guarda al cerrar cada mes; la suya, de la simulación) y una frase de Doña Tortuga que cambia con el nivel. Nunca se burla
 de la Liebre: explica qué decisión marcó la diferencia.
 
-**El préstamo de la Liebre.** Los meses que pasa hambre (o tiene la despensa vacía), en la pizarra pide **5 eL** y promete
+**El préstamo de la Liebre (los meses que pasa hambre aparece en Eventos "La Liebre te pide un préstamo"; "Ir" coge la barca y en su pizarra está el botón Prestar).** Los meses que pasa hambre (o tiene la despensa vacía), en la pizarra pide **5 eL** y promete
 devolver **6** el mes que viene. Una de cada cinco veces se retrasa dos meses (aviso en Eventos). El eL de interés pasa
 por Hacienda como cualquier rendimiento. Es la única deuda del juego, la contraria del bono: prestas a alguien menos
 fiable que el Ayuntamiento y por eso cobras más (20 % en un mes), pero puede fallarte. Solo un préstamo vivo a la vez.

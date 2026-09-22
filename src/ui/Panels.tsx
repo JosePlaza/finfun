@@ -1960,7 +1960,7 @@ function LiebrePanel() {
             <div className="g-inset p-3.5 text-[13px] font-semibold text-ink-l leading-snug">
               {liebre.hungryNow || liebre.foodMonths === 0
                 ? `Hoy la Liebre tiene hambre, pero te faltan ${formatCents(LIEBRE_LOAN_CENTS - game.huchaCents)} en el cofre para prestarle.`
-                : `Hoy la Liebre tiene comida. Los meses que pasa hambre te pide ${formatCents(LIEBRE_LOAN_CENTS)} y devuelve ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}.`}
+                : `Hoy la Liebre tiene comida. Los meses que pasa hambre te lo pide en Eventos: presta ${formatCents(LIEBRE_LOAN_CENTS)} y devuelve ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}.`}
               {game.liebreLoansRepaid > 0 &&
                 ` Te ha devuelto ${game.liebreLoansRepaid} ${game.liebreLoansRepaid === 1 ? 'préstamo' : 'préstamos'}${game.liebreLoansLate > 0 ? ` (${game.liebreLoansLate} con retraso)` : ''}.`}
             </div>
