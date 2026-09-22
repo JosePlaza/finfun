@@ -11,6 +11,7 @@ import {
   HUNGER_DEATH_MONTHS,
   AUTO_FOOD_ITEM,
   LESSONS,
+  QUIZZES,
   LIEBRE_LOAN_CENTS,
   LIEBRE_LOAN_LATE_CHANCE,
   LIEBRE_LOAN_LATE_MONTHS,
@@ -33,7 +34,20 @@ import { liebreAt, type LiebreCtx } from './liebre'
 export { inflatePrice, inflationForYear } from './inflation'
 import type { DiaryEntry, GameState, LedgerEvent, TaxMode } from './types'
 import { missionsFor } from './missions'
-import { BUSINESS_BY_ID, BUSINESSES, COMMISSION_CENTS, CRASH_AFTER_MONTHS, discoveryThisYear, fundNavAt, isHotYear, isResultsMonth, priceAt, quarterFor, SHARES_PER_BUSINESS, type MarketCtx } from './market'
+import {
+  BUSINESS_BY_ID,
+  BUSINESSES,
+  COMMISSION_CENTS,
+  CRASH_AFTER_MONTHS,
+  discoveryThisYear,
+  fundNavAt,
+  isHotYear,
+  isResultsMonth,
+  priceAt,
+  quarterFor,
+  SHARES_PER_BUSINESS,
+  type MarketCtx,
+} from './market'
 
 const LEDGER_MAX = 80
 
@@ -80,6 +94,7 @@ export function createGame(params: { islandName: string; seed: number; epochMs: 
     taxDebtCents: 0,
     declarations: [],
     lessonsRead: [],
+    quizFailedMonth: {},
     holdings: {},
     businessesBought: [],
     yearDividendsCents: 0,
@@ -122,6 +137,7 @@ export function migrate(state: GameState): GameState {
     state.pendingYearEnds === undefined ||
     state.bonds === undefined ||
     state.lessonsRead === undefined ||
+    state.quizFailedMonth === undefined ||
     state.declarations === undefined ||
     state.holdings === undefined ||
     state.fundUnits === undefined ||
@@ -165,6 +181,7 @@ function clone(state: GameState): GameState {
   c.taxDebtCents ??= 0
   c.declarations ??= []
   c.lessonsRead ??= []
+  c.quizFailedMonth ??= {}
   c.holdings ??= {}
   c.businessesBought ??= []
   c.yearDividendsCents ??= 0
@@ -323,7 +340,12 @@ function processMonth(state: GameState, month: number) {
       const upgraded = state.huertoUpgradedMonth !== null
       const food = upgraded ? HUERTO_UPGRADED_FOOD_MONTHS : HUERTO_FOOD_MONTHS
       state.foodMonths += food
-      log(state, { kind: 'huerto', month, amountCents: 0, label: upgraded ? `El huerto ampliado llena la despensa (+${food} meses de comida)` : `El huerto da una cesta grande (+${food} meses de comida)` })
+      log(state, {
+        kind: 'huerto',
+        month,
+        amountCents: 0,
+        label: upgraded ? `El huerto ampliado llena la despensa (+${food} meses de comida)` : `El huerto da una cesta grande (+${food} meses de comida)`,
+      })
     }
   }
 
@@ -360,7 +382,15 @@ function processMonth(state: GameState, month: number) {
         state.foodMonths = 1
         state.rescues += 1
         state.lastRescueMonth = month
-        log(state, { kind: 'rescate', month, amountCents: -lost, label: lost > 0 ? `Doña Tortuga te rescata: seis meses sin comer. El cofre (${formatCents(lost)}) se fue en médicos y sopa` : 'Doña Tortuga te rescata: seis meses sin comer. El cofre estaba vacío' })
+        log(state, {
+          kind: 'rescate',
+          month,
+          amountCents: -lost,
+          label:
+            lost > 0
+              ? `Doña Tortuga te rescata: seis meses sin comer. El cofre (${formatCents(lost)}) se fue en médicos y sopa`
+              : 'Doña Tortuga te rescata: seis meses sin comer. El cofre estaba vacío',
+        })
       }
     }
   }
@@ -414,7 +444,12 @@ function processMonth(state: GameState, month: number) {
       loan.late = true
       loan.dueMonth = month + LIEBRE_LOAN_LATE_MONTHS
       state.liebreLoansLate += 1
-      log(state, { kind: 'noticia', month, amountCents: 0, label: `La Liebre no puede devolverte los ${formatCents(loan.repayCents)} todavía: "¡Te los doy en dos meses, prometido!"` })
+      log(state, {
+        kind: 'noticia',
+        month,
+        amountCents: 0,
+        label: `La Liebre no puede devolverte los ${formatCents(loan.repayCents)} todavía: "¡Te los doy en dos meses, prometido!"`,
+      })
     } else {
       const interest = loan.repayCents - loan.amountCents
       const { net, retained } = earnTaxable(state, interest)
@@ -432,18 +467,29 @@ function processMonth(state: GameState, month: number) {
 
   // 5a. La Tormenta: un mes, todo cae a la vez. Se apunta lo que se tenía para la misión de aguantar.
   if (state.crashMonth !== null && month === state.crashMonth) {
-    log(state, { kind: 'tormenta', month, amountCents: 0, label: 'LA TORMENTA: todos los precios de la isla caen de golpe. Los negocios siguen ganando; los precios se recuperan con el tiempo.' })
+    log(state, {
+      kind: 'tormenta',
+      month,
+      amountCents: 0,
+      label: 'LA TORMENTA: todos los precios de la isla caen de golpe. Los negocios siguen ganando; los precios se recuperan con el tiempo.',
+    })
     const shares = Object.values(state.holdings).reduce((a, h) => a + h.shares, 0)
     state.crashWatch = { shares, fundUnits: state.fundUnits }
     for (const def of BUSINESSES) {
-      if (def.refuge && def.world <= state.world) log(state, { kind: 'noticia', month, amountCents: 0, label: `Con el miedo, todos buscan refugio: el oro de la ${def.name} sube mientras lo demás cae.` })
+      if (def.refuge && def.world <= state.world)
+        log(state, { kind: 'noticia', month, amountCents: 0, label: `Con el miedo, todos buscan refugio: el oro de la ${def.name} sube mientras lo demás cae.` })
     }
   }
   // El miedo se pasa: el oro vuelve a su precio de siempre.
   if (state.crashMonth !== null) {
     for (const def of BUSINESSES) {
       if (def.refuge && def.world <= state.world && month === state.crashMonth + def.refuge.fadeMonths)
-        log(state, { kind: 'noticia', month, amountCents: 0, label: 'El miedo se ha ido: el oro vuelve a su precio de siempre. El refugio protege en la tormenta, no hace rico a nadie.' })
+        log(state, {
+          kind: 'noticia',
+          month,
+          amountCents: 0,
+          label: 'El miedo se ha ido: el oro vuelve a su precio de siempre. El refugio protege en la tormenta, no hace rico a nadie.',
+        })
     }
   }
   if (state.crashWatch && state.crashMonth !== null && month === state.crashMonth + 3) {
@@ -463,7 +509,14 @@ function processMonth(state: GameState, month: number) {
       if (def.world > state.world) continue
       if (def.fashion) {
         const hot = isHotYear(ctx, def, yearIndex)
-        log(state, { kind: 'noticia', month, amountCents: 0, label: hot ? `Este año los juguetes del ${def.name} están de moda: todo el mundo los quiere.` : `Este año nadie se acuerda de los juguetes del ${def.name}. Las modas pasan.` })
+        log(state, {
+          kind: 'noticia',
+          month,
+          amountCents: 0,
+          label: hot
+            ? `Este año los juguetes del ${def.name} están de moda: todo el mundo los quiere.`
+            : `Este año nadie se acuerda de los juguetes del ${def.name}. Las modas pasan.`,
+        })
       }
       if (def.discovery && discoveryThisYear(ctx, def, yearIndex)) log(state, { kind: 'noticia', month, amountCents: 0, label: def.discovery.label })
     }
@@ -523,7 +576,12 @@ function processMonth(state: GameState, month: number) {
       log(state, { kind: 'impuestos', month, amountCents: -tax, label: `Declaración del año ${cal.year}: 19 % de ${formatCents(base)}` })
     }
     if (state.taxesUnlocked) {
-      state.declarations.push({ year: cal.year, mode: state.taxMode, grossCents: state.yearPendingTaxableCents + (state.taxMode === 'cada-cobro' ? roundCents((state.yearTaxCents * 10_000) / RETENTION_BPS) : 0), taxCents: state.yearTaxCents })
+      state.declarations.push({
+        year: cal.year,
+        mode: state.taxMode,
+        grossCents: state.yearPendingTaxableCents + (state.taxMode === 'cada-cobro' ? roundCents((state.yearTaxCents * 10_000) / RETENTION_BPS) : 0),
+        taxCents: state.yearTaxCents,
+      })
     }
     state.pendingYearEnds.push({
       year: cal.year,
@@ -708,15 +766,19 @@ export function setAutoFood(input: GameState, nowMs: number, on: boolean): Actio
   const state = clone(advanceTo(input, nowMs))
   state.autoFood = on
   const month = currentMonth(state, nowMs)
-  log(state, { kind: 'comida', month, amountCents: 0, label: on ? 'Cesta domiciliada: la despensa se rellenará sola cuando se vacíe' : 'Cesta domiciliada desactivada: compra tú la comida cada mes' })
+  log(state, {
+    kind: 'comida',
+    month,
+    amountCents: 0,
+    label: on ? 'Cesta domiciliada: la despensa se rellenará sola cuando se vacíe' : 'Cesta domiciliada desactivada: compra tú la comida cada mes',
+  })
   return done(state)
 }
 
-/** Avanza (o termina) el recorrido inicial. Al terminarlo, la lección "Espera y verás" queda leída. */
+/** Avanza (o termina) el recorrido inicial. */
 export function setTutorialStep(input: GameState, step: number): ActionResult {
   const state = clone(input)
   state.tutorialStep = Math.max(0, Math.min(TUTORIAL_DONE, step))
-  if (state.tutorialStep >= TUTORIAL_DONE && !state.lessonsRead.includes('paciencia')) state.lessonsRead.push('paciencia')
   return done(state)
 }
 
@@ -746,7 +808,12 @@ export function lendToLiebre(input: GameState, nowMs: number): ActionResult {
   if (state.huchaCents < LIEBRE_LOAN_CENTS) return { ok: false, reason: `Te faltan ${formatCents(LIEBRE_LOAN_CENTS - state.huchaCents)} euroLukys en el cofre.` }
   state.huchaCents -= LIEBRE_LOAN_CENTS
   state.liebreLoan = { lentMonth: month, dueMonth: month + 1, amountCents: LIEBRE_LOAN_CENTS, repayCents: LIEBRE_LOAN_REPAY_CENTS, late: false }
-  log(state, { kind: 'prestamo', month, amountCents: -LIEBRE_LOAN_CENTS, label: `Prestas ${formatCents(LIEBRE_LOAN_CENTS)} a la Liebre: te devolverá ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}` })
+  log(state, {
+    kind: 'prestamo',
+    month,
+    amountCents: -LIEBRE_LOAN_CENTS,
+    label: `Prestas ${formatCents(LIEBRE_LOAN_CENTS)} a la Liebre: te devolverá ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}`,
+  })
   return done(state)
 }
 
@@ -787,7 +854,15 @@ export function buyBond(input: GameState, nowMs: number, offerId: string, cents:
   const month = currentMonth(state, nowMs)
   state.huchaCents -= cents
   state.bondsBought += 1
-  state.bonds.push({ id: `${offer.id}-${month}-${state.bondsBought}`, offerId: offer.id, principalCents: cents, couponBps: offer.couponBps, boughtMonth: month, maturityMonth: month + offer.months, couponsPaid: 0 })
+  state.bonds.push({
+    id: `${offer.id}-${month}-${state.bondsBought}`,
+    offerId: offer.id,
+    principalCents: cents,
+    couponBps: offer.couponBps,
+    boughtMonth: month,
+    maturityMonth: month + offer.months,
+    couponsPaid: 0,
+  })
   log(state, { kind: 'bono', month, amountCents: -cents, label: `Prestas al Ayuntamiento: ${offer.name}` })
   return done(state)
 }
@@ -811,7 +886,8 @@ export function buyShares(input: GameState, nowMs: number, businessId: string, s
   const holding = state.holdings[businessId] ?? { shares: 0, avgCostCents: 0 }
   if (holding.shares + shares > SHARES_PER_BUSINESS) return { ok: false, reason: `${def.name} solo tiene ${SHARES_PER_BUSINESS} acciones.` }
   const cost = price * shares + COMMISSION_CENTS
-  if (cost > state.huchaCents) return { ok: false, reason: `Te faltan ${formatCents(cost - state.huchaCents)} euroLukys (con la comisión de ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })}).` }
+  if (cost > state.huchaCents)
+    return { ok: false, reason: `Te faltan ${formatCents(cost - state.huchaCents)} euroLukys (con la comisión de ${formatCents(COMMISSION_CENTS, { alwaysDecimals: true })}).` }
   state.huchaCents -= cost
   // Precio medio de compra: lo pagado (sin comisión) entre todas las acciones.
   const totalCost = holding.avgCostCents * holding.shares + price * shares
@@ -842,7 +918,12 @@ export function sellShares(input: GameState, nowMs: number, businessId: string, 
   holding.shares -= shares
   if (holding.shares === 0) delete state.holdings[businessId]
   const gainText = gain > 0 ? `ganas ${formatCents(gain)}` : gain < 0 ? `pierdes ${formatCents(-gain)}` : 'ni ganas ni pierdes'
-  log(state, { kind: 'acciones-venta', month, amountCents: net, label: `Vendes ${shares} ${shares === 1 ? 'acción' : 'acciones'} de ${def.name} a ${formatCents(price)}: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}` })
+  log(state, {
+    kind: 'acciones-venta',
+    month,
+    amountCents: net,
+    label: `Vendes ${shares} ${shares === 1 ? 'acción' : 'acciones'} de ${def.name} a ${formatCents(price)}: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}`,
+  })
   return done(state)
 }
 
@@ -857,7 +938,12 @@ export function buyFund(input: GameState, nowMs: number, cents: number): ActionR
   state.huchaCents -= cents
   state.fundUnits += cents / nav
   state.fundCostCents += cents
-  log(state, { kind: 'fondo-compra', month, amountCents: -cents, label: `Metes ${formatCents(cents)} en el Fondo Isla (participación a ${formatCents(Math.round(nav), { alwaysDecimals: true })})` })
+  log(state, {
+    kind: 'fondo-compra',
+    month,
+    amountCents: -cents,
+    label: `Metes ${formatCents(cents)} en el Fondo Isla (participación a ${formatCents(Math.round(nav), { alwaysDecimals: true })})`,
+  })
   return done(state)
 }
 
@@ -888,15 +974,42 @@ export function sellFund(input: GameState, nowMs: number, cents: number | 'all')
     }
   }
   const gainText = gain > 0 ? `ganas ${formatCents(gain)}` : gain < 0 ? `pierdes ${formatCents(-gain)}` : 'ni ganas ni pierdes'
-  log(state, { kind: 'fondo-venta', month, amountCents: amount - retained, label: `Sacas ${formatCents(amount)} del Fondo Isla: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}` })
+  log(state, {
+    kind: 'fondo-venta',
+    month,
+    amountCents: amount - retained,
+    label: `Sacas ${formatCents(amount)} del Fondo Isla: ${gainText}${retained > 0 ? ` (Hacienda retuvo ${formatCents(retained, { alwaysDecimals: true })})` : ''}`,
+  })
   return done(state)
 }
 
-export function readLesson(input: GameState, nowMs: number, lessonId: string): ActionResult {
+/** Estado del cuestionario de una lección para la interfaz. */
+export type QuizStatus = 'aprendida' | 'disponible' | 'manana'
+
+export function quizStatus(state: GameState, nowMs: number, lessonId: string): QuizStatus {
+  if (state.lessonsRead.includes(lessonId)) return 'aprendida'
+  const failed = state.quizFailedMonth[lessonId]
+  if (failed !== undefined && failed >= currentMonth(state, nowMs)) return 'manana'
+  return 'disponible'
+}
+
+/**
+ * Responde al cuestionario de una lección. Acierto: la lección queda aprendida. Fallo: se apunta el mes y no se
+ * puede repetir hasta el mes siguiente (el día siguiente del jugador). `correct` dice cómo ha ido.
+ */
+export function answerQuiz(input: GameState, nowMs: number, lessonId: string, optionIndex: number): ActionResult & { correct?: boolean } {
   const state = clone(advanceTo(input, nowMs))
-  if (!LESSONS.some((l) => l.id === lessonId)) return { ok: false, reason: 'Esa lección no existe.' }
-  if (!state.lessonsRead.includes(lessonId)) state.lessonsRead.push(lessonId)
-  return done(state)
+  if (!LESSONS.some((l) => l.id === lessonId) || !QUIZZES[lessonId]) return { ok: false, reason: 'Esa lección no existe.' }
+  const status = quizStatus(state, nowMs, lessonId)
+  if (status === 'aprendida') return { ok: false, reason: 'Esa lección ya está aprendida.' }
+  if (status === 'manana') return { ok: false, reason: 'Hoy ya lo has intentado: vuelve mañana.' }
+  if (optionIndex === 0) {
+    state.lessonsRead.push(lessonId)
+    delete state.quizFailedMonth[lessonId]
+    return { ...done(state), correct: true }
+  }
+  state.quizFailedMonth[lessonId] = currentMonth(state, nowMs)
+  return { ...done(state), correct: false }
 }
 
 export function canDoTask(state: GameState, nowMs: number): boolean {

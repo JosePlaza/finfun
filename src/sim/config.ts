@@ -29,7 +29,6 @@ export const TASK_MIN_CENTS = 2_00
 export const TASK_MAX_CENTS = 2_00
 export const TASK_ACORNS = 5
 
-
 /** Comida: meses de despensa que da cada cesta y comida con la que se empieza. */
 export const FOOD_START_MONTHS = 3
 /** Meses seguidos sin comer hasta que Doña Tortuga te rescata (y se pierde lo del cofre). */
@@ -141,19 +140,232 @@ export interface Lesson {
   icon: string
 }
 
+/**
+ * Cuestionario de una lección: una sola pregunta con cuatro opciones. La PRIMERA opción es la correcta (la
+ * interfaz las baraja). `hint` es la pista de Doña Tortuga al fallar: orienta sin dar la respuesta.
+ */
+export interface Quiz {
+  question: string
+  options: [string, string, string, string]
+  hint: string
+}
+
+export const QUIZZES: Record<string, Quiz> = {
+  inflacion: {
+    question: 'La bici costaba 180 eL y este año cuesta 185. ¿Qué ha pasado?',
+    options: [
+      'Han subido los precios: con los mismos euroLukys compras un poco menos.',
+      'La bici es mejor que el año pasado.',
+      'La tienda se ha equivocado al poner el precio.',
+      'Tu paga ha bajado.',
+    ],
+    hint: 'Fíjate en el precio tachado que aparece en la tienda cada enero. La bici es la misma… lo que cambia es el precio.',
+  },
+  'interes-compuesto': {
+    question: 'Dejas 100 eL en el banco y no los tocas en muchos años. ¿Qué pasa con el interés que te dan?',
+    options: [
+      'Cada año te dan un poco más, porque también hay interés sobre el interés anterior.',
+      'Cada año te dan exactamente lo mismo.',
+      'Cada año te dan un poco menos.',
+      'Solo te dan interés el primer año.',
+    ],
+    hint: 'Piensa en una bola de nieve que rueda cuesta abajo: ¿se queda igual de grande?',
+  },
+  bono: {
+    question: 'Compras el Bono Puente: 100 eL a 12 meses al 4 %. ¿Qué es un bono?',
+    options: [
+      'Prestar dinero a cambio de que te lo devuelvan con un cupón.',
+      'Un regalo que le haces al Ayuntamiento.',
+      'Comprar un trozo del puente.',
+      'Una cuenta del banco con otro nombre.',
+    ],
+    hint: 'El Ayuntamiento te devuelve los 100 eL al final. Si te los devuelve… ¿qué ha sido ese dinero mientras tanto?',
+  },
+  impuestos: {
+    question: 'El banco te da 10 eL de interés y en el cofre solo llegan 8,10. ¿Dónde han ido los otros 1,90?',
+    options: [
+      'A Hacienda: el 19 % de lo que ganas paga las cosas comunes de la isla.',
+      'Se los ha quedado el banco como comisión.',
+      'Se los ha llevado la inflación.',
+      'Es un error del banco.',
+    ],
+    hint: '¿Quién paga las farolas y la escuela de la isla? Don Búho te lo cuenta en la torre.',
+  },
+  riesgo: {
+    question: 'Necesitas 50 eL dentro de dos meses para la cesta y el colegio. ¿Dónde los guardas?',
+    options: [
+      'En el banco o el cofre: lo que necesitas pronto no se arriesga.',
+      'En acciones del Astillero, que pueden subir mucho.',
+      'En el negocio que más subió el mes pasado.',
+      'Todo en oro.',
+    ],
+    hint: 'Lo que puede dar más también puede dar menos. ¿Puedes permitirte que en dos meses haya menos?',
+  },
+  accion: {
+    question: 'Tienes 10 acciones de la Panadería, que tiene 100 en total. ¿Qué significa?',
+    options: [
+      'Que eres dueño del 10 % de la Panadería y de esa parte de lo que gane.',
+      'Que la Panadería te regala pan.',
+      'Que la Panadería te debe dinero.',
+      'Que trabajas en la Panadería.',
+    ],
+    hint: 'Mira el cartel del negocio: pone "Tuyo: 10 %". Una acción es un trocito de algo.',
+  },
+  dividendo: {
+    question: 'El Puerto pesquero llevaba tres trimestres pagando dividendo y este trimestre no ha pagado nada. ¿Por qué?',
+    options: [
+      'Porque ha habido tormenta y el negocio no ha ganado: el dividendo depende de que haya beneficio.',
+      'Porque se ha olvidado.',
+      'Porque vendiste tus acciones demasiado tarde.',
+      'Porque Hacienda se lo ha quedado entero.',
+    ],
+    hint: 'El cupón de un bono estaba prometido. El dividendo, no. ¿De qué depende?',
+  },
+  cesta: {
+    question: 'Tienes 100 eL para invertir en acciones. ¿Qué es más prudente?',
+    options: [
+      'Repartirlo entre varios negocios distintos, para que un mal golpe en uno no lo sea en todos.',
+      'Ponerlo todo en el negocio que más te gusta.',
+      'Ponerlo todo en el que más subió este mes.',
+      'Comprar y vender cada día para aprovechar los cambios.',
+    ],
+    hint: 'Si llevas todos los huevos en una cesta y tropiezas… ¿cuántos se rompen?',
+  },
+  ciclos: {
+    question: 'Este año el Taller de juguetes está de moda y su precio ha subido mucho. ¿Qué suele pasar si compras ahora por eso?',
+    options: [
+      'Que llegas tarde: las modas pasan y el que compra arriba suele comprar caro.',
+      'Que seguirá subiendo siempre.',
+      'Que cobrarás el doble de dividendo.',
+      'Que el oro bajará.',
+    ],
+    hint: 'Las modas van y vienen. Si compras algo porque está arriba… ¿hacia dónde le queda más camino?',
+  },
+  fondo: {
+    question: 'Metes 100 eL en el Fondo Isla. ¿Qué has comprado?',
+    options: ['Un trocito de todos los negocios de la isla a la vez.', 'Solo acciones de la Panadería.', 'Un bono del Ayuntamiento.', 'Lingotes de oro.'],
+    hint: 'El fondo es como una cesta ya preparada. Mira el edificio del fondo: ¿de cuántos negocios habla?',
+  },
+  tormenta: {
+    question: 'Llega La Tormenta y todas las acciones caen un 30 % en un día. La Panadería sigue vendiendo el mismo pan. ¿Qué haces?',
+    options: [
+      'Nada: los negocios siguen ganando igual, solo ha cambiado el precio de hoy; quien vende ahora convierte la bajada en pérdida.',
+      'Vender todo antes de que baje más.',
+      'Pedir un préstamo a la Liebre para comprar más.',
+      'Dejar de comprar comida para no gastar.',
+    ],
+    hint: '¿Ha cambiado la Panadería, o solo lo que la gente asustada paga hoy por ella?',
+  },
+  paciencia: {
+    question: '¿Cuál es la mejor forma de jugar a Finfun?',
+    options: [
+      'Diez minutos al día, muchos días: lo importante pasa poco a poco.',
+      'Muchas horas cada día para avanzar deprisa.',
+      'Entrar una vez al mes y hacerlo todo de golpe.',
+      'Copiar todo lo que haga la Liebre.',
+    ],
+    hint: 'Aquí un día tuyo es un mes de la isla. Lo importante no pasa deprisa… pasa cada día.',
+  },
+  independencia: {
+    question: 'El huerto ampliado da tres meses de comida cada trimestre, justo lo que comes. ¿Por qué eso se llama independencia financiera?',
+    options: [
+      'Porque lo que producen tus inversiones cubre lo que necesitas para vivir, sin gastar la paga.',
+      'Porque ya no necesitas al banco.',
+      'Porque puedes dejar de jugar.',
+      'Porque el huerto es gratis.',
+    ],
+    hint: 'Si el huerto te da de comer cada mes… ¿qué pasa con la paga? ¿La necesitas para comer?',
+  },
+  comida: {
+    question: 'Tienes 12 eL, la despensa vacía y en la tienda hay un cómic que te encanta (4 eL) y la cesta pequeña (5 eL). ¿Qué compras primero?',
+    options: ['La cesta: primero lo necesario y con lo que sobre, el deseo.', 'El cómic, que es más barato.', 'Nada, mejor ahorrarlo todo.', 'Acciones, que dan más.'],
+    hint: 'Con la despensa vacía pierdes corazones. ¿Qué es necesario y qué es un deseo?',
+  },
+}
+
 export const LESSONS: Lesson[] = [
-  { id: 'inflacion', title: 'La inflación', icon: '📈', body: 'Casi todos los años los precios suben un poco. Con los mismos euroLukys compras un poco menos. Por eso el dinero quieto en el cofre pierde valor: hay que ponerlo a trabajar.' },
-  { id: 'interes-compuesto', title: 'El interés compuesto', icon: '🌱', body: 'El banco paga interés sobre lo que tienes… incluido el interés que ya te dio antes. Es una bola de nieve: al principio crece despacio y luego cada vez más rápido. Cuanto antes empieces, más grande será.' },
-  { id: 'bono', title: 'Qué es un bono', icon: '📜', body: 'Comprar un bono es prestar dinero. El Ayuntamiento te paga un cupón fijo cada trimestre y al final del plazo te devuelve lo prestado. Cuanto más tiempo prestas, más cupón te pagan.' },
-  { id: 'impuestos', title: 'Los impuestos', icon: '🦉', body: 'Hacienda se lleva un 19 % de lo que ganas con tu dinero (intereses y cupones). Con eso se pagan las farolas y la escuela. Si pagas una vez al año en vez de en cada cobro, el dinero sigue creciendo mientras tanto.' },
-  { id: 'riesgo', title: 'Riesgo y recompensa', icon: '⚖️', body: 'Lo que puede dar más también puede dar menos. El banco y los bonos son seguros y dan poco. Las acciones (Nivel 3) dan más… algunos años. Nunca pongas en lo arriesgado el dinero que necesitas pronto.' },
-  { id: 'accion', title: 'Qué es una acción', icon: '📈', body: 'Una acción es un trocito de un negocio. Si la Panadería tiene 100 acciones y tú tienes 10, el 10 % de la Panadería es tuyo: una parte de lo que gana es para ti. El precio de la acción sube y baja según lo que gana el negocio… y según lo nerviosa que esté la gente.' },
-  { id: 'dividendo', title: 'El dividendo no está prometido', icon: '🎁', body: 'El cupón de un bono estaba prometido. El dividendo de una acción, no: depende de cómo le haya ido al negocio ese trimestre. Si hay tormenta en el Puerto, ese trimestre no hay dividendo. A cambio, cuando el negocio va bien, el dividendo crece.' },
-  { id: 'cesta', title: 'No pongas todos los huevos en la misma cesta', icon: '🧺', body: 'Si toda tu cartera es el Puerto y llega una tormenta, lo notas entero. Si tienes un poco de cada negocio, unos compensan a otros: unos años gana la Heladería, otros la Granja. Repartir no te hace ganar más, te hace dormir mejor.' },
-  { id: 'ciclos', title: 'Modas y refugios', icon: '🪙', body: 'El Taller de juguetes depende de las modas, que nadie puede predecir: comprar lo que está arriba porque está arriba suele salir caro. El oro de la Cantera es lo contrario: no gana ni reparte nada, pero cuando todos tienen miedo lo quieren y sube. Un poco de oro amortigua las tormentas; mucho oro es una cartera que no crece.' },
-  { id: 'fondo', title: 'Qué es un fondo', icon: '🏠', body: 'El Fondo Isla tiene un trocito igual de todos los negocios. Compras participaciones y ya estás repartido sin pensar. Es de acumulación: los dividendos que cobra no salen, se reinvierten y hacen subir la participación. Cobra una comisión pequeña cada año por hacerlo.' },
-  { id: 'tormenta', title: 'Cuando todo cae', icon: '⛈️', body: 'Algún día todos los precios caen a la vez. Los negocios siguen ganando dinero, pero la gente vende asustada. Quien vende en la caída pierde de verdad; quien aguanta ve cómo los precios vuelven poco a poco y sigue cobrando dividendos mientras tanto.' },
-  { id: 'paciencia', title: 'Espera y verás', icon: '🐢', body: 'Finfun no se juega durante horas: se juega diez minutos al día, muchos días. Aquí un día tuyo es un mes de la isla, y lo importante (los intereses, los dividendos, la despensa que se llena sola) no pasa deprisa: pasa cada día, un poco. Este juego entrena dos músculos que sirven para toda la vida: la paciencia y la constancia. Quien quiere tenerlo todo hoy, acaba como la Liebre.' },
-  { id: 'independencia', title: 'Independencia financiera', icon: '🏝️', body: 'Cuando lo que producen tus inversiones paga lo que necesitas para vivir, eres libre: trabajas si quieres, no porque te haga falta. En la isla, el huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola. Eso es la independencia financiera, en pequeño.' },
-  { id: 'comida', title: 'Primero lo necesario', icon: '🧺', body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta domiciliada se compra sola cuando hace falta, como los recibos de casa: pero solo si hay dinero. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.' },
+  {
+    id: 'inflacion',
+    title: 'La inflación',
+    icon: '📈',
+    body: 'Casi todos los años los precios suben un poco. Con los mismos euroLukys compras un poco menos. Por eso el dinero quieto en el cofre pierde valor: hay que ponerlo a trabajar.',
+  },
+  {
+    id: 'interes-compuesto',
+    title: 'El interés compuesto',
+    icon: '🌱',
+    body: 'El banco paga interés sobre lo que tienes… incluido el interés que ya te dio antes. Es una bola de nieve: al principio crece despacio y luego cada vez más rápido. Cuanto antes empieces, más grande será.',
+  },
+  {
+    id: 'bono',
+    title: 'Qué es un bono',
+    icon: '📜',
+    body: 'Comprar un bono es prestar dinero. El Ayuntamiento te paga un cupón fijo cada trimestre y al final del plazo te devuelve lo prestado. Cuanto más tiempo prestas, más cupón te pagan.',
+  },
+  {
+    id: 'impuestos',
+    title: 'Los impuestos',
+    icon: '🦉',
+    body: 'Hacienda se lleva un 19 % de lo que ganas con tu dinero (intereses y cupones). Con eso se pagan las farolas y la escuela. Si pagas una vez al año en vez de en cada cobro, el dinero sigue creciendo mientras tanto.',
+  },
+  {
+    id: 'riesgo',
+    title: 'Riesgo y recompensa',
+    icon: '⚖️',
+    body: 'Lo que puede dar más también puede dar menos. El banco y los bonos son seguros y dan poco. Las acciones (Nivel 3) dan más… algunos años. Nunca pongas en lo arriesgado el dinero que necesitas pronto.',
+  },
+  {
+    id: 'accion',
+    title: 'Qué es una acción',
+    icon: '📈',
+    body: 'Una acción es un trocito de un negocio. Si la Panadería tiene 100 acciones y tú tienes 10, el 10 % de la Panadería es tuyo: una parte de lo que gana es para ti. El precio de la acción sube y baja según lo que gana el negocio… y según lo nerviosa que esté la gente.',
+  },
+  {
+    id: 'dividendo',
+    title: 'El dividendo no está prometido',
+    icon: '🎁',
+    body: 'El cupón de un bono estaba prometido. El dividendo de una acción, no: depende de cómo le haya ido al negocio ese trimestre. Si hay tormenta en el Puerto, ese trimestre no hay dividendo. A cambio, cuando el negocio va bien, el dividendo crece.',
+  },
+  {
+    id: 'cesta',
+    title: 'No pongas todos los huevos en la misma cesta',
+    icon: '🧺',
+    body: 'Si toda tu cartera es el Puerto y llega una tormenta, lo notas entero. Si tienes un poco de cada negocio, unos compensan a otros: unos años gana la Heladería, otros la Granja. Repartir no te hace ganar más, te hace dormir mejor.',
+  },
+  {
+    id: 'ciclos',
+    title: 'Modas y refugios',
+    icon: '🪙',
+    body: 'El Taller de juguetes depende de las modas, que nadie puede predecir: comprar lo que está arriba porque está arriba suele salir caro. El oro de la Cantera es lo contrario: no gana ni reparte nada, pero cuando todos tienen miedo lo quieren y sube. Un poco de oro amortigua las tormentas; mucho oro es una cartera que no crece.',
+  },
+  {
+    id: 'fondo',
+    title: 'Qué es un fondo',
+    icon: '🏠',
+    body: 'El Fondo Isla tiene un trocito igual de todos los negocios. Compras participaciones y ya estás repartido sin pensar. Es de acumulación: los dividendos que cobra no salen, se reinvierten y hacen subir la participación. Cobra una comisión pequeña cada año por hacerlo.',
+  },
+  {
+    id: 'tormenta',
+    title: 'Cuando todo cae',
+    icon: '⛈️',
+    body: 'Algún día todos los precios caen a la vez. Los negocios siguen ganando dinero, pero la gente vende asustada. Quien vende en la caída pierde de verdad; quien aguanta ve cómo los precios vuelven poco a poco y sigue cobrando dividendos mientras tanto.',
+  },
+  {
+    id: 'paciencia',
+    title: 'Espera y verás',
+    icon: '🐢',
+    body: 'Finfun no se juega durante horas: se juega diez minutos al día, muchos días. Aquí un día tuyo es un mes de la isla, y lo importante (los intereses, los dividendos, la despensa que se llena sola) no pasa deprisa: pasa cada día, un poco. Este juego entrena dos músculos que sirven para toda la vida: la paciencia y la constancia. Quien quiere tenerlo todo hoy, acaba como la Liebre.',
+  },
+  {
+    id: 'independencia',
+    title: 'Independencia financiera',
+    icon: '🏝️',
+    body: 'Cuando lo que producen tus inversiones paga lo que necesitas para vivir, eres libre: trabajas si quieres, no porque te haga falta. En la isla, el huerto ampliado da tres meses de comida cada trimestre: la despensa se llena sola. Eso es la independencia financiera, en pequeño.',
+  },
+  {
+    id: 'comida',
+    title: 'Primero lo necesario',
+    icon: '🧺',
+    body: 'Antes de invertir, asegúrate de que hay comida en la despensa. La cesta domiciliada se compra sola cuando hace falta, como los recibos de casa: pero solo si hay dinero. La cesta grande sale más barata por mes, y el huerto da comida sola cada tres meses: es una inversión que se come.',
+  },
 ]

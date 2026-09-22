@@ -20,7 +20,8 @@ import {
   forfeitTask,
   formatCents,
   migrate,
-  readLesson as simReadLesson,
+  answerQuiz as simAnswerQuiz,
+  LESSONS,
   spinInflation as simSpinInflation,
   setTutorialStep as simSetTutorialStep,
   setAutoFood as simSetAutoFood,
@@ -39,7 +40,20 @@ import {
 import type { BuildingId } from '../scene/registry'
 import { dayAcornSpots } from '../scene/acorns'
 import { playAcornSfx, playCoinSfx } from '../ui/Music'
-import { currentAccount, deleteRemote, hasSupabase, loadRemote, onAuthChange, saveRemote, serverNow, signIn as sbSignIn, signOut as sbSignOut, signUp as sbSignUp, syncClock, type Account } from '../lib/supabase'
+import {
+  currentAccount,
+  deleteRemote,
+  hasSupabase,
+  loadRemote,
+  onAuthChange,
+  saveRemote,
+  serverNow,
+  signIn as sbSignIn,
+  signOut as sbSignOut,
+  signUp as sbSignUp,
+  syncClock,
+  type Account,
+} from '../lib/supabase'
 import { netWorth } from '../sim'
 
 /** Lugar activo: la isla completa o uno de sus edificios (la cámara vuela hasta él). */
@@ -163,7 +177,8 @@ interface Store {
   sellFund: (cents: number | 'all') => void
   showBusiness: (id: BuildingId) => void
   chooseTaxMode: (mode: TaxMode) => void
-  readLesson: (id: string) => void
+  /** Responde al cuestionario de una lección. Devuelve si ha acertado (null si no se pudo responder). */
+  answerQuiz: (id: string, optionIndex: number) => boolean | null
   spinInflation: () => number | null
   openWheel: (open: boolean) => void
   restart: () => void
@@ -211,7 +226,10 @@ export const useGame = create<Store>()(
           get().celebrate({
             icon: '🎉',
             title: `¡Se abre el Nivel ${r.state.world}!`,
-            text: r.state.world === 2 ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos, y el banco también. Desde ahora tus rendimientos pasan por Don Búho.' : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
+            text:
+              r.state.world === 2
+                ? 'El Ayuntamiento, Hacienda y la escuela ya están abiertos, y el banco también. Desde ahora tus rendimientos pasan por Don Búho.'
+                : 'Hay edificios nuevos en la isla. Tócalos para ver qué puedes hacer en ellos.',
             tone: 'purple',
           })
         }
@@ -257,7 +275,23 @@ export const useGame = create<Store>()(
         signOut: async () => {
           flushRemoteSave(get().game)
           await sbSignOut()
-          set({ account: null, game: null, saveOwner: null, view: 'isla', trip: 'home', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, wheelAutoShownFor: -1, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
+          set({
+            account: null,
+            game: null,
+            saveOwner: null,
+            view: 'isla',
+            trip: 'home',
+            acornsFound: [],
+            acornsMonth: -1,
+            celebration: null,
+            wheelOpen: false,
+            wheelAutoShownFor: -1,
+            seenDiary: 0,
+            seenBankOpen: false,
+            seenWorld: 1,
+            seenMissions: 0,
+            stormSeen: false,
+          })
         },
         nowMs: Date.now(),
         devOffsetMs: 0,
@@ -499,7 +533,13 @@ export const useGame = create<Store>()(
           if (!g) return
           const r = simBuildHuerto(g, now())
           apply(r)
-          if (r.ok) get().celebrate({ icon: '🌾', title: '¡Huerto construido!', text: 'Cada tres meses dará una cesta grande de comida, para siempre. Tu primera inversión que se come.', tone: 'green' })
+          if (r.ok)
+            get().celebrate({
+              icon: '🌾',
+              title: '¡Huerto construido!',
+              text: 'Cada tres meses dará una cesta grande de comida, para siempre. Tu primera inversión que se come.',
+              tone: 'green',
+            })
         },
         upgradeHuerto: () => {
           const g = get().game
@@ -545,10 +585,20 @@ export const useGame = create<Store>()(
           if (!g) return
           apply(simChooseTaxMode(g, now(), mode), mode === 'anual' ? 'Pagarás una vez al año.' : 'Pagarás en cada cobro.')
         },
-        readLesson: (id) => {
+        answerQuiz: (id, optionIndex) => {
           const g = get().game
-          if (!g) return
-          apply(simReadLesson(g, now(), id))
+          if (!g) return null
+          const r = simAnswerQuiz(g, now(), id, optionIndex)
+          if (!r.ok) {
+            apply(r)
+            return null
+          }
+          apply(r)
+          if (r.correct) {
+            playAcornSfx()
+            get().showToast(`🎓 ¡Lección aprendida! · ${r.state.lessonsRead.length} de ${LESSONS.length}`)
+          }
+          return r.correct ?? null
         },
         spinInflation: () => {
           const g = get().game
@@ -563,7 +613,20 @@ export const useGame = create<Store>()(
         restart: () => {
           const name = get().game?.islandName ?? 'Mi isla'
           if (hasSupabase) void deleteRemote()
-          set({ game: null, view: 'isla', trip: 'home', acornsFound: [], acornsMonth: -1, celebration: null, wheelOpen: false, seenDiary: 0, seenBankOpen: false, seenWorld: 1, seenMissions: 0, stormSeen: false })
+          set({
+            game: null,
+            view: 'isla',
+            trip: 'home',
+            acornsFound: [],
+            acornsMonth: -1,
+            celebration: null,
+            wheelOpen: false,
+            seenDiary: 0,
+            seenBankOpen: false,
+            seenWorld: 1,
+            seenMissions: 0,
+            stormSeen: false,
+          })
           get().createIsland(name)
         },
         showBuilding: (id) => set({ infoBuilding: id, view: 'edificio' }),
@@ -609,7 +672,21 @@ export const useGame = create<Store>()(
     },
     {
       name: 'finfun-save-v1',
-      partialize: (s) => ({ game: s.game, saveOwner: s.saveOwner, devOffsetMs: s.devOffsetMs, seenDiary: s.seenDiary, seenBankOpen: s.seenBankOpen, seenWorld: s.seenWorld, seenMissions: s.seenMissions, stormSeen: s.stormSeen, rescueSeen: s.rescueSeen, musicOn: s.musicOn, musicVolume: s.musicVolume, sfxOn: s.sfxOn, sfxVolume: s.sfxVolume }),
+      partialize: (s) => ({
+        game: s.game,
+        saveOwner: s.saveOwner,
+        devOffsetMs: s.devOffsetMs,
+        seenDiary: s.seenDiary,
+        seenBankOpen: s.seenBankOpen,
+        seenWorld: s.seenWorld,
+        seenMissions: s.seenMissions,
+        stormSeen: s.stormSeen,
+        rescueSeen: s.rescueSeen,
+        musicOn: s.musicOn,
+        musicVolume: s.musicVolume,
+        sfxOn: s.sfxOn,
+        sfxVolume: s.sfxVolume,
+      }),
     },
   ),
 )

@@ -50,9 +50,9 @@ Misiones N1: primera paga · llenar la despensa · bellotas 3 días · comprar a
 | --- | --- | --- |
 | **Ayuntamiento** [hecho] | Emite tres bonos para obras concretas: **Bono Farolas** 6 meses · 3 % · **Bono Puente** 12 meses · 4 % · **Bono Escuela** 24 meses · 5 %. Mínimo 10 eL, de 10 en 10. Cupón **trimestral** al cofre, principal devuelto al vencer. No se puede vender antes (eso llega con el Mercado). | Prestar ≠ regalar; plazo ↔ cupón; renta fija = saber lo que vas a cobrar. |
 | **Hacienda (Don Búho)** [hecho] | Elegir cómo pagar el 19 %: **en cada cobro** (retención instantánea) o **una vez al año** (todo bruto, declaración al cerrar el año; si no hay dinero queda deuda que se cobra en cuanto lo hay). Historial de declaraciones. | Los impuestos existen y financian lo común; diferir el pago deja más dinero componiendo. |
-| **Escuela** [hecho] | Seis lecciones cortas (inflación, interés compuesto, bono, impuestos, riesgo, comida). Leer una da un carné. | Vocabulario y conceptos, con calma. |
+| **Escuela** [hecho] | Lecciones cortas (inflación, interés compuesto, bono, impuestos, riesgo, comida…). Cada una termina con una pregunta de cuatro opciones: acertar la marca como aprendida (carné); fallar la deja "para mañana" (se repite al día siguiente, con la pista de Doña Tortuga). | Vocabulario y conceptos, con calma. |
 
-Misiones N2: cobrar tres meses de interés · primer bono · cobrar un cupón · elegir en Hacienda · leer 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
+Misiones N2: cobrar tres meses de interés · primer bono · cobrar un cupón · elegir en Hacienda · aprender 3 lecciones · 200 eL prestados a la vez · 600 de patrimonio → **Nivel 3**.
 
 Diseño pendiente N2: **visitar la isla de la Liebre** — ver la sección al final.
 
@@ -81,7 +81,7 @@ cantidades rápidas. Eventos avisa de dividendos y tormentas; el diario resume d
 | **Puerto pesquero** | 25 eL | 2 % trimestral (8 %/año)… | Cada trimestre 1 de 6 de **tormenta**: dividendo 0 y precio −15 % | Mucha renta, mucho susto. |
 | **Astillero** | 30 eL | Ninguno | Crecimiento 8 %/año con ±6 %/mes; reinvierte todo | Crecer sin repartir: la recompensa llega al vender. |
 
-Misiones N3: construir el huerto · comprar acciones de dos negocios · cobrar un dividendo · aguantar una tormenta sin vender · leer todas las lecciones → **Nivel 4**.
+Misiones N3: construir el huerto · comprar acciones de dos negocios · cobrar un dividendo · aguantar una tormenta sin vender · aprender todas las lecciones → **Nivel 4**.
 
 ---
 

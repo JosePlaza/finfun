@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   BANK_RATE_BPS,
   BOND_OFFERS,
@@ -26,6 +26,8 @@ import {
   HUERTO_UPGRADED_FOOD_MONTHS,
   HUNGER_DEATH_MONTHS,
   LESSONS,
+  QUIZZES,
+  quizStatus,
   missionsFor,
   monthlyInterest,
   PAGA_CENTS,
@@ -90,7 +92,21 @@ function Big({ label, cents }: { label: string; cents: number }) {
   )
 }
 
-function GButton({ children, onClick, disabled, tone = '', block = true, size = '' }: { children: ReactNode; onClick: () => void; disabled?: boolean; tone?: string; block?: boolean; size?: string }) {
+function GButton({
+  children,
+  onClick,
+  disabled,
+  tone = '',
+  block = true,
+  size = '',
+}: {
+  children: ReactNode
+  onClick: () => void
+  disabled?: boolean
+  tone?: string
+  block?: boolean
+  size?: string
+}) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} className={`g-btn ${tone} ${size} ${block ? 'g-btn--block' : ''}`}>
       {children}
@@ -207,7 +223,8 @@ function Pantry({ compact = false }: { compact?: boolean }) {
       </div>
       {hungry && (
         <p className="m-0 mt-2 text-[12.5px] font-bold text-red-d">
-          A los {HUNGER_DEATH_MONTHS} meses sin comer Doña Tortuga tendrá que rescatarte y perderás lo del cofre. Quedan {HUNGER_DEATH_MONTHS - game.hunger}. Compra una cesta cuanto antes.
+          A los {HUNGER_DEATH_MONTHS} meses sin comer Doña Tortuga tendrá que rescatarte y perderás lo del cofre. Quedan {HUNGER_DEATH_MONTHS - game.hunger}. Compra una cesta
+          cuanto antes.
         </p>
       )}
       {!hungry && months <= 1 && <p className="m-0 mt-2 text-[12.5px] font-bold text-orange-d">Queda poco. Cada mes de isla se come una ración.</p>}
@@ -229,7 +246,9 @@ function AutoFoodRow() {
         <div className="min-w-0">
           <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Cesta domiciliada</div>
           <div className="text-[12px] font-semibold text-ink-l leading-snug">
-            {on ? 'Cuando la despensa se vacíe, la isla compra sola la cesta pequeña con tu dinero (del cofre; si no llega, del banco).' : 'Desactivada: la comida la compras tú cada mes. Si te olvidas, hambre.'}
+            {on
+              ? 'Cuando la despensa se vacíe, la isla compra sola la cesta pequeña con tu dinero (del cofre; si no llega, del banco).'
+              : 'Desactivada: la comida la compras tú cada mes. Si te olvidas, hambre.'}
           </div>
         </div>
       </div>
@@ -282,16 +301,34 @@ function PatrimonioPanel() {
   const fund = fundValue(game, month)
   const invested = Object.values(game.holdings ?? {}).reduce((a, h) => a + h.shares * h.avgCostCents, 0)
   const total = game.huchaCents + game.bankCents + bonds + stocks + fund
-  const rows: { icon: string; name: string; cents: number | null; world: number; view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento' | 'mercado' | 'fondo'; tone: string; note?: string }[] = [
+  const rows: {
+    icon: string
+    name: string
+    cents: number | null
+    world: number
+    view?: 'cofre' | 'banco' | 'casa' | 'ayuntamiento' | 'mercado' | 'fondo'
+    tone: string
+    note?: string
+  }[] = [
     { icon: '🪙', name: 'Cofre de la cueva', cents: game.huchaCents, world: 1, view: 'cofre', tone: 'g-icon--orange' },
     { icon: '🏦', name: 'Banco de la Isla', cents: game.bankUnlocked ? game.bankCents : null, world: 1, view: 'banco', tone: 'g-icon--green' },
     { icon: '📜', name: 'Bonos del Ayuntamiento', cents: game.world >= 2 ? bonds : null, world: 2, view: 'ayuntamiento', tone: 'g-icon--blue' },
     {
-      icon: '📈', name: 'Acciones', cents: game.world >= 3 ? stocks : null, world: 3, view: 'mercado', tone: 'g-icon--purple',
+      icon: '📈',
+      name: 'Acciones',
+      cents: game.world >= 3 ? stocks : null,
+      world: 3,
+      view: 'mercado',
+      tone: 'g-icon--purple',
       note: stocks > 0 ? `${stocks - invested >= 0 ? 'ganas' : 'pierdes'} ${formatCents(Math.abs(stocks - invested))} sin vender` : undefined,
     },
     {
-      icon: '🏠', name: 'Fondo Isla', cents: game.world >= 4 ? fund : null, world: 4, view: 'fondo', tone: 'g-icon--purple',
+      icon: '🏠',
+      name: 'Fondo Isla',
+      cents: game.world >= 4 ? fund : null,
+      world: 4,
+      view: 'fondo',
+      tone: 'g-icon--purple',
       note: fund > 0 ? `${fund - game.fundCostCents >= 0 ? 'ganas' : 'pierdes'} ${formatCents(Math.abs(fund - game.fundCostCents))} sin vender` : undefined,
     },
   ]
@@ -300,9 +337,7 @@ function PatrimonioPanel() {
       <div className="g-inset p-4 text-center">
         <div className="g-label">Todo tu dinero</div>
         <Amount cents={total} size="xl" className="text-ink mt-1 !text-4xl" />
-        {game.mailboxCents > 0 && (
-          <div className="text-[13px] font-bold text-orange-d mt-1">+ {formatCents(game.mailboxCents)} sin recoger en el buzón</div>
-        )}
+        {game.mailboxCents > 0 && <div className="text-[13px] font-bold text-orange-d mt-1">+ {formatCents(game.mailboxCents)} sin recoger en el buzón</div>}
       </div>
       <SectionTitle>Dónde está cada parte</SectionTitle>
       <ul className="grid gap-2">
@@ -443,8 +478,7 @@ function CasaPanel() {
       </div>
       <div className="mt-4">
         <Tortuga>
-          Cada mes de isla (cada día tuyo) te llega la paga al buzón. Lo que recojas va al cofre de la cueva. Desde allí decides: gastarlo,
-          guardarlo o llevarlo al banco.
+          Cada mes de isla (cada día tuyo) te llega la paga al buzón. Lo que recojas va al cofre de la cueva. Desde allí decides: gastarlo, guardarlo o llevarlo al banco.
         </Tortuga>
       </div>
       <MyThings />
@@ -464,7 +498,9 @@ function MyThings() {
   const game = useGame((s) => s.game)!
   const setView = useGame((s) => s.setView)
   const owned = SHOP_ITEMS.filter((d) => d.kind === 'objeto' && game.purchases.some((p) => p.itemId === d.id))
-  const treats = SHOP_ITEMS.filter((d) => d.kind === 'consumible').map((d) => ({ def: d, n: game.purchases.filter((p) => p.itemId === d.id).length })).filter((t) => t.n > 0)
+  const treats = SHOP_ITEMS.filter((d) => d.kind === 'consumible')
+    .map((d) => ({ def: d, n: game.purchases.filter((p) => p.itemId === d.id).length }))
+    .filter((t) => t.n > 0)
   const eaten = treats.reduce((a, t) => a + t.n, 0)
   return (
     <div className="mt-5">
@@ -507,8 +543,8 @@ function CofrePanel() {
       </div>
       <div className="mt-4">
         <Tortuga>
-          El cofre guarda tu dinero a buen recaudo, pero no lo hace crecer. Y cada año los precios de la tienda suben un poco. Si un dinero
-          no lo vas a usar pronto, el banco es mejor sitio.
+          El cofre guarda tu dinero a buen recaudo, pero no lo hace crecer. Y cada año los precios de la tienda suben un poco. Si un dinero no lo vas a usar pronto, el banco es
+          mejor sitio.
         </Tortuga>
       </div>
       <div className="grid grid-cols-2 gap-3 mt-4">
@@ -575,7 +611,12 @@ function ItemGrid({ kinds }: { kinds: string[] }) {
               {changed && <span className="text-ink-3 text-xs font-bold line-through tabular-nums">{formatCents(st.previousPriceCents)}</span>}
               {perMonth !== null && <span className="text-[10px] font-bold text-ink-3">{formatCents(Math.round(perMonth), { alwaysDecimals: true })} al mes</span>}
             </div>
-            <button type="button" disabled={!can && !owned} onClick={() => !owned && buy(def.id)} className={`g-btn g-btn--sm ${owned ? 'g-btn--cream' : def.kind === 'comida' ? 'g-btn--green' : 'g-btn--orange'}`}>
+            <button
+              type="button"
+              disabled={!can && !owned}
+              onClick={() => !owned && buy(def.id)}
+              className={`g-btn g-btn--sm ${owned ? 'g-btn--cream' : def.kind === 'comida' ? 'g-btn--green' : 'g-btn--orange'}`}
+            >
               {owned ? 'En tu isla' : can ? 'Comprar' : 'Te falta'}
             </button>
           </li>
@@ -620,7 +661,14 @@ function BancoPanel() {
       </p>
 
       <div className="mt-4">
-        <Tabs value={mode} onChange={setMode} options={[['meter', 'Meter'], ['sacar', 'Sacar']]} />
+        <Tabs
+          value={mode}
+          onChange={setMode}
+          options={[
+            ['meter', 'Meter'],
+            ['sacar', 'Sacar'],
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-4 gap-2 mt-3">
@@ -651,10 +699,7 @@ function BancoPanel() {
       </div>
 
       <div className="mt-4">
-        <Tortuga>
-          Aquí el dinero está tan seguro como en el cofre y lo puedes sacar cuando quieras. La diferencia: cada mes crece un poquito. Poquito,
-          pero siempre.
-        </Tortuga>
+        <Tortuga>Aquí el dinero está tan seguro como en el cofre y lo puedes sacar cuando quieras. La diferencia: cada mes crece un poquito. Poquito, pero siempre.</Tortuga>
       </div>
     </Sheet>
   )
@@ -670,13 +715,20 @@ function FaroPanel() {
   return (
     <Sheet title="Doña Tortuga" tone="sky">
       <div className="mb-3">
-        <Tabs value={tab} onChange={setTab} options={[['diario', 'Diario'], ['ayuda', 'Cómo se juega']]} />
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          options={[
+            ['diario', 'Diario'],
+            ['ayuda', 'Cómo se juega'],
+          ]}
+        />
       </div>
       {tab === 'diario' ? (
         entries.length === 0 ? (
           <Tortuga>
-            Escribo una página al terminar cada año de isla. La primera, {daysToYearEnd <= 1 ? 'mañana' : `dentro de ${daysToYearEnd} días`}. Te
-            contaré qué ha pasado con tu dinero… y qué habría pasado si lo hubieras puesto en otro sitio.
+            Escribo una página al terminar cada año de isla. La primera, {daysToYearEnd <= 1 ? 'mañana' : `dentro de ${daysToYearEnd} días`}. Te contaré qué ha pasado con tu
+            dinero… y qué habría pasado si lo hubieras puesto en otro sitio.
           </Tortuga>
         ) : (
           <div className="grid gap-3">
@@ -698,10 +750,19 @@ function FaroPanel() {
       ) : (
         <div className="grid gap-2.5 text-[15px] font-semibold leading-relaxed text-ink">
           {[
-            ['Un día real es un mes de isla', 'El año de la isla va de enero a diciembre: cada tres días cambia la estación y al pasar de diciembre a enero se cierra el año y sale la ruleta de la inflación. La isla sigue aunque no entres.'],
-            ['Cada día', 'Llega la paga a tu casa (tócala para recogerla), hay cinco bellotas escondidas por la isla y tú decides qué haces con tu dinero: gastarlo en la tienda, guardarlo en el cofre o llevarlo al banco.'],
+            [
+              'Un día real es un mes de isla',
+              'El año de la isla va de enero a diciembre: cada tres días cambia la estación y al pasar de diciembre a enero se cierra el año y sale la ruleta de la inflación. La isla sigue aunque no entres.',
+            ],
+            [
+              'Cada día',
+              'Llega la paga a tu casa (tócala para recogerla), hay cinco bellotas escondidas por la isla y tú decides qué haces con tu dinero: gastarlo en la tienda, guardarlo en el cofre o llevarlo al banco.',
+            ],
             ['Muévete por la isla', 'Toca un edificio para ir hasta él. Arrastra con un dedo para girar la isla y usa dos dedos para acercarte.'],
-            ['La despensa', 'Cada mes se come una ración. Compra cestas en la tienda (la grande sale más barata por mes) o construye el huerto. Seis meses sin comer y la aventura se acaba.'],
+            [
+              'La despensa',
+              'Cada mes se come una ración. Compra cestas en la tienda (la grande sale más barata por mes) o construye el huerto. Seis meses sin comer y la aventura se acaba.',
+            ],
             ['La ruleta del año', 'Al cerrar cada año aparece la ruleta de la inflación. La giras tú: lo que salga es lo que suben los precios de la tienda.'],
             ['Los solares en obras', 'Son edificios que se abrirán cuando llegues a su nivel. Tócalos para leer qué harás allí. Completa las misiones para avanzar.'],
           ].map(([t, d]) => (
@@ -787,7 +848,10 @@ function MisionesPanel() {
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {BUILDINGS.filter((b) => b.world === w).map((b) => (
-                  <span key={b.id} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-extrabold ${open ? 'bg-white text-ink shadow-[0_2px_0_var(--color-cream-d)]' : 'bg-cream-d/50 text-ink-l'}`}>
+                  <span
+                    key={b.id}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-extrabold ${open ? 'bg-white text-ink shadow-[0_2px_0_var(--color-cream-d)]' : 'bg-cream-d/50 text-ink-l'}`}
+                  >
                     <span aria-hidden="true">{b.icon}</span> {b.name}
                   </span>
                 ))}
@@ -799,7 +863,6 @@ function MisionesPanel() {
     </Sheet>
   )
 }
-
 
 /* ───────────────────────── Huerto ───────────────────────── */
 
@@ -819,7 +882,8 @@ function HuertoPanel() {
           <div className="text-4xl mb-1">🌾</div>
           <div className="g-title text-lg">Un huerto con animales</div>
           <div className="text-ink-l font-bold text-sm mt-1">
-            Cuesta <b className="text-ink">{formatCents(HUERTO_COST_CENTS)}</b> euroLukys y da una cesta grande ({HUERTO_FOOD_MONTHS} meses de comida) cada {HUERTO_EVERY_MONTHS} meses, para siempre.
+            Cuesta <b className="text-ink">{formatCents(HUERTO_COST_CENTS)}</b> euroLukys y da una cesta grande ({HUERTO_FOOD_MONTHS} meses de comida) cada {HUERTO_EVERY_MONTHS}{' '}
+            meses, para siempre.
           </div>
         </div>
         <div className="mt-3">
@@ -834,8 +898,8 @@ function HuertoPanel() {
         </div>
         <div className="mt-4">
           <Tortuga>
-            Una cesta grande cuesta {formatCents(game.shop.find((i) => i.id === 'cesta-grande')?.priceCents ?? 9_50)} en la tienda. El huerto te da cuatro al año sin pagar nada más, y
-            cuando los precios suban, sus cestas valdrán más. Eso es una inversión: pagas hoy y cobras siempre.
+            Una cesta grande cuesta {formatCents(game.shop.find((i) => i.id === 'cesta-grande')?.priceCents ?? 9_50)} en la tienda. El huerto te da cuatro al año sin pagar nada
+            más, y cuando los precios suban, sus cestas valdrán más. Eso es una inversión: pagas hoy y cobras siempre.
           </Tortuga>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -882,8 +946,8 @@ function HuertoPanel() {
       </div>
       <div className="mt-4">
         <Tortuga>
-          La vaca, el cerdo y las gallinas trabajan mientras tú duermes. Cada {HUERTO_EVERY_MONTHS} meses dejan {upgraded ? HUERTO_UPGRADED_FOOD_MONTHS : HUERTO_FOOD_MONTHS} meses de comida en tu despensa. Ya has ahorrado{' '}
-          {formatCents(baskets * (game.shop.find((i) => i.id === 'cesta-grande')?.priceCents ?? 9_50))} en comida.
+          La vaca, el cerdo y las gallinas trabajan mientras tú duermes. Cada {HUERTO_EVERY_MONTHS} meses dejan {upgraded ? HUERTO_UPGRADED_FOOD_MONTHS : HUERTO_FOOD_MONTHS} meses
+          de comida en tu despensa. Ya has ahorrado {formatCents(baskets * (game.shop.find((i) => i.id === 'cesta-grande')?.priceCents ?? 9_50))} en comida.
         </Tortuga>
       </div>
       {!upgraded && (
@@ -897,8 +961,8 @@ function HuertoPanel() {
               <div className="flex-1 min-w-0">
                 <div className="font-display font-extrabold text-ink text-[15px] leading-tight">Invernadero, colmenas y otra vaca</div>
                 <div className="text-[12.5px] font-semibold text-ink-l leading-snug">
-                  Cuesta {formatCents(HUERTO_UPGRADE_COST_CENTS)}. Pasa de {HUERTO_FOOD_MONTHS} a {HUERTO_UPGRADED_FOOD_MONTHS} meses de comida por trimestre: exactamente lo que comes. No volverás a
-                  comprar cestas.
+                  Cuesta {formatCents(HUERTO_UPGRADE_COST_CENTS)}. Pasa de {HUERTO_FOOD_MONTHS} a {HUERTO_UPGRADED_FOOD_MONTHS} meses de comida por trimestre: exactamente lo que
+                  comes. No volverás a comprar cestas.
                 </div>
               </div>
             </div>
@@ -946,7 +1010,12 @@ function AyuntamientoPanel() {
           const sel = o.id === offerId
           return (
             <li key={o.id}>
-              <button type="button" onClick={() => setOfferId(o.id)} className={`g-row w-full text-left ${sel ? '!border-blue !bg-white' : ''}`} style={sel ? { boxShadow: '0 0 0 3px var(--color-blue)' } : undefined}>
+              <button
+                type="button"
+                onClick={() => setOfferId(o.id)}
+                className={`g-row w-full text-left ${sel ? '!border-blue !bg-white' : ''}`}
+                style={sel ? { boxShadow: '0 0 0 3px var(--color-blue)' } : undefined}
+              >
                 <span className={`g-icon ${sel ? 'g-icon--blue' : ''}`} aria-hidden="true">
                   {o.icon}
                 </span>
@@ -966,8 +1035,8 @@ function AyuntamientoPanel() {
 
       <div className="g-inset p-3.5 mt-3">
         <div className="text-[13px] font-bold text-ink-l">
-          Con <b className="text-ink">100</b> en el {offer.name}: cupón de <b className="text-ink">{formatCents(bondCoupon(100_00, offer.couponBps), { alwaysDecimals: true })}</b> cada
-          trimestre ({Math.round(offer.months / 3)} cupones) y los 100 de vuelta en {offer.months} meses.
+          Con <b className="text-ink">100</b> en el {offer.name}: cupón de <b className="text-ink">{formatCents(bondCoupon(100_00, offer.couponBps), { alwaysDecimals: true })}</b>{' '}
+          cada trimestre ({Math.round(offer.months / 3)} cupones) y los 100 de vuelta en {offer.months} meses.
           {game.taxesUnlocked && game.taxMode === 'cada-cobro' && ' Hacienda retiene el 19 % de cada cupón.'}
         </div>
       </div>
@@ -982,9 +1051,23 @@ function AyuntamientoPanel() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 mt-2 items-center">
         <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
           <CoinIcon size={16} />
-          <input inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Otra cantidad (de 10 en 10)" className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+          <input
+            inputMode="numeric"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="Otra cantidad (de 10 en 10)"
+            className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70"
+          />
         </div>
-        <button type="button" disabled={!customOk} onClick={() => { buyBond(offer.id, parsed); setCustom('') }} className="g-btn g-btn--sm">
+        <button
+          type="button"
+          disabled={!customOk}
+          onClick={() => {
+            buyBond(offer.id, parsed)
+            setCustom('')
+          }}
+          className="g-btn g-btn--sm"
+        >
           Prestar
         </button>
       </div>
@@ -1036,8 +1119,8 @@ function HaciendaPanel() {
           🦉
         </span>
         <p className="m-0">
-          <b>Don Búho:</b> De lo que ganas con tu dinero (intereses y cupones) me llevo un <b>{formatPct(RETENTION_BPS)}</b>. Con eso pagamos las farolas y la escuela. Lo que tú decides es{' '}
-          <b>cuándo</b> me lo das.
+          <b>Don Búho:</b> De lo que ganas con tu dinero (intereses y cupones) me llevo un <b>{formatPct(RETENTION_BPS)}</b>. Con eso pagamos las farolas y la escuela. Lo que tú
+          decides es <b>cuándo</b> me lo das.
         </p>
       </div>
 
@@ -1046,12 +1129,23 @@ function HaciendaPanel() {
         {(
           [
             ['cada-cobro', '🧾', 'En cada cobro', 'Cada vez que cobras un interés o un cupón, se retiene el 19 % al momento. Sencillo y sin sorpresas.'],
-            ['anual', '📅', 'Una vez al año', 'Cobras todo bruto y al cerrar el año pagas el 19 % de golpe. Mientras, ese dinero sigue creciendo contigo: es mejor para el interés compuesto… si guardas para pagar.'],
+            [
+              'anual',
+              '📅',
+              'Una vez al año',
+              'Cobras todo bruto y al cerrar el año pagas el 19 % de golpe. Mientras, ese dinero sigue creciendo contigo: es mejor para el interés compuesto… si guardas para pagar.',
+            ],
           ] as const
         ).map(([m, icon, title, text]) => {
           const sel = mode === m
           return (
-            <button key={m} type="button" onClick={() => chooseTaxMode(m)} className={`g-row w-full text-left ${sel ? '!bg-white' : ''}`} style={sel ? { boxShadow: '0 0 0 3px var(--color-purple)' } : undefined}>
+            <button
+              key={m}
+              type="button"
+              onClick={() => chooseTaxMode(m)}
+              className={`g-row w-full text-left ${sel ? '!bg-white' : ''}`}
+              style={sel ? { boxShadow: '0 0 0 3px var(--color-purple)' } : undefined}
+            >
               <span className={`g-icon ${sel ? 'g-icon--purple' : ''}`} aria-hidden="true">
                 {icon}
               </span>
@@ -1103,38 +1197,135 @@ function HaciendaPanel() {
   )
 }
 
-/* ───────────────────────── Escuela: lecciones ───────────────────────── */
+/* ───────────────────────── Escuela: lecciones y cuestionarios ───────────────────────── */
+
+/** Orden barajado de las cuatro opciones, fijo por partida y lección (así no cambia entre intentos ni al reabrir). */
+function quizOrder(seed: number, lessonId: string): number[] {
+  let h = (seed ^ 0x9e3779b9) >>> 0
+  for (let i = 0; i < lessonId.length; i++) h = (Math.imul(h ^ lessonId.charCodeAt(i), 0x01000193) + 0x7f4a7c15) >>> 0
+  const order = [0, 1, 2, 3]
+  for (let i = order.length - 1; i > 0; i--) {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0
+    const j = h % (i + 1)
+    ;[order[i], order[j]] = [order[j], order[i]]
+  }
+  return order
+}
+
+const QUIZ_LETTERS = ['A', 'B', 'C', 'D']
+
+function LessonQuiz({ lessonId, onClose }: { lessonId: string; onClose: () => void }) {
+  const game = useGame((s) => s.game)!
+  const answerQuiz = useGame((s) => s.answerQuiz)
+  const quiz = QUIZZES[lessonId]
+  const order = useMemo(() => quizOrder(game.seed, lessonId), [game.seed, lessonId])
+  const [picked, setPicked] = useState<number | null>(null)
+  const [result, setResult] = useState<boolean | null>(null)
+  if (!quiz) return null
+
+  const choose = (optionIndex: number) => {
+    if (picked !== null) return
+    setPicked(optionIndex)
+    setResult(answerQuiz(lessonId, optionIndex))
+  }
+
+  return (
+    <div className="mt-3 g-inset p-3.5">
+      <div className="g-label mb-1.5">Ponte a prueba</div>
+      <p className="m-0 mb-3 font-display font-extrabold text-ink text-[15.5px] leading-snug">{quiz.question}</p>
+      <div className="grid gap-2">
+        {order.map((optionIndex, i) => {
+          const isPicked = picked === optionIndex
+          const cls = result === null ? '' : isPicked ? (result ? 'quiz-opt--ok' : 'quiz-opt--ko') : 'quiz-opt--dim'
+          return (
+            <button key={optionIndex} type="button" disabled={picked !== null} onClick={() => choose(optionIndex)} className={`quiz-opt ${cls}`}>
+              <span className="quiz-opt__letter" aria-hidden="true">
+                {QUIZ_LETTERS[i]}
+              </span>
+              <span>{quiz.options[optionIndex]}</span>
+            </button>
+          )
+        })}
+      </div>
+      {result === true && (
+        <div className="mt-3">
+          <Tortuga>¡Eso es! Lección aprendida. Ya tienes un carné más de inversor.</Tortuga>
+          <button type="button" onClick={onClose} className="g-btn g-btn--sm g-btn--green mt-2.5">
+            Seguir
+          </button>
+        </div>
+      )}
+      {result === false && (
+        <div className="mt-3">
+          <Tortuga>Esa no era. {quiz.hint} Vuelve a leer la lección con calma y mañana lo intentas otra vez.</Tortuga>
+          <button type="button" onClick={onClose} className="g-btn g-btn--sm g-btn--cream mt-2.5">
+            Entendido
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function EscuelaPanel() {
   const game = useGame((s) => s.game)!
-  const readLesson = useGame((s) => s.readLesson)
+  const nowMs = useGame((s) => s.nowMs)
   const [open, setOpen] = useState<string | null>(null)
-  const read = game.lessonsRead
+  const [quizFor, setQuizFor] = useState<string | null>(null)
+  const learned = game.lessonsRead
   return (
     <Sheet title="Escuela" tone="sky">
       <div className="flex items-center gap-3 mb-3">
         <div className="g-bar flex-1">
-          <i style={{ width: `${(read.length / LESSONS.length) * 100}%` }} />
+          <i style={{ width: `${(learned.length / LESSONS.length) * 100}%` }} />
         </div>
         <span className="font-display font-extrabold text-ink tabular-nums">
-          {read.length}/{LESSONS.length}
+          {learned.length}/{LESSONS.length}
         </span>
       </div>
-      <Tortuga>Una lección por cada idea importante. Léelas con calma: cada una te da un carné de inversor.</Tortuga>
+      <Tortuga>
+        Una lección por cada idea importante. Léela con calma y, al final, responde a una pregunta: si aciertas, queda aprendida; si fallas, mañana puedes volver a intentarlo.
+      </Tortuga>
       <ul className="grid gap-2 mt-3">
         {LESSONS.map((l) => {
-          const done = read.includes(l.id)
+          const status = quizStatus(game, nowMs, l.id)
+          const done = status === 'aprendida'
           const isOpen = open === l.id
           return (
             <li key={l.id} className={`g-row flex-col !items-stretch ${done && !isOpen ? 'g-row--muted' : ''}`}>
-              <button type="button" onClick={() => { setOpen(isOpen ? null : l.id); if (!done) readLesson(l.id) }} className="flex items-center gap-3 w-full text-left">
-                <span className={`g-icon ${done ? 'g-icon--green' : 'g-icon--blue'}`} aria-hidden="true">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(isOpen ? null : l.id)
+                  setQuizFor(null)
+                }}
+                className="flex items-center gap-3 w-full text-left"
+              >
+                <span className={`g-icon ${done ? 'g-icon--green' : status === 'manana' ? 'g-icon--orange' : 'g-icon--blue'}`} aria-hidden="true">
                   {done ? '🎓' : l.icon}
                 </span>
-                <div className="flex-1 font-display font-extrabold text-ink text-[15px] leading-tight">{l.title}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-extrabold text-ink text-[15px] leading-tight">{l.title}</div>
+                  <div className="text-[11.5px] font-extrabold text-ink-3">{done ? 'Aprendida' : status === 'manana' ? 'Para mañana' : 'Por aprender'}</div>
+                </div>
                 <span className="text-ink-3 font-extrabold">{isOpen ? '▴' : '▾'}</span>
               </button>
-              {isOpen && <p className="m-0 mt-2 text-[14.5px] font-semibold leading-relaxed text-ink">{l.body}</p>}
+              {isOpen && (
+                <>
+                  <p className="m-0 mt-2 text-[14.5px] font-semibold leading-relaxed text-ink">{l.body}</p>
+                  {quizFor === l.id ? (
+                    <LessonQuiz lessonId={l.id} onClose={() => setQuizFor(null)} />
+                  ) : status === 'disponible' ? (
+                    <button type="button" onClick={() => setQuizFor(l.id)} className="g-btn g-btn--sm g-btn--orange mt-3 self-start">
+                      Ponme a prueba
+                    </button>
+                  ) : status === 'manana' ? (
+                    <div className="mt-3 text-[13px] font-extrabold text-ink-3">🐢 Hoy ya lo has intentado. Mañana, con la lección fresca, lo vuelves a probar.</div>
+                  ) : (
+                    <div className="mt-3 text-[13px] font-extrabold text-green-d">🎓 Lección aprendida</div>
+                  )}
+                </>
+              )}
             </li>
           )
         })}
@@ -1226,7 +1417,14 @@ function MercadoPanel() {
         <span className="g-label">Tienes en el cofre</span>
         <Amount cents={game.huchaCents} size="lg" />
       </div>
-      <Tabs value={tab} onChange={setTab} options={[['negocios', 'Negocios'], ['cartera', 'Mi cartera']]} />
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        options={[
+          ['negocios', 'Negocios'],
+          ['cartera', 'Mi cartera'],
+        ]}
+      />
       {tab === 'negocios' ? (
         <>
           <div className="mt-3">
@@ -1288,7 +1486,11 @@ function MercadoPanel() {
             </ul>
           )}
           <SectionTitle>Últimos movimientos</SectionTitle>
-          <Ledger events={game.ledger.filter((e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'noticia' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta')} />
+          <Ledger
+            events={game.ledger.filter(
+              (e) => e.kind === 'dividendo' || e.kind === 'tormenta' || e.kind === 'noticia' || e.kind === 'acciones-compra' || e.kind === 'acciones-venta',
+            )}
+          />
         </>
       )}
     </Sheet>
@@ -1358,7 +1560,9 @@ function NegocioPanel() {
             </div>
             <div className="g-inset p-2.5 text-center">
               <div className="g-label !text-[10px]">Miedo</div>
-              <div className={`font-display font-extrabold text-[17px] ${fear > 0 ? 'text-orange-d' : 'text-ink-3'}`}>{fear > 0 ? `+${formatPct(Math.round(fear * 10_000))}` : 'calma'}</div>
+              <div className={`font-display font-extrabold text-[17px] ${fear > 0 ? 'text-orange-d' : 'text-ink-3'}`}>
+                {fear > 0 ? `+${formatPct(Math.round(fear * 10_000))}` : 'calma'}
+              </div>
             </div>
           </div>
           <p className="text-[12px] font-bold text-ink-3 mt-2 mb-0">
@@ -1369,15 +1573,24 @@ function NegocioPanel() {
         </>
       ) : (
         <>
-          <SectionTitle>Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}</SectionTitle>
+          <SectionTitle>
+            Últimas cuentas · {['ene-mar', 'abr-jun', 'jul-sep', 'oct-dic'][q.quarterOfYear]} del año {q.year}
+          </SectionTitle>
           {q.storm && b.def.storm && <p className="m-0 mb-2 text-[13px] font-bold text-red-d">⛈️ {b.def.storm.label}</p>}
           {b.def.cycle && q.cyclePhase !== undefined && (
             <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">
-              🎢 Ciclo: {q.cyclePhase > 0.5 ? 'en lo alto' : q.cyclePhase < -0.5 ? 'en lo bajo' : q.cyclePhase > 0 ? 'subiendo' : 'bajando'} ({Math.round((q.cyclePhase + 1) * 50)} % del camino).
+              🎢 Ciclo: {q.cyclePhase > 0.5 ? 'en lo alto' : q.cyclePhase < -0.5 ? 'en lo bajo' : q.cyclePhase > 0 ? 'subiendo' : 'bajando'} ({Math.round((q.cyclePhase + 1) * 50)}{' '}
+              % del camino).
             </p>
           )}
-          {b.def.fashion && q.hot !== undefined && <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">{q.hot ? '🔥 Este año está de moda.' : '🥶 Este año nadie se acuerda de sus juguetes.'}</p>}
-          {b.def.discovery && (q.discoveries ?? 0) > 0 && <p className="m-0 mb-2 text-[13px] font-bold text-green-d">🌠 Descubrimientos: {q.discoveries}. Su beneficio se multiplicó por {Math.pow(b.def.discovery.mul, q.discoveries!)}.</p>}
+          {b.def.fashion && q.hot !== undefined && (
+            <p className="m-0 mb-2 text-[13px] font-bold text-ink-l">{q.hot ? '🔥 Este año está de moda.' : '🥶 Este año nadie se acuerda de sus juguetes.'}</p>
+          )}
+          {b.def.discovery && (q.discoveries ?? 0) > 0 && (
+            <p className="m-0 mb-2 text-[13px] font-bold text-green-d">
+              🌠 Descubrimientos: {q.discoveries}. Su beneficio se multiplicó por {Math.pow(b.def.discovery.mul, q.discoveries!)}.
+            </p>
+          )}
           <div className="grid grid-cols-3 gap-2">
             <div className="g-inset p-2.5 text-center">
               <div className="g-label !text-[10px]">Ventas / acción</div>
@@ -1422,7 +1635,14 @@ function NegocioPanel() {
       </div>
 
       <div className="mt-3">
-        <Tabs value={mode} onChange={setMode} options={[['comprar', 'Comprar'], ['vender', 'Vender']]} />
+        <Tabs
+          value={mode}
+          onChange={setMode}
+          options={[
+            ['comprar', 'Comprar'],
+            ['vender', 'Vender'],
+          ]}
+        />
       </div>
       <div className="grid grid-cols-4 gap-2 mt-3">
         {SHARE_QUICK.map((n) => (
@@ -1433,7 +1653,13 @@ function NegocioPanel() {
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 mt-2 items-center">
         <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
-          <input inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={`Nº de ${units}`} className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+          <input
+            inputMode="numeric"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder={`Nº de ${units}`}
+            className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70"
+          />
         </div>
         <button type="button" disabled={!customOk} onClick={() => act(parsed)} className={`g-btn g-btn--sm ${mode === 'comprar' ? 'g-btn--purple' : 'g-btn--orange'}`}>
           {mode === 'comprar' ? 'Comprar' : 'Vender'}
@@ -1519,10 +1745,21 @@ function FondoPanel() {
           )}
         </div>
       </div>
-      {value > 0 && <p className="text-[12px] font-bold text-ink-3 mt-1 mb-0">{game.fundUnits.toFixed(2)} participaciones · metiste {formatCents(game.fundCostCents)}</p>}
+      {value > 0 && (
+        <p className="text-[12px] font-bold text-ink-3 mt-1 mb-0">
+          {game.fundUnits.toFixed(2)} participaciones · metiste {formatCents(game.fundCostCents)}
+        </p>
+      )}
 
       <div className="mt-4">
-        <Tabs value={mode} onChange={setMode} options={[['meter', 'Meter'], ['sacar', 'Sacar']]} />
+        <Tabs
+          value={mode}
+          onChange={setMode}
+          options={[
+            ['meter', 'Meter'],
+            ['sacar', 'Sacar'],
+          ]}
+        />
       </div>
       <div className="grid grid-cols-4 gap-2 mt-3">
         {FUND_QUICK.map((q) => (
@@ -1534,7 +1771,13 @@ function FondoPanel() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 mt-2 items-center">
         <div className="min-w-0 flex items-center gap-2 h-12 px-3 g-inset">
           <CoinIcon size={16} />
-          <input inputMode="decimal" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Otra cantidad" className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70" />
+          <input
+            inputMode="decimal"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="Otra cantidad"
+            className="min-w-0 flex-1 bg-transparent outline-none font-display font-extrabold text-ink placeholder:text-ink-3/70"
+          />
         </div>
         <button type="button" disabled={!customOk} onClick={() => act(parsed)} className={`g-btn g-btn--sm ${mode === 'meter' ? 'g-btn--purple' : 'g-btn--orange'}`}>
           {mode === 'meter' ? 'Meter' : 'Sacar'}
@@ -1614,7 +1857,14 @@ function LiebrePanel() {
   const items = liebre.items.map((i) => SHOP_ITEMS.find((d) => d.id === i.itemId)).filter(Boolean)
   return (
     <Sheet title="Tú y la Liebre" tone="orange">
-      <Tabs value={tab} onChange={setTab} options={[['pizarra', 'La pizarra'], ['liebre', 'Qué hace ella']]} />
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        options={[
+          ['pizarra', 'La pizarra'],
+          ['liebre', 'Qué hace ella'],
+        ]}
+      />
       {tab === 'pizarra' ? (
         <>
           <div className="grid grid-cols-2 gap-3 mt-3">
@@ -1655,7 +1905,8 @@ function LiebrePanel() {
                 <div className="min-w-0">
                   <div className="font-display font-extrabold text-ink text-[15px] leading-tight">"¡No tengo para la cesta! ¿Me prestas {formatCents(LIEBRE_LOAN_CENTS)}?"</div>
                   <div className="text-[13px] font-semibold text-ink-l leading-snug mt-0.5">
-                    Promete devolverte {formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene: 1 eL de interés por prestar a alguien menos fiable que el Ayuntamiento. A veces se retrasa.
+                    Promete devolverte {formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene: 1 eL de interés por prestar a alguien menos fiable que el Ayuntamiento. A veces se
+                    retrasa.
                   </div>
                 </div>
               </div>
@@ -1670,7 +1921,8 @@ function LiebrePanel() {
               {liebre.hungryNow || liebre.foodMonths === 0
                 ? `Hoy la Liebre tiene hambre, pero te faltan ${formatCents(LIEBRE_LOAN_CENTS - game.huchaCents)} en el cofre para prestarle.`
                 : `Hoy la Liebre tiene comida. Los meses que pasa hambre te pide ${formatCents(LIEBRE_LOAN_CENTS)} y devuelve ${formatCents(LIEBRE_LOAN_REPAY_CENTS)}.`}
-              {game.liebreLoansRepaid > 0 && ` Te ha devuelto ${game.liebreLoansRepaid} ${game.liebreLoansRepaid === 1 ? 'préstamo' : 'préstamos'}${game.liebreLoansLate > 0 ? ` (${game.liebreLoansLate} con retraso)` : ''}.`}
+              {game.liebreLoansRepaid > 0 &&
+                ` Te ha devuelto ${game.liebreLoansRepaid} ${game.liebreLoansRepaid === 1 ? 'préstamo' : 'préstamos'}${game.liebreLoansLate > 0 ? ` (${game.liebreLoansLate} con retraso)` : ''}.`}
             </div>
           )}
         </>
@@ -1688,7 +1940,9 @@ function LiebrePanel() {
           <div className="grid grid-cols-3 gap-2 mt-3">
             <div className="g-inset p-2.5 text-center">
               <div className="g-label !text-[10px]">Despensa</div>
-              <div className="font-display font-extrabold text-ink text-[17px]">{liebre.foodMonths} {liebre.foodMonths === 1 ? 'mes' : 'meses'}</div>
+              <div className="font-display font-extrabold text-ink text-[17px]">
+                {liebre.foodMonths} {liebre.foodMonths === 1 ? 'mes' : 'meses'}
+              </div>
             </div>
             <div className="g-inset p-2.5 text-center">
               <div className="g-label !text-[10px]">Meses con hambre</div>
@@ -1733,7 +1987,8 @@ function LiebrePanel() {
                             {MONTH_NAMES[o.month % 12]} · a {formatCents(o.priceCents, { alwaysDecimals: true })}
                             {o.gainCents !== undefined && (
                               <span className={o.gainCents >= 0 ? ' text-green-d' : ' text-red-d'}>
-                                {' '}· {o.gainCents >= 0 ? 'ganó' : 'perdió'} {formatCents(Math.abs(o.gainCents))}
+                                {' '}
+                                · {o.gainCents >= 0 ? 'ganó' : 'perdió'} {formatCents(Math.abs(o.gainCents))}
                               </span>
                             )}
                           </div>
@@ -1763,7 +2018,18 @@ function LiebrePanel() {
 /* ───────────────────────── Ajustes ───────────────────────── */
 
 /** Una fila de Ajustes: interruptor y, si está activo, deslizador de volumen. */
-function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolume, label, onTest }: {
+function SoundSetting({
+  icon,
+  title,
+  onText,
+  offText,
+  on,
+  volume,
+  setOn,
+  setVolume,
+  label,
+  onTest,
+}: {
   icon: string
   title: string
   onText: string
@@ -1804,7 +2070,9 @@ function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolu
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="text-lg leading-none">🔈</span>
+            <span aria-hidden="true" className="text-lg leading-none">
+              🔈
+            </span>
             <input
               type="range"
               min={0}
@@ -1816,7 +2084,9 @@ function SoundSetting({ icon, title, onText, offText, on, volume, setOn, setVolu
               style={{ ['--pct' as string]: `${pct}%` }}
               onChange={(e) => setVolume(Number(e.target.value) / 100)}
             />
-            <span aria-hidden="true" className="text-lg leading-none">🔊</span>
+            <span aria-hidden="true" className="text-lg leading-none">
+              🔊
+            </span>
           </div>
         </div>
       )}
@@ -1883,7 +2153,17 @@ function AjustesPanel() {
     <Sheet title="Ajustes" tone="blue">
       <SectionTitle>Sonido</SectionTitle>
       <div className="grid gap-2">
-        <SoundSetting icon="🎵" title="Música" onText="Sonando en la isla" offText="En silencio" on={musicOn} volume={musicVolume} setOn={setMusicOn} setVolume={setMusicVolume} label="Volumen de la música" />
+        <SoundSetting
+          icon="🎵"
+          title="Música"
+          onText="Sonando en la isla"
+          offText="En silencio"
+          on={musicOn}
+          volume={musicVolume}
+          setOn={setMusicOn}
+          setVolume={setMusicVolume}
+          label="Volumen de la música"
+        />
         <SoundSetting
           icon="🔔"
           title="Efectos de sonido"
@@ -1909,7 +2189,14 @@ function AjustesPanel() {
             <div className="text-[12px] font-semibold text-ink-l leading-snug">Los cinco pasos básicos, otra vez.</div>
           </div>
         </div>
-        <button type="button" onClick={() => { setTutorialStep(0); setView('isla') }} className="g-btn g-btn--cream g-btn--sm shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            setTutorialStep(0)
+            setView('isla')
+          }}
+          className="g-btn g-btn--cream g-btn--sm shrink-0"
+        >
           Repetir
         </button>
       </div>

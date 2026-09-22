@@ -189,8 +189,10 @@ export interface GameState {
   /** Impuestos que no se pudieron pagar al cerrar el año; se cobran en cuanto hay dinero. */
   taxDebtCents: number
   declarations: Declaration[]
-  /** Lecciones leídas en la escuela. */
+  /** Lecciones aprendidas en la escuela (cuestionario superado). */
   lessonsRead: string[]
+  /** Último mes en que se falló el cuestionario de cada lección: hasta el mes siguiente no se puede repetir. */
+  quizFailedMonth: Record<string, number>
 
   // ───── Nivel 3: acciones ─────
   holdings: Record<string, Holding>
