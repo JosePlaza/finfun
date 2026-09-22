@@ -23,7 +23,8 @@ import { House } from './buildings/House'
 import { Cave } from './buildings/Cave'
 import { Pier } from './buildings/Pier'
 import { ForSaleLot } from './buildings/Generic'
-import { Doer, LIEBRE, LOOKS } from './Ambient'
+import { Doer } from './Ambient'
+import { avatarOr, LIEBRE_AVATAR, NEIGHBORS } from './avatars/catalog'
 
 type V3 = [number, number, number]
 
@@ -163,8 +164,17 @@ export function LiebreIsland({ palette, night }: { palette: SeasonPalette; night
   const plants = useMemo(() => {
     const pts: { x: number; z: number; kind: 'palm' | 'bush' | 'grass' | 'flowers'; s: number }[] = []
     const spots: [number, number, 'palm' | 'bush' | 'grass' | 'flowers', number][] = [
-      [-8.5, -1.5, 'palm', 1.0], [8.8, -3.4, 'palm', 0.9], [-3.5, 7.8, 'palm', 0.85], [6.5, 7.2, 'bush', 1.0], [-6.8, 4.2, 'bush', 0.9],
-      [1.2, -7.4, 'bush', 1.1], [4.0, 5.9, 'flowers', 1], [-1.0, 1.4, 'flowers', 1], [-4.2, -2.4, 'grass', 1.2], [7.6, 1.6, 'grass', 1.1], [2.6, -3.6, 'grass', 1.0],
+      [-8.5, -1.5, 'palm', 1.0],
+      [8.8, -3.4, 'palm', 0.9],
+      [-3.5, 7.8, 'palm', 0.85],
+      [6.5, 7.2, 'bush', 1.0],
+      [-6.8, 4.2, 'bush', 0.9],
+      [1.2, -7.4, 'bush', 1.1],
+      [4.0, 5.9, 'flowers', 1],
+      [-1.0, 1.4, 'flowers', 1],
+      [-4.2, -2.4, 'grass', 1.2],
+      [7.6, 1.6, 'grass', 1.1],
+      [2.6, -3.6, 'grass', 1.0],
     ]
     for (const [x, z, kind, s] of spots) {
       const h = localHeight(terrain, x, z)
@@ -196,7 +206,9 @@ export function LiebreIsland({ palette, night }: { palette: SeasonPalette; night
       {has('bici') && <Bike position={at(cx + 3.1, cz - 0.6)} rotation={0.8} />}
       {has('tienda-campana') && <Tent position={at(cx - 3.4, cz - 1.2)} rotation={0.7} />}
       {has('columpio') && <Swing position={at(cx + 0.6, cz - 3.4)} rotation={0.3} />}
-      {has('guitarra') && <Box size={[0.3, 0.9, 0.12]} position={[cx + 1.9, localHeight(terrain, cx + 1.9, cz + 2.4) + 0.45, cz + 2.4]} rotation={[0.2, 0.4, 0.5]} color={C.wood} />}
+      {has('guitarra') && (
+        <Box size={[0.3, 0.9, 0.12]} position={[cx + 1.9, localHeight(terrain, cx + 1.9, cz + 2.4) + 0.45, cz + 2.4]} rotation={[0.2, 0.4, 0.5]} color={C.wood} />
+      )}
       {has('camara') && <Box size={[0.3, 0.2, 0.2]} position={[cx - 2.0, localHeight(terrain, cx - 2.0, cz + 1.0) + 0.1, cz + 1.0]} color={C.stoneDark} />}
       {has('telescopio') && <Telescope position={at(cx + 2.4, cz + 3.2)} />}
       {has('consola') && <Box size={[0.5, 0.14, 0.34]} position={[cx - 0.4, localHeight(terrain, cx - 0.4, cz + 2.2) + 0.07, cz + 2.2]} color={C.navy} />}
@@ -222,11 +234,9 @@ export function LiebreIsland({ palette, night }: { palette: SeasonPalette; night
       <Pier position={[L_PIER.x, 0, L_PIER.z]} rotation={L_PIER.rotation} length={L_PIER.length} />
 
       {/* La Liebre en casa (cuando no va en la barca) */}
-      {trip === 'there' || trip === 'home' ? (
-        <Doer position={at(cx - 1.6, cz + 1.8)} rotation={2.6} look={LIEBRE} action={liebre.hungryNow ? 'sit' : 'look'} />
-      ) : null}
+      {trip === 'there' || trip === 'home' ? <Doer position={at(cx - 1.6, cz + 1.8)} rotation={2.6} look={LIEBRE_AVATAR} action={liebre.hungryNow ? 'sit' : 'look'} /> : null}
       {/* Un vecino mirando la pizarra */}
-      <Doer position={at(px + 1.4, pz + 1.3)} rotation={-2.3} look={LOOKS[3 % LOOKS.length]} action="look" />
+      <Doer position={at(px + 1.4, pz + 1.3)} rotation={-2.3} look={NEIGHBORS[2]} action="look" />
 
       {/* Vegetación y rocas */}
       {plants.map((p, i) =>
@@ -259,6 +269,7 @@ export function LiebreIsland({ palette, night }: { palette: SeasonPalette; night
 export function LiebreBoat() {
   const game = useGame((s) => s.game)!
   const trip = useGame((s) => s.trip)
+  const avatarId = useGame((s) => s.avatar)
   const tripStartMs = useGame((s) => s.tripStartMs)
   const { travelToLiebre, returnHome, arriveAtLiebre, arriveHome } = useGame.getState()
   const group = useRef<THREE.Group>(null)
@@ -313,11 +324,11 @@ export function LiebreBoat() {
         </mesh>
         {/* pasajeros: la Liebre siempre; el niño cuando navega o está allí */}
         <group position={[0, 0.2, 0.55]} rotation={[0, Math.PI, 0]} scale={0.85}>
-          <Doer position={[0, 0, 0]} look={LIEBRE} action="sit" />
+          <Doer position={[0, 0, 0]} look={LIEBRE_AVATAR} action="sit" />
         </group>
         {(sailing || trip === 'there') && (
           <group position={[0, 0.2, -0.55]} scale={0.85}>
-            <Doer position={[0, 0, 0]} look={LOOKS[0]} action="sit" />
+            <Doer position={[0, 0, 0]} look={avatarOr(avatarId)} action="sit" />
           </group>
         )}
         {trip === 'home' && <Label text="Barca de la Liebre" sub="Visitar su isla" tone="coin" y={2.6} />}

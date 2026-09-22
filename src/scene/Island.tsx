@@ -21,8 +21,8 @@ import { Cave } from './buildings/Cave'
 import { Shop } from './buildings/Shop'
 import { MerchantBoat, Pier, Rowboat } from './buildings/Pier'
 import { GenericBuilding } from './buildings/Generic'
-import { Ambient, LIEBRE, LOOKS, type Action, type Look, type Prop, type Stop } from './Ambient'
-import { avatarOr, type AvatarDef } from './avatars/catalog'
+import { Ambient, type Action, type Prop, type Stop } from './Ambient'
+import { avatarOr, LIEBRE_AVATAR, NEIGHBORS, type AvatarDef } from './avatars/catalog'
 import { forwardOf } from './registry'
 import { boatPose, LiebreBoat, LiebreIsland, liebreIslandPose } from './LiebreIsland'
 import { COACH_STEPS } from '../ui/coachSteps'
@@ -287,32 +287,32 @@ function Scene() {
     }
     const walkers = 2 * game.world
     // El primer paseante es el propio jugador, con su avatar; los demás son vecinos.
-    const routes: { stops: Stop[]; look: Look | AvatarDef; speed: number; offset: number }[] = []
+    const routes: { stops: Stop[]; look: AvatarDef; speed: number; offset: number }[] = []
     for (let i = 0; i < walkers; i++) {
       const picks = shuffled(open).slice(0, Math.min(open.length, 4 + (i % 3)))
       if (picks.length < 3) continue
-      routes.push({ stops: picks.map(stopFor), look: i === 0 ? avatarOr(avatarId) : LOOKS[i % LOOKS.length], speed: 1.0 + (i % 3) * 0.15, offset: i * 7 })
+      routes.push({ stops: picks.map(stopFor), look: i === 0 ? avatarOr(avatarId) : NEIGHBORS[i % NEIGHBORS.length], speed: 1.0 + (i % 3) * 0.15, offset: i * 7 })
     }
     // La Liebre: siempre con prisa, entre la tienda, la casa y el cofre.
     const liebreStops = ['tienda', 'casa', 'cofre', 'banco'].map((id) => stopFor(BUILDING_BY_ID[id as BuildingId]))
     liebreStops.forEach((st) => (st.dwell = 1.5))
-    routes.push({ stops: liebreStops, look: LIEBRE, speed: 1.7, offset: 11 })
+    routes.push({ stops: liebreStops, look: LIEBRE_AVATAR, speed: 1.7, offset: 11 })
 
     // Gente quieta haciendo su trabajo.
-    const doers: { position: V3; rotation: number; look: Look; action: Action; prop: Prop }[] = []
-    doers.push({ position: [PIER.x + 0.4, 0.55, PIER.z + PIER.length + 0.4], rotation: Math.PI * 0.1, look: LOOKS[6], action: 'sit', prop: 'rod' })
+    const doers: { position: V3; rotation: number; look: AvatarDef; action: Action; prop: Prop }[] = []
+    doers.push({ position: [PIER.x + 0.4, 0.55, PIER.z + PIER.length + 0.4], rotation: Math.PI * 0.1, look: NEIGHBORS[5], action: 'sit', prop: 'rod' })
     const tienda = BUILDING_BY_ID.tienda
     const [tx, tz] = front(tienda, 1.6)
-    doers.push({ position: [tx + 1.2, terrain.height(tx + 1.2, tz), tz], rotation: tienda.rotation + Math.PI + 0.6, look: LOOKS[5], action: 'work', prop: 'broom' })
+    doers.push({ position: [tx + 1.2, terrain.height(tx + 1.2, tz), tz], rotation: tienda.rotation + Math.PI + 0.6, look: NEIGHBORS[4], action: 'work', prop: 'broom' })
     if (huertoBuilt) {
       const h = BUILDING_BY_ID.huerto
       const [hx, hz] = front(h, 1.2)
-      doers.push({ position: [hx - 1, terrain.height(hx - 1, hz), hz], rotation: h.rotation + Math.PI, look: LOOKS[9], action: 'work', prop: 'hoe' })
+      doers.push({ position: [hx - 1, terrain.height(hx - 1, hz), hz], rotation: h.rotation + Math.PI, look: NEIGHBORS[8], action: 'work', prop: 'hoe' })
     }
     if (game.bankUnlocked) {
       const b = BUILDING_BY_ID.banco
       const [bx, bz] = front(b, 1.4)
-      doers.push({ position: [bx - 1.4, terrain.height(bx - 1.4, bz), bz], rotation: b.rotation + 0.4, look: LOOKS[2], action: 'wave', prop: 'none' })
+      doers.push({ position: [bx - 1.4, terrain.height(bx - 1.4, bz), bz], rotation: b.rotation + 0.4, look: NEIGHBORS[9], action: 'wave', prop: 'none' })
     }
     return { routes, doers }
   }, [terrain, game.world, huertoBuilt, game.bankUnlocked, avatarId])

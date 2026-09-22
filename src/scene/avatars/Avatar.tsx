@@ -10,7 +10,8 @@ import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import { Mat } from '../kit/Parts'
-import type { Action } from '../Ambient'
+import type { Action, Prop } from '../Ambient'
+import { C } from '../palette'
 import type { AvatarDef } from './catalog'
 
 type V3 = [number, number, number]
@@ -333,6 +334,31 @@ function Face({ def }: { def: AvatarDef }) {
   const noseColor = shade(def.skin, 0.8)
   const eye = (x: number, w = 0.055, h = 0.075) => <Bx key={x} s={[w, h, 0.03]} p={[x, 0.02, FACE_Z]} c={DARK} radius={0.015} />
   if (face === 'calabaza') return null
+  if (face === 'liebre') {
+    return (
+      <>
+        {[-0.11, 0.11].map((x) => eye(x, 0.06, 0.08))}
+        {/* hocico rosa, bigotes y dientes */}
+        <Sph r={0.045} p={[0, -0.05, FACE_Z + 0.02]} c="#e28a9d" />
+        {[-1, 1].map((sgn) => (
+          <group key={sgn}>
+            <Bx s={[0.16, 0.012, 0.012]} p={[sgn * 0.14, -0.05, FACE_Z + 0.01]} c={shade(def.skin, 0.6)} r={[0, 0, sgn * 0.15]} sharp />
+            <Bx s={[0.16, 0.012, 0.012]} p={[sgn * 0.14, -0.09, FACE_Z + 0.01]} c={shade(def.skin, 0.6)} r={[0, 0, -sgn * 0.15]} sharp />
+          </group>
+        ))}
+        {[-0.03, 0.03].map((x) => (
+          <Bx key={x} s={[0.045, 0.06, 0.03]} p={[x, -0.15, FACE_Z]} c={WHITE} radius={0.01} />
+        ))}
+        {/* orejas largas */}
+        {[-0.13, 0.13].map((x) => (
+          <group key={x} position={[x, TOP_Y + 0.28, -0.04]} rotation={[0, 0, x > 0 ? -0.18 : 0.18]}>
+            <Bx s={[0.13, 0.6, 0.09]} p={[0, 0, 0]} c={def.skin} radius={0.05} />
+            <Bx s={[0.07, 0.44, 0.03]} p={[0, 0, 0.04]} c="#e28a9d" radius={0.02} />
+          </group>
+        ))}
+      </>
+    )
+  }
   if (face === 'robot') {
     return (
       <>
@@ -725,6 +751,38 @@ function Hat({ def }: { def: AvatarDef }) {
           </group>
         </>
       )
+    case 'panuelo':
+      return (
+        <group position={[0, TOP_Y - 0.12, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.36, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.42]} />
+            <Mat color={c} />
+          </mesh>
+          <Bx s={[0.64, 0.07, 0.1]} p={[0, 0.06, 0.24]} c={a} radius={0.02} />
+          <Bx s={[0.1, 0.16, 0.06]} p={[0.06, -0.02, -0.3]} c={c} r={[0.3, 0, -0.5]} radius={0.02} />
+          <Bx s={[0.1, 0.14, 0.06]} p={[-0.08, -0.04, -0.3]} c={c} r={[0.3, 0, 0.6]} radius={0.02} />
+        </group>
+      )
+    case 'marinero':
+      return (
+        <group position={[0, TOP_Y - 0.02, 0]}>
+          <Cyl rt={0.3} rb={0.32} h={0.14} p={[0, 0.07, 0]} c={c} seg={12} />
+          <Cyl rt={0.36} rb={0.36} h={0.06} p={[0, 0.03, 0]} c={c} seg={12} />
+          <Cyl rt={0.33} rb={0.33} h={0.05} p={[0, 0.005, 0]} c={a} seg={12} />
+          <Sph r={0.03} p={[0, 0.15, 0]} c={a} />
+        </group>
+      )
+    case 'boina':
+      return (
+        <group position={[0, TOP_Y - 0.06, 0]} rotation={[0, 0, -0.12]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.36, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.4]} />
+            <Mat color={c} />
+          </mesh>
+          <Cyl rt={0.33} rb={0.34} h={0.04} p={[0, 0.02, 0]} c={shade(c, 0.8)} seg={12} />
+          <Sph r={0.03} p={[0, 0.36, 0]} c={c} />
+        </group>
+      )
     case 'gorro-rasta':
       return (
         <group position={[0, TOP_Y - 0.1, -0.02]}>
@@ -862,6 +920,19 @@ function BodyExtras({ def, torsoW, torsoH }: { def: AvatarDef; torsoW: number; t
           <Bx s={[0.09, 0.07, 0.03]} p={[0, 0.03, zf + 0.01]} c={GOLD} radius={0.01} />
         </>
       )}
+      {has('delantal') && (
+        <>
+          <Bx s={[0.36, 0.3, 0.03]} p={[0, 0.16, zf + 0.01]} c={def.top.accent ?? WHITE} radius={0.02} />
+          <Bx s={[torsoW + 0.01, 0.05, 0.31]} p={[0, 0.3, 0]} c={def.top.accent ?? WHITE} radius={0.01} />
+          <Bx s={[0.1, 0.05, 0.03]} p={[0, 0.16, zf + 0.03]} c={shade(def.top.accent ?? WHITE, 0.85)} radius={0.01} />
+        </>
+      )}
+      {has('bolso') && (
+        <>
+          <Bx s={[0.05, 0.5, 0.05]} p={[0.16, 0.3, 0.08]} c="#8a5a3a" r={[0, 0, -0.55]} radius={0.02} />
+          <Bx s={[0.2, 0.16, 0.1]} p={[0.32, 0.02, 0.06]} c="#c98b5a" radius={0.03} />
+        </>
+      )}
       {has('peto') && (
         <>
           <Bx s={[0.3, 0.2, 0.03]} p={[0, 0.3, zf]} c={def.bottom.color} radius={0.01} />
@@ -877,7 +948,19 @@ function BodyExtras({ def, torsoW, torsoH }: { def: AvatarDef; torsoW: number; t
 
 /* ───────────────────────── El avatar ───────────────────────── */
 
-export function Avatar({ def, walking, action, fixedHeadY }: { def: AvatarDef; walking: React.RefObject<number>; action: React.RefObject<Action>; fixedHeadY?: number }) {
+export function Avatar({
+  def,
+  walking,
+  action,
+  prop = 'none',
+  fixedHeadY,
+}: {
+  def: AvatarDef
+  walking: React.RefObject<number>
+  action: React.RefObject<Action>
+  prop?: Prop
+  fixedHeadY?: number
+}) {
   const legL = useRef<THREE.Group>(null)
   const legR = useRef<THREE.Group>(null)
   const armL = useRef<THREE.Group>(null)
@@ -903,8 +986,8 @@ export function Avatar({ def, walking, action, fixedHeadY }: { def: AvatarDef; w
     let headZ = 0
     let aLx = -swing * 0.8
     let aRx = swing * 0.8
-    let aLz = 0.18
-    let aRz = -0.18
+    let aLz = -0.16
+    let aRz = 0.16
     switch (act) {
       case 'look':
         headY = Math.sin(t * 1.3) * 0.6
@@ -913,7 +996,7 @@ export function Avatar({ def, walking, action, fixedHeadY }: { def: AvatarDef; w
         aRx = 0
         break
       case 'wave':
-        aRz = -2.5 + Math.sin(t * 7) * 0.35
+        aRz = 2.45 - Math.sin(t * 7) * 0.3
         aRx = 0
         aLx = 0
         headY = 0.15
@@ -981,6 +1064,25 @@ export function Avatar({ def, walking, action, fixedHeadY }: { def: AvatarDef; w
             <Bx s={[0.13, 0.34, 0.14]} p={[0, -0.16, 0]} c={sleeves} radius={0.04} />
             {bones && <Bx s={[0.04, 0.24, 0.02]} p={[0, -0.16, 0.075]} c={WHITE} sharp />}
             <Sph r={0.075} p={[0, -0.36, 0]} c={handColor} />
+            {/* herramienta en la mano derecha */}
+            {i === 1 && prop === 'rod' && (
+              <mesh position={[0, -0.36, 0.7]} rotation={[Math.PI / 2 - 0.5, 0, 0]}>
+                <cylinderGeometry args={[0.012, 0.02, 1.8, 5]} />
+                <Mat color={C.woodDark} />
+              </mesh>
+            )}
+            {i === 1 && prop === 'broom' && (
+              <group position={[0, -0.36, 0.15]} rotation={[0.5, 0, 0]}>
+                <Cyl rt={0.02} rb={0.02} h={1.3} p={[0, 0, 0]} c={C.wood} seg={5} />
+                <Bx s={[0.28, 0.22, 0.08]} p={[0, -0.7, 0]} c="#e2c26a" flat radius={0.02} />
+              </group>
+            )}
+            {i === 1 && prop === 'hoe' && (
+              <group position={[0, -0.36, 0.15]} rotation={[0.5, 0, 0]}>
+                <Cyl rt={0.02} rb={0.02} h={1.3} p={[0, 0, 0]} c={C.wood} seg={5} />
+                <Bx s={[0.22, 0.12, 0.03]} p={[0, -0.68, 0.06]} c={C.stoneDark} r={[0.6, 0, 0]} sharp />
+              </group>
+            )}
             {i === 1 && extras.includes('tridente') && (
               <group position={[0, -0.36, 0.08]} rotation={[0.15, 0, 0]}>
                 <Cyl rt={0.02} rb={0.02} h={1.5} p={[0, 0.35, 0]} c={GOLD} seg={6} />

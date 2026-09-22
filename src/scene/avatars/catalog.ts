@@ -32,7 +32,10 @@ export type Hat =
   | 'hueso'
   | 'cactus'
   | 'gorro-rasta'
-export type Face = 'normal' | 'robot' | 'momia' | 'calavera' | 'zombi' | 'calabaza'
+  | 'panuelo'
+  | 'marinero'
+  | 'boina'
+export type Face = 'normal' | 'robot' | 'momia' | 'calavera' | 'zombi' | 'calabaza' | 'liebre'
 export type Beard = 'completa' | 'perilla' | 'bigote' | 'larga' | 'mostacho'
 export type Glasses = 'redondas' | 'sol' | 'espiral' | 'parche' | 'monoculo'
 export type Extra =
@@ -69,6 +72,8 @@ export type Extra =
   | 'cejas-enfadadas'
   | 'mejillas'
   | 'hoja'
+  | 'delantal'
+  | 'bolso'
 
 export interface AvatarDef {
   id: string
@@ -514,4 +519,161 @@ export const DEFAULT_AVATAR = AVATARS[0].id
 
 export function avatarOr(id: string | null | undefined): AvatarDef {
   return (id && AVATAR_BY_ID[id]) || AVATAR_BY_ID[DEFAULT_AVATAR]
+}
+
+/* ───────────────────────── Vecinos de la isla y la Liebre ───────────────────────── */
+
+/**
+ * Los habitantes de la isla, con la misma morfología que los avatares (así todos parecen del mismo mundo).
+ * No se eligen: pasean, pescan, barren… El orden importa: Island.tsx los reparte por rutas y puestos.
+ */
+export const NEIGHBORS: AvatarDef[] = [
+  {
+    id: 'v-nina',
+    name: 'Niña de la coleta',
+    emoji: '👧',
+    skin: '#e0a984',
+    hair: { color: '#2b1b12', style: 'coletas' },
+    top: { color: '#e8a4c4', accent: '#f4ecdc' },
+    bottom: { color: '#4a5a8a' },
+    shoes: '#c9302b',
+    extras: ['mejillas', 'rombos'],
+    scale: 0.84,
+  },
+  {
+    id: 'v-vecino',
+    name: 'Vecino',
+    emoji: '👨',
+    skin: '#8d5a3b',
+    hair: { color: '#1f1512', style: 'corto' },
+    top: { color: '#e28a4a', accent: '#f4ecdc' },
+    bottom: { color: '#5a3a24' },
+    shoes: '#2b2b2b',
+    extras: ['botones', 'cinturon'],
+  },
+  {
+    id: 'v-abuelo',
+    name: 'Abuelo del sombrero',
+    emoji: '👴',
+    skin: '#f6d6bd',
+    hair: { color: '#c9c2b5', style: 'calvo' },
+    top: { color: '#7fb069', accent: '#5a3a24' },
+    bottom: { color: '#6b4b2f' },
+    shoes: '#3a2f28',
+    hat: 'paja',
+    hatColor: '#e2c26a',
+    hatAccent: '#c9302b',
+    beard: { color: '#c9c2b5', style: 'bigote' },
+    glasses: 'redondas',
+    extras: ['chaleco'],
+    scale: 0.98,
+  },
+  {
+    id: 'v-vecina',
+    name: 'Vecina',
+    emoji: '👩',
+    skin: '#c68b5c',
+    hair: { color: '#3a2416', style: 'melena' },
+    top: { color: '#c9302b', accent: '#f2c044' },
+    bottom: { color: '#3f3f3f', skirt: true },
+    shoes: '#2b2b2b',
+    extras: ['pendientes', 'colgante'],
+    scale: 0.96,
+  },
+  {
+    id: 'v-panadera',
+    name: 'Panadera',
+    emoji: '🥖',
+    skin: '#f2c9a6',
+    hair: { color: '#b5652b', style: 'mono' },
+    top: { color: '#f5c542', accent: '#f4ecdc' },
+    bottom: { color: '#4a5a8a' },
+    shoes: '#5a3a24',
+    hat: 'panuelo',
+    hatColor: '#c9302b',
+    hatAccent: '#f4ecdc',
+    extras: ['delantal'],
+    scale: 0.94,
+  },
+  {
+    id: 'v-marinero',
+    name: 'Marinero',
+    emoji: '⚓',
+    skin: '#a56c47',
+    hair: { color: '#111', style: 'corto' },
+    top: { color: '#3aa5d8', accent: '#f4ecdc' },
+    bottom: { color: '#e9e2d0' },
+    shoes: '#2b2b2b',
+    hat: 'marinero',
+    hatColor: '#f4ecdc',
+    hatAccent: '#2f4f8a',
+    beard: { color: '#111', style: 'perilla' },
+    extras: ['rayas-poncho', 'panuelo-cuello'],
+  },
+  {
+    id: 'v-chica',
+    name: 'Chica del morado',
+    emoji: '💜',
+    skin: '#f0bfa0',
+    hair: { color: '#e2b04a', style: 'trenzas' },
+    top: { color: '#7a5fe0', accent: '#f4ecdc' },
+    bottom: { color: '#4a5a8a' },
+    shoes: '#f4ecdc',
+    extras: ['mejillas', 'bolso'],
+    scale: 0.9,
+  },
+  {
+    id: 'v-repartidor',
+    name: 'Repartidor',
+    emoji: '📦',
+    skin: '#d9a77c',
+    hair: { color: '#4b2e1e', style: 'corto' },
+    top: { color: '#f4ecdc', accent: '#e28a4a' },
+    bottom: { color: '#2f4858' },
+    shoes: '#2b2b2b',
+    hat: 'gorra',
+    hatColor: '#e28a4a',
+    extras: ['chaleco', 'cinturon'],
+  },
+  {
+    id: 'v-hortelano',
+    name: 'Hortelano',
+    emoji: '🥕',
+    skin: '#f2c9a6',
+    hair: { color: '#5a3a1e', style: 'corto' },
+    top: { color: '#3e8f3a', accent: '#8a5a3a' },
+    bottom: { color: '#6b4b2f' },
+    shoes: '#5a3a24',
+    hat: 'boina',
+    hatColor: '#5a3a24',
+    beard: { color: '#5a3a1e', style: 'mostacho' },
+    extras: ['peto', 'remiendos'],
+    scale: 0.98,
+  },
+  {
+    id: 'v-banquero',
+    name: 'Banquero',
+    emoji: '🏦',
+    skin: '#f6d6bd',
+    hair: { color: '#3a2416', style: 'corto' },
+    top: { color: '#2f4f8a', accent: '#f4ecdc' },
+    bottom: { color: '#2b2b3a' },
+    shoes: '#2b2b2b',
+    glasses: 'monoculo',
+    extras: ['corbata', 'chaleco', 'botones'],
+  },
+]
+
+/** La Liebre: la vecina impulsiva. Misma morfología, con orejas, hocico y dientes. */
+export const LIEBRE_AVATAR: AvatarDef = {
+  id: 'liebre',
+  name: 'La Liebre',
+  emoji: '🐰',
+  skin: '#d9c3a5',
+  top: { color: '#c9302b', accent: '#f2c044' },
+  bottom: { color: '#5a3a24' },
+  shoes: '#d9c3a5',
+  face: 'liebre',
+  extras: ['botones'],
+  scale: 0.9,
 }

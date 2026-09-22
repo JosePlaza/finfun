@@ -6,11 +6,12 @@ import { StrictMode, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { AVATARS } from '../scene/avatars/catalog'
+import { AVATARS, LIEBRE_AVATAR, NEIGHBORS } from '../scene/avatars/catalog'
 import { Avatar } from '../scene/avatars/Avatar'
 import type { Action } from '../scene/Ambient'
 
-const COLS = 6
+const COLS = 7
+const ALL = [...AVATARS, ...NEIGHBORS, LIEBRE_AVATAR]
 const GAP_X = 2.0
 const GAP_Y = 2.3
 
@@ -23,17 +24,17 @@ function Turning({ children, i }: { children: React.ReactNode; i: number }) {
 }
 
 function Gallery() {
-  const rows = Math.ceil(AVATARS.length / COLS)
+  const rows = Math.ceil(ALL.length / COLS)
   const walking = useRef(0)
-  const actions: Action[] = ['wave', 'look', 'walk', 'wave', 'look', 'carry']
+  const actions: Action[] = ['wave', 'look', 'walk', 'wave', 'look', 'carry', 'work']
   return (
-    <Canvas shadows camera={{ position: [0, 0, 22], fov: 30 }} gl={{ antialias: true }}>
+    <Canvas shadows camera={{ position: [0, 0, 26], fov: 30 }} gl={{ antialias: true }}>
       <color attach="background" args={['#1b1b1b']} />
       <ambientLight intensity={0.85} />
       <directionalLight position={[4, 8, 6]} intensity={1.6} castShadow />
       <directionalLight position={[-4, 3, -2]} intensity={0.4} />
       <group position={[(-(COLS - 1) * GAP_X) / 2, ((rows - 1) * GAP_Y) / 2 - 0.65, 0]}>
-        {AVATARS.map((def, i) => {
+        {ALL.map((def, i) => {
           const act = { current: actions[i % actions.length] } as React.RefObject<Action>
           return (
             <group key={def.id} position={[(i % COLS) * GAP_X, -Math.floor(i / COLS) * GAP_Y, 0]}>

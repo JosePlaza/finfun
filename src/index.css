@@ -968,7 +968,7 @@ textarea {
 .g-hud-btn--green { --l: var(--color-green-l); --b: var(--color-green); --d: var(--color-green-d); }
 .avatar-stage {
   width: 100%;
-  height: 230px;
+  height: 200px;
   border-radius: 16px;
   background: radial-gradient(circle at 50% 35%, #fff9ec, #f1e6cf 70%);
   box-shadow: inset 0 3px 0 var(--color-cream-d);
