@@ -16,6 +16,7 @@ import {
   completeTask,
   createGame,
   currentMonth,
+  monthAt,
   deposit as simDeposit,
   forfeitTask,
   formatCents,
@@ -462,11 +463,18 @@ export const useGame = create<Store>()(
             set({ nowMs: t })
             return
           }
-          const g = migrate(g0)
+          let g = migrate(g0)
+          // Partida por delante del reloj (adelantada con la barra de pruebas antigua, o reloj del dispositivo
+          // atrasado): se mueve la fecha de creación para que el calendario real la alcance y siga avanzando.
+          const behind = g.processedMonth - monthAt(t, g.epochMs)
+          if (behind > 0) {
+            g = { ...g, epochMs: g.epochMs - behind * 24 * 60 * 60 * 1000 }
+            scheduleRemoteSave(g)
+          }
           const advanced = advanceTo(g, t)
           const month = currentMonth(advanced, t)
           const patch: Partial<Store> = { nowMs: t }
-          if (advanced !== g) {
+          if (advanced !== g || g !== g0) {
             patch.game = advanced
             scheduleRemoteSave(advanced)
             announceBadges(g0, advanced)
