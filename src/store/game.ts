@@ -229,7 +229,8 @@ function flushRemoteSave(game: GameState | null) {
 export const useGame = create<Store>()(
   persist(
     (set, get) => {
-      const now = () => serverNow() + get().devOffsetMs
+      // Sin desfases locales: la hora es la del servidor (o la del dispositivo si no hay Supabase).
+      const now = () => serverNow()
 
       /** Avisa de las insignias nuevas (comparando la lista de antes y la de después). */
       const announceBadges = (before: GameState | null, after: GameState) => {
@@ -466,9 +467,11 @@ export const useGame = create<Store>()(
           let g = migrate(g0)
           // Partida por delante del reloj (adelantada con la barra de pruebas antigua, o reloj del dispositivo
           // atrasado): se mueve la fecha de creación para que el calendario real la alcance y siga avanzando.
-          const behind = g.processedMonth - monthAt(t, g.epochMs)
-          if (behind > 0) {
-            g = { ...g, epochMs: g.epochMs - behind * 24 * 60 * 60 * 1000 }
+          if (g.epochMs > t || g.processedMonth > monthAt(t, g.epochMs)) {
+            // La isla "nació" hoy menos los meses ya procesados: así el calendario real la alcanza justo ahora.
+            const born = new Date(t)
+            born.setDate(born.getDate() - g.processedMonth)
+            g = { ...g, epochMs: born.getTime() }
             scheduleRemoteSave(g)
           }
           const advanced = advanceTo(g, t)
@@ -738,7 +741,7 @@ export const useGame = create<Store>()(
       partialize: (s) => ({
         game: s.game,
         saveOwner: s.saveOwner,
-        devOffsetMs: s.devOffsetMs,
+        devOffsetMs: 0,
         seenDiary: s.seenDiary,
         seenMarketMonth: s.seenMarketMonth,
         seenBankOpen: s.seenBankOpen,
