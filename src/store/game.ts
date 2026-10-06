@@ -118,6 +118,9 @@ interface Store {
   seenDiary: number
   /** Último mes de isla en que se abrió el Mercado (sus avisos se dan por vistos). */
   seenMarketMonth: number
+  /** Mes en que se dijo "hoy no" a la Liebre: su petición no vuelve a salir hasta el mes siguiente. */
+  seenLiebreAskMonth: number
+  declineLiebre: () => void
   /** Pestaña con la que debe abrirse el Mercado la próxima vez (la pide un evento). */
   mercadoTab: 'negocios' | 'cartera' | null
   seenBankOpen: boolean
@@ -322,6 +325,7 @@ export const useGame = create<Store>()(
             wheelAutoShownFor: -1,
             seenDiary: 0,
             seenMarketMonth: -1,
+            seenLiebreAskMonth: -1,
             seenBankOpen: false,
             seenWorld: 1,
             seenMissions: 0,
@@ -333,6 +337,11 @@ export const useGame = create<Store>()(
         view: 'isla',
         toast: null,
         seenMarketMonth: -1,
+        seenLiebreAskMonth: -1,
+        declineLiebre: () => {
+          const g = get().game
+          if (g) set({ seenLiebreAskMonth: g.processedMonth })
+        },
         mercadoTab: null,
         acornsFound: [],
         acornsMonth: -1,
@@ -681,6 +690,7 @@ export const useGame = create<Store>()(
             wheelOpen: false,
             seenDiary: 0,
             seenMarketMonth: -1,
+            seenLiebreAskMonth: -1,
             seenBankOpen: false,
             seenWorld: 1,
             seenMissions: 0,
@@ -744,6 +754,7 @@ export const useGame = create<Store>()(
         devOffsetMs: 0,
         seenDiary: s.seenDiary,
         seenMarketMonth: s.seenMarketMonth,
+        seenLiebreAskMonth: s.seenLiebreAskMonth,
         seenBankOpen: s.seenBankOpen,
         seenWorld: s.seenWorld,
         seenMissions: s.seenMissions,

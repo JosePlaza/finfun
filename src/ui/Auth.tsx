@@ -117,9 +117,19 @@ export function AuthScreen() {
               </div>
 
               {error && (
-                <p role="alert" className="mt-3 mb-0 g-inset !bg-red-l/40 p-3 text-[13px] font-extrabold text-red-d leading-snug">
+                <div role="alert" className="mt-3 g-inset !bg-red-l/40 p-3 text-[13px] font-extrabold text-red-d leading-snug">
                   {error}
-                </p>
+                  {/* Un error de credenciales al entrar suele ser alguien que aún no tiene cuenta: se le ofrece crearla. */}
+                  {mode === 'entrar' && error.includes('no son correctos') && (
+                    <div className="mt-2 font-bold text-ink-l">
+                      Si es tu primera vez en Finfun, todavía no tienes cuenta:{' '}
+                      <button type="button" onClick={() => switchMode('crear')} className="text-blue-d underline font-extrabold">
+                        créala aquí
+                      </button>
+                      .
+                    </div>
+                  )}
+                </div>
               )}
 
               <button type="submit" disabled={!canSubmit || busy} className={`g-btn g-btn--block g-btn--lg mt-4 ${mode === 'crear' ? 'g-btn--orange' : 'g-btn--green'}`}>

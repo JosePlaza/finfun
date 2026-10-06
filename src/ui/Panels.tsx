@@ -400,12 +400,15 @@ function EventosPanel() {
   const seenWorld = useGame((s) => s.seenWorld)
   const seenMissions = useGame((s) => s.seenMissions)
   const seenMarketMonth = useGame((s) => s.seenMarketMonth)
-  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth }
+  const seenLiebreAskMonth = useGame((s) => s.seenLiebreAskMonth)
+  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth, seenLiebreAskMonth }
   const setView = useGame((s) => s.setView)
   const collect = useGame((s) => s.collect)
   const openWheel = useGame((s) => s.openWheel)
   const hintAcorn = useGame((s) => s.hintAcorn)
   const revealAcorns = useGame((s) => s.revealAcorns)
+  const lendToLiebre = useGame((s) => s.lendToLiebre)
+  const declineLiebre = useGame((s) => s.declineLiebre)
   const month = currentMonth(game, nowMs)
   const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
   const events = pendingEvents(game, acornsLeft, seen)
@@ -435,6 +438,21 @@ function EventosPanel() {
                   <button type="button" onClick={() => openWheel(true)} className="g-btn g-btn--purple g-btn--sm">
                     Girar
                   </button>
+                ) : e.id.startsWith('liebre-pide') ? (
+                  <>
+                    <button type="button" onClick={declineLiebre} className="g-btn g-btn--cream g-btn--sm">
+                      Hoy no
+                    </button>
+                    <button
+                      type="button"
+                      onClick={lendToLiebre}
+                      disabled={game.huchaCents < LIEBRE_LOAN_CENTS}
+                      className="g-btn g-btn--orange g-btn--sm"
+                      title={game.huchaCents < LIEBRE_LOAN_CENTS ? 'Te falta dinero en el cofre' : undefined}
+                    >
+                      Prestar {formatCents(LIEBRE_LOAN_CENTS)}
+                    </button>
+                  </>
                 ) : e.id === 'bellotas' ? (
                   <>
                     <button type="button" onClick={revealAcorns} className="g-btn g-btn--cream g-btn--sm" title="Te enseña todas, pero hoy no hay premio">

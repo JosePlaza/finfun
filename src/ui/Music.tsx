@@ -286,6 +286,7 @@ export function EventSounds() {
   const seenWorld = useGame((s) => s.seenWorld)
   const seenMissions = useGame((s) => s.seenMissions)
   const seenMarketMonth = useGame((s) => s.seenMarketMonth)
+  const seenLiebreAskMonth = useGame((s) => s.seenLiebreAskMonth)
   const known = useRef<Set<string> | null>(null)
 
   // Precarga el aviso en cuanto hay contexto (tras el primer gesto), para que no llegue tarde la primera vez.
@@ -302,7 +303,7 @@ export function EventSounds() {
     if (!game) return
     const month = currentMonth(game, nowMs)
     const acornsLeft = game.taskDoneMonth < month ? TASK_ACORNS - acornsFound.length : 0
-    const ids = pendingEvents(game, acornsLeft, { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth }).map((e) => e.id)
+    const ids = pendingEvents(game, acornsLeft, { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth, seenLiebreAskMonth }).map((e) => e.id)
     if (!known.current) {
       known.current = new Set(ids)
       return
@@ -311,7 +312,7 @@ export function EventSounds() {
     known.current = new Set(ids)
     // Las bellotas cambian de número al recogerlas y la paga vuelve cada día: solo avisamos de lo realmente nuevo.
     if (fresh.length > 0) playEventSfx()
-  }, [game, nowMs, acornsFound, seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth])
+  }, [game, nowMs, acornsFound, seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth, seenLiebreAskMonth])
 
   return null
 }

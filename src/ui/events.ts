@@ -17,7 +17,7 @@ export interface PendingEvent {
 export function pendingEvents(
   game: GameState,
   acornsLeft: number,
-  seen: { seenDiary: number; seenBankOpen: boolean; seenWorld: number; seenMissions: number; seenMarketMonth: number },
+  seen: { seenDiary: number; seenBankOpen: boolean; seenWorld: number; seenMissions: number; seenMarketMonth: number; seenLiebreAskMonth: number },
 ): PendingEvent[] {
   const out: PendingEvent[] = []
   // Lo urgente primero: la comida y la ruleta del año.
@@ -130,12 +130,12 @@ export function pendingEvents(
     out.push({ id: `rescate-${rescue.month}`, icon: '🍲', title: 'Doña Tortuga te ha rescatado', detail: rescue.label, view: 'tienda', tone: 'red' })
   }
   // La Liebre pasa hambre y no debe nada: pide un préstamo. "Ir" coge la barca hasta su isla, donde está el botón.
-  if (liebreCanBorrow(game, game.processedMonth)) {
+  if (liebreCanBorrow(game, game.processedMonth) && seen.seenLiebreAskMonth < game.processedMonth) {
     out.push({
       id: `liebre-pide-${game.processedMonth}`,
       icon: '🐰',
       title: 'La Liebre te pide un préstamo',
-      detail: `"¡No tengo para la cesta! ¿Me prestas ${formatCents(LIEBRE_LOAN_CENTS)}?" Promete devolver ${formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene. Ve a su isla en la barca para decidir.`,
+      detail: `"¡No tengo para la cesta! ¿Me prestas ${formatCents(LIEBRE_LOAN_CENTS)}?" Promete devolver ${formatCents(LIEBRE_LOAN_REPAY_CENTS)} el mes que viene: 1 eL de interés por prestar a alguien menos fiable que el Ayuntamiento. A veces se retrasa.`,
       view: 'liebre',
       tone: 'orange',
     })

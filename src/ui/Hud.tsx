@@ -27,7 +27,8 @@ export function TopBar() {
   const seenWorld = useGame((s) => s.seenWorld)
   const seenMissions = useGame((s) => s.seenMissions)
   const seenMarketMonth = useGame((s) => s.seenMarketMonth)
-  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth }
+  const seenLiebreAskMonth = useGame((s) => s.seenLiebreAskMonth)
+  const seen = { seenDiary, seenBankOpen, seenWorld, seenMissions, seenMarketMonth, seenLiebreAskMonth }
   const month = currentMonth(game, nowMs)
   const cal = calendarOf(month)
   const total = game.huchaCents + game.bankCents + bondsTotal(game) + stocksValue(game, month) + fundValue(game, month)
